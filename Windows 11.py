@@ -2,6 +2,7 @@ import tkinter
 from tkinter import messagebox
 import os
 
+runIdFileManager=1
 def FTRConfigSettings(path, data=None) -> tuple:
     if os.access(path, os.F_OK):
         with open(path) as read_config:
@@ -10,8 +11,6 @@ def FTRConfigSettings(path, data=None) -> tuple:
         with open(path, "w") as FTR_write_config: #FirstTimeRun_Write_config, full form.
             FTR_write_config.write(data)
     return config
-
-import platform
 THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings("theme_config.txt", f"White\nBlack")
 class Apps(object):
     def BlackJack():
@@ -83,6 +82,8 @@ class Apps(object):
         a.mainloop()
 
     def FileManager():
+        global THEME_FOREGROUND
+        global THEME_WINDOW_BG
         filepath = None
         def lookUpFiles(path):
             nonlocal filepath
@@ -93,7 +94,8 @@ class Apps(object):
             for i in fileView.get_children():
                 fileView.delete(i)
             for file in range(len(filesInFolder)):
-                fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]])
+                fileView.configure(style="Treeview")
+                fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
         def openFileOrFolder(*event):
             nonlocal filepath
             SFI = fileView.selection()
@@ -105,24 +107,33 @@ class Apps(object):
                 lookUpFiles(filepath)
             else:
                 os.startfile(f"{selectedFile}")
+
         def goBackFolder(path: str):
-            if platform.system() == "Windows":
-                fileDirSplitVar = "\\"
+            global runIdFileManager
+            if "\\" in path:
+                path = path.replace("\\", "/")
+                print(path)
+            folderSplit = path.split("/")
+            if runIdFileManager == 1:
+                folderSplit.pop(-1)
+                runIdFileManager += 1
             else:
-                fileDirSplitVar = "/"
-            folderSplit = path.split(fileDirSplitVar)
-            folderSplit.pop(-1)
-            path = "".join(f"{folder}/" for folder in folderSplit)
+                folderSplit.pop(-1)
+                folderSplit.pop(-1)
+            print(folderSplit)
+            path = str().join(f"{folder}/" for folder in folderSplit)
+            print(path)
             addressBar.delete(0, tkinter.END)
             addressBar.insert(tkinter.END, path)
             lookUpFiles(path=path)
         fileManagerWindow = tkinter.Toplevel(ROOT_WINDOW, background=THEME_WINDOW_BG)
         fileManagerWindow.title("File Manager")
+        ttk.Style(fileManagerWindow).configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         mainFrame = tkinter.Frame(fileManagerWindow, background=THEME_WINDOW_BG)
         mainFrame.grid(row=0, column=0)
-        ttk.Style().configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         addressBar = tkinter.Entry(mainFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
         addressBar.insert(tkinter.END, os.getcwd())
+        checkTheme(addressBar)
         goButton = tkinter.Button(mainFrame, text="Go!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
                                 command=lambda: lookUpFiles(addressBar.get()))
         goButton.grid(row=0, column=1, sticky="nw")
@@ -143,6 +154,7 @@ class Apps(object):
         fileView.column("Files", anchor=tkinter.W, width=600)
         fileView.heading("Files", text="Files", anchor=tkinter.CENTER)
         fileView.bind("<<TreeviewSelect>>", openFileOrFolder)
+        fileView.configure(style="Treeview")
         fileManagerWindow.mainloop()
 import tkinter.ttk as ttk
 import time
@@ -207,25 +219,68 @@ class GUIButtonCommand(object):
             if problem:
                 messagebox.showerror("Error", str(problem))
 
-pinned_apps = []
-PINNED_APPS = FTRConfigSettings("ProgramFiles/pinnedApps.txt", str(pinned_apps))
-ROOT_WINDOW = tkinter.Tk()
-ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
-launcherComboBox = ttk.Combobox(ROOT_WINDOW)
-APPS_LIST = ["Notepad", "fileshare", "OnlineBanking", "BlackJack", "ComputerGuesses", 
-            "GuessingGame", "MemoryHog", "FileManager"]
+def main():
+    global launcherComboBox
+    global contextMenu
+    global ROOT_WINDOW
+    pinned_apps = []
+    PINNED_APPS = FTRConfigSettings("ProgramFiles/pinnedApps.txt", str(pinned_apps))
+    ROOT_WINDOW = tkinter.Tk()
+    ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
+    launcherComboBox = ttk.Combobox(ROOT_WINDOW)
+    APPS_LIST = ["Notepad", "fileshare", "OnlineBanking", "BlackJack", "ComputerGuesses", 
+                "GuessingGame", "MemoryHog", "FileManager"]
 
-launcherComboBox['values'] = APPS_LIST
-launcherComboBox['state'] = "readonly"
-launcherComboBox.bind("<<ComboboxSelected>>", GUIButtonCommand.launchComboBoxEvent)
-launcherComboBox.grid(row=0, column=0, sticky="w")
-appsFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, border=5)
-contextMenu = tkinter.Menu(appsFrame, tearoff=False)
-contextMenu.add_command(label="Taskbar settings", command=GUIButtonCommand.taskbarSettingsGUI)
-shutDown = tkinter.Button(appsFrame, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
-                            command=ROOT_WINDOW.quit)
-shutDown.grid(row=0, column=0, padx=5)
-appsFrame.bind("<Button-3>", GUIButtonCommand.popup)
-appsFrame.grid(row=0, column=1, sticky="n")
+    launcherComboBox['values'] = APPS_LIST
+    launcherComboBox['state'] = "readonly"
+    launcherComboBox.bind("<<ComboboxSelected>>", GUIButtonCommand.launchComboBoxEvent)
+    launcherComboBox.grid(row=0, column=0, sticky="w")
+    appsFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, border=5)
+    contextMenu = tkinter.Menu(appsFrame, tearoff=False)
+    contextMenu.add_command(label="Taskbar settings", command=GUIButtonCommand.taskbarSettingsGUI)
+    shutDown = tkinter.Button(appsFrame, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
+                                command=ROOT_WINDOW.quit)
+    shutDown.grid(row=0, column=0, padx=5)
+    appsFrame.bind("<Button-3>", GUIButtonCommand.popup)
+    appsFrame.grid(row=0, column=1, sticky="n")
 
-ROOT_WINDOW.mainloop()
+    ROOT_WINDOW.mainloop()
+def loginVerification():
+    global userNameText
+    global passwordText
+    with open("ProgramFiles/accConfiguration.conf", "r") as verify:
+        username, password = verify.readlines()
+        username = username.removesuffix('\n')
+        password = password.removesuffix('\n')
+        if userNameText.get() == username and passwordText.get() == password:
+            main()
+        else:
+            messagebox.showerror("Incorrect Username or Password", "The password or username (or both) are incorrect. try again!")
+
+def checkTheme(*widgets):
+    global widget
+    if THEME_WINDOW_BG in DARK_COLOURS:
+        for widget in widgets:
+            widget.configure(insertbackground="white",
+                                selectbackground='white',
+                                selectforeground='black')
+DARK_COLOURS = ['black', 'brown', 'blue', 'green', 'red', 'violet', 'purple', 'dark blue', 'dark green',
+                'dark red', 'dark brown', ]
+loginWindow = tkinter.Tk()
+loginWindow.title("Login to Windows 11")
+loginWindow.configure(background=THEME_WINDOW_BG)
+msg = tkinter.Label(loginWindow, text="Enter your Username: ", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+msg.grid(row=0, column=0)
+userNameText = tkinter.Entry(loginWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+userNameText.grid(row=0, column=1)
+userNameText.configure(insertbackground="white", selectbackground='white', selectforeground='black')
+msg2 = tkinter.Label(loginWindow, text="Enter your Password", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+msg2.grid(row=1, column=0)
+passwordText = tkinter.Entry(loginWindow, foreground=THEME_FOREGROUND, background=THEME_WINDOW_BG)
+passwordText.grid(row=1, column=1)
+passwordText.configure(insertbackground="white", selectbackground='white', selectforeground='black')
+checkTheme(userNameText, passwordText)
+loginBtn = tkinter.Button(loginWindow, text="Login", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
+                            command=loginVerification)
+loginBtn.grid(row=2, column=1)
+loginWindow.mainloop()
