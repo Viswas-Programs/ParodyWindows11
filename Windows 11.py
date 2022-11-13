@@ -2,7 +2,7 @@ import tkinter
 from tkinter import messagebox
 import os
 
-runIdFileManager=1
+
 def FTRConfigSettings(path, data=None) -> tuple:
     if os.access(path, os.F_OK):
         with open(path) as read_config:
@@ -106,20 +106,16 @@ class Apps(object):
                 filepath = os.path.join(filepath, selectedFile)
                 lookUpFiles(filepath)
             else:
-                os.startfile(f"{selectedFile}")
+                os.startfile(f"{filepath}")
 
-        def goBackFolder(path: str):
-            global runIdFileManager
+        def goBackFolder(path: str):  
             if "\\" in path:
                 path = path.replace("\\", "/")
                 print(path)
             folderSplit = path.split("/")
-            if runIdFileManager == 1:
+            if folderSplit[-1] == '':
                 folderSplit.pop(-1)
-                runIdFileManager += 1
-            else:
-                folderSplit.pop(-1)
-                folderSplit.pop(-1)
+            folderSplit.pop(-1)
             print(folderSplit)
             path = str().join(f"{folder}/" for folder in folderSplit)
             print(path)
