@@ -1,5 +1,7 @@
 """ Windows 11 setup, one of a GUI mess. I am fixing the mess now! 06/05/2022
-UPDATE: FIXING IN FULL BLOW - 4/11/2022"""
+UPDATE: FIXING IN FULL BLOW - 4/11/2022
+UPDATE: Fixing successful! not a mess like before. 
+UPDATE: 21/11/2022- Made the installer a little bit modulus, by not hardcoding every single file to be downloaded from github!"""
 import time
 import tkinter
 from tkinter import messagebox
@@ -58,6 +60,9 @@ class Installer(object):
     def configUser(self):
         with open("ProgramFiles/accConfiguration.conf", "w") as config:
             config.write(f"{self.useraccount.get()}\n{self.password.get()}")
+        os.system("""python3 "Windows 11.py" """)
+        os.remove("Windows 11 INSTALLER.py")
+        exit()
 
     def usersetup(self):
         """ user setup """
@@ -78,12 +83,73 @@ class Installer(object):
                                         foreground=THEME_FOREGROUND)
         enterbutton.grid()
 
+    def _installFiles(self, GitHubRepoName: str, fileName, writeFileName: str, branch="main"):
+        if GitHubRepoName == "ParodyWindows11":
+            exec(f"ParodyWindows11Dwn = requests.get('https://github.com/Viswas-Programs/ParodyWindows11/raw/{branch}/Windows 11.py')")
+            exec(f"self._installWindows11(downloadedFile=ParodyWindows11Dwn)")
+        else:
+            if GitHubRepoName == "BlackJack-Python-Game":
+                GitHubRepoName = "BlackJack"
+            exec(f"{GitHubRepoName}Dwn = requests.get('https://github.com/Viswas-Programs/{GitHubRepoName}/raw/{branch}/{fileName}')")
+            WriteFileName = writeFileName.removesuffix(".py")
+            print(WriteFileName, writeFileName)
+            exec(f"self._midInstallFileWriter(downloadedFile={GitHubRepoName}Dwn, fileNamePath='{WriteFileName}')")
+
+    def _midInstallFileWriter(self, downloadedFile, fileNamePath: str, encoding='utf-8') -> None:
+        with open(f"ProgramFiles/{fileNamePath}/{fileNamePath}", "w") as writeTo:
+            try:
+                writeTo.write(downloadedFile.content.decode(encoding=encoding))
+            except UnicodeEncodeError as UER:
+                print(f"UnicodeDecodeError occured while writing {fileNamePath}\n--MSG:{UER}")
+
+    def _installWindows11(self, downloadedFile,):
+        with open("Windows 11.py", "w") as writeTo:
+            try:
+                writeTo.write(downloadedFile.content.decode(encoding='utf-8'))
+            except UnicodeEncodeError as UER:
+                print(f"UnicodeDecodeError occured while installing Windows 11 main file.\n--DEBUG({UER})")
+        
     def Install(self):
         """ installer for enterprise edition"""
         self.installWindow.title("Installing Windows 11...")
-        ProgramFilesDownload = requests.get("https://github.com/Viswas-Programs/ParodyWindows11/raw/main/ProgramFiles.zip")
-        ExtractFiles = zipfile.ZipFile(BytesIO(ProgramFilesDownload.content))
-        ExtractFiles.extractall(os.getcwd())
+        # ProgramFilesDownload = requests.get("https://github.com/Viswas-Programs/ParodyWindows11/raw/main/ProgramFiles.zip")
+        # SyntaxCheckFileDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/syntax_checker.py")
+        # FuncForBljckCheckFileDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/functions_for_blackjack.py")
+        # Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py")
+        # self._midInstallFileWriter(downloadedFile=SyntaxCheckFileDownload, fileNamePath="syntax_checker.py")
+        # self._midInstallFileWriter(downloadedFile=FuncForBljckCheckFileDownload, fileNamePath="functions_for_blackjack.py")
+        # self._midInstallFileWriter(downloadedFile=Windows11MainDownload, fileNamePath="Windows 11.py")
+        # ExtractFiles = zipfile.ZipFile(BytesIO(ProgramFilesDownload.content))
+        # ExtractFiles.extractall(os.getcwd())
+        downloadFilesDict = {"Notepad": ["notepadGUI.py", "syntax_checker.py"],
+                            "ParodyWindows11": ["Windows 11.py"],
+                            "BlackJack-Python-Game": ["blackjack.py", "functions_for_blackjack.py"],
+                            "FileSharing": ["fileSharing.py"],
+                            "fileinspector": ["fileinspector.py"]}
+        os.mkdir("ProgramFiles")
+        # for repo, files in downloadFilesDict.items():
+        #     for file in files:
+        #         print(file, repo, sep=" : ")
+        #         if file == "notepadGUI.py": writeFile = "Notepad.py"
+        #         if file == "fileSharing.py": writeFile = "FileSharing.py"
+        #         try:
+        #             os.mkdir(f"ProgramFiles/{writeFile.removesuffix('.py')}")
+        #         except FileExistsError as error:
+        #             print(f"DEBUG<The install folder already exists.>\n"
+        #             f"--MSG: {error} ")
+        #         self._installFiles(repo, file, str(writeFile))
+        for repository, filesToDownload in downloadFilesDict.items():
+            if repository == "ParodyWindows11":
+                self._installFiles("ParodyWindows11", "Windows 11.py", "Windows 11.py")
+            else:
+                for file in filesToDownload:
+                    writeFile = file
+                    if file == "notepadGUI.py": writeFile = "Notepad.py"
+                    if file == "fileSharing.py": writeFile = "FileSharing.py"
+                os.mkdir(f"ProgramFiles/{writeFile.removesuffix('.py')}")
+                for file in filesToDownload:
+                    self._installFiles(repository, file, f'{writeFile}')
+
         self.usersetup()
 
 
