@@ -1,0 +1,11 @@
+v1.0->
+-The main windows 11.
+-Apps
+-Start menu
+-Shutdown button
+-Clock widget
+-A basic security system
+-Functional in-construction installer.
+v1.0.1 [IN PROGRESS]->
+-Update system
+-
