@@ -114,16 +114,16 @@ class Installer(object):
         self.installWindow.title("Installing Windows 11...")
         # ProgramFilesDownload = requests.get("https://github.com/Viswas-Programs/ParodyWindows11/raw/main/ProgramFiles.zip")
         # SyntaxCheckFileDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/syntax_checker.py")
-        # FuncForBljckCheckFileDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/functions_for_blackjack.py")
+        FuncForBljckCheckFileDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/functions_for_blackjack.py")
         # Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py")
         # self._midInstallFileWriter(downloadedFile=SyntaxCheckFileDownload, fileNamePath="syntax_checker.py")
-        # self._midInstallFileWriter(downloadedFile=FuncForBljckCheckFileDownload, fileNamePath="functions_for_blackjack.py")
+        self._midInstallFileWriter(downloadedFile=FuncForBljckCheckFileDownload, fileNamePath="functions_for_blackjack.py")
         # self._midInstallFileWriter(downloadedFile=Windows11MainDownload, fileNamePath="Windows 11.py")
         # ExtractFiles = zipfile.ZipFile(BytesIO(ProgramFilesDownload.content))
         # ExtractFiles.extractall(os.getcwd())
-        downloadFilesDict = {"Notepad": ["notepadGUI.py", "syntax_checker.py"],
+        downloadFilesDict = {"Notepad": ["notepadGUI.py", "syntax_checker.py", "spellcheck.txt"],
                             "ParodyWindows11": ["Windows 11.py"],
-                            "BlackJack-Python-Game": ["blackjack.py", "functions_for_blackjack.py"],
+                            "BlackJack-Python-Game": ["blackjack.py"],
                             "FileSharing": ["fileSharing.py"],
                             "fileinspector": ["fileinspector.py"]}
         os.mkdir("ProgramFiles")
@@ -140,7 +140,9 @@ class Installer(object):
         #         self._installFiles(repo, file, str(writeFile))
         for repository, filesToDownload in downloadFilesDict.items():
             if repository == "ParodyWindows11":
-                self._installFiles("ParodyWindows11", "Windows 11.py", "Windows 11.py")
+                filesToDownloadWindows11 = ["Windows 11.py", "VERSION.txt", "CHANGELOG.txt", "updateManager.py"]
+                for file in filesToDownloadWindows11:
+                    self._installFiles("ParodyWindows11", file, file)
             else:
                 for file in filesToDownload:
                     writeFile = file
