@@ -1,1 +1,4 @@
 updateManager.py
+Windows 11 INSTALLER.py
+CHAGNELOG.txt
+VERSION.txt
