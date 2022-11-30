@@ -152,6 +152,10 @@ class Apps(object):
         fileView.bind("<<TreeviewSelect>>", openFileOrFolder)
         fileView.configure(style="Treeview")
         fileManagerWindow.mainloop()
+    
+    def UpdateManager():
+        import ProgramFiles.updateManager as updateManager
+        updateManager.main()
 import tkinter.ttk as ttk
 import time
 class GUIButtonCommand(object):
@@ -219,13 +223,14 @@ def main():
     global launcherComboBox
     global contextMenu
     global ROOT_WINDOW
+    global APPS_LIST
     pinned_apps = []
     PINNED_APPS = FTRConfigSettings("ProgramFiles/pinnedApps.txt", str(pinned_apps))
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
     launcherComboBox = ttk.Combobox(ROOT_WINDOW)
     APPS_LIST = ["Notepad", "fileshare", "OnlineBanking", "BlackJack", "ComputerGuesses", 
-                "GuessingGame", "MemoryHog", "FileManager"]
+                "GuessingGame", "MemoryHog", "FileManager", "UpdateManager"]
 
     launcherComboBox['values'] = APPS_LIST
     launcherComboBox['state'] = "readonly"
@@ -249,6 +254,7 @@ def loginVerification():
         username = username.removesuffix('\n')
         password = password.removesuffix('\n')
         if userNameText.get() == username and passwordText.get() == password:
+            loginWindow.destroy()
             main()
         else:
             messagebox.showerror("Incorrect Username or Password", "The password or username (or both) are incorrect. try again!")
