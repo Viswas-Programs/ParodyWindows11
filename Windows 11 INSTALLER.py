@@ -7,8 +7,7 @@ import tkinter
 from tkinter import messagebox
 import os
 import requests
-import zipfile
-from io import BytesIO
+import tkinter.messagebox as msgbox
 
 if os.access("theme_config.txt", os.F_OK):
     with open("theme_config.txt") as read_config:
@@ -85,15 +84,23 @@ class Installer(object):
 
     def _installFiles(self, GitHubRepoName: str, fileName, writeFileName: str, branch="main"):
         if GitHubRepoName == "ParodyWindows11":
-            exec(f"ParodyWindows11Dwn = requests.get('https://github.com/Viswas-Programs/ParodyWindows11/raw/{branch}/Windows 11.py')")
-            exec(f"self._installWindows11(downloadedFile=ParodyWindows11Dwn)")
+            try:
+                exec(f"ParodyWindows11Dwn = requests.get('https://github.com/Viswas-Programs/ParodyWindows11/raw/{branch}/Windows 11.py')")
+                exec(f"self._installWindows11(downloadedFile=ParodyWindows11Dwn)")
+            except requests.exceptions.ConnectTimeout:
+                msgbox.showerror("Erorr while connecting to server", "Error occured while trying to connect to"
+                                "our servers. (DEBUG: the program encountered requests.exception.ConnectTimeout error!")
         else:
             if GitHubRepoName == "BlackJack-Python-Game":
                 GitHubRepoName = "BlackJack"
-            exec(f"{GitHubRepoName}Dwn = requests.get('https://github.com/Viswas-Programs/{GitHubRepoName}/raw/{branch}/{fileName}')")
-            WriteFileName = writeFileName.removesuffix(".py")
-            print(WriteFileName, writeFileName)
-            exec(f"self._midInstallFileWriter(downloadedFile={GitHubRepoName}Dwn, fileNamePath='{WriteFileName}')")
+            try:
+                exec(f"{GitHubRepoName}Dwn = requests.get('https://github.com/Viswas-Programs/{GitHubRepoName}/raw/{branch}/{fileName}')")
+                WriteFileName = writeFileName.removesuffix(".py")
+                print(WriteFileName, writeFileName)
+                exec(f"self._midInstallFileWriter(downloadedFile={GitHubRepoName}Dwn, fileNamePath='{WriteFileName}')")
+            except requests.exceptions.ConnectTimeout:
+                msgbox.showerror("Erorr while connecting to server", "Error occured while trying to connect to"
+                                "our servers. (DEBUG: the program encountered requests.exception.ConnectTimeout error!")
 
     def _midInstallFileWriter(self, downloadedFile, fileNamePath: str, encoding='utf-8') -> None:
         with open(f"ProgramFiles/{fileNamePath}/{fileNamePath}", "w") as writeTo:
@@ -112,47 +119,51 @@ class Installer(object):
     def Install(self):
         """ installer for enterprise edition"""
         self.installWindow.title("Installing Windows 11...")
-        # ProgramFilesDownload = requests.get("https://github.com/Viswas-Programs/ParodyWindows11/raw/main/ProgramFiles.zip")
-        # SyntaxCheckFileDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/syntax_checker.py")
-        FuncForBljckCheckFileDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/functions_for_blackjack.py")
-        # Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py")
-        # self._midInstallFileWriter(downloadedFile=SyntaxCheckFileDownload, fileNamePath="syntax_checker.py")
-        self._midInstallFileWriter(downloadedFile=FuncForBljckCheckFileDownload, fileNamePath="functions_for_blackjack.py")
-        # self._midInstallFileWriter(downloadedFile=Windows11MainDownload, fileNamePath="Windows 11.py")
-        # ExtractFiles = zipfile.ZipFile(BytesIO(ProgramFilesDownload.content))
-        # ExtractFiles.extractall(os.getcwd())
-        downloadFilesDict = {"Notepad": ["notepadGUI.py", "syntax_checker.py", "spellcheck.txt"],
-                            "ParodyWindows11": ["Windows 11.py"],
-                            "BlackJack-Python-Game": ["blackjack.py"],
-                            "FileSharing": ["fileSharing.py"],
-                            "fileinspector": ["fileinspector.py"]}
-        os.mkdir("ProgramFiles")
-        # for repo, files in downloadFilesDict.items():
-        #     for file in files:
-        #         print(file, repo, sep=" : ")
-        #         if file == "notepadGUI.py": writeFile = "Notepad.py"
-        #         if file == "fileSharing.py": writeFile = "FileSharing.py"
-        #         try:
-        #             os.mkdir(f"ProgramFiles/{writeFile.removesuffix('.py')}")
-        #         except FileExistsError as error:
-        #             print(f"DEBUG<The install folder already exists.>\n"
-        #             f"--MSG: {error} ")
-        #         self._installFiles(repo, file, str(writeFile))
-        for repository, filesToDownload in downloadFilesDict.items():
-            if repository == "ParodyWindows11":
-                filesToDownloadWindows11 = ["Windows 11.py", "VERSION.txt", "CHANGELOG.txt", "updateManager.py"]
-                for file in filesToDownloadWindows11:
-                    self._installFiles("ParodyWindows11", file, file)
-            else:
-                for file in filesToDownload:
-                    writeFile = file
-                    if file == "notepadGUI.py": writeFile = "Notepad.py"
-                    if file == "fileSharing.py": writeFile = "FileSharing.py"
-                os.mkdir(f"ProgramFiles/{writeFile.removesuffix('.py')}")
-                for file in filesToDownload:
-                    self._installFiles(repository, file, f'{writeFile}')
+        try:
+            # ProgramFilesDownload = requests.get("https://github.com/Viswas-Programs/ParodyWindows11/raw/main/ProgramFiles.zip")
+            # SyntaxCheckFileDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/syntax_checker.py")
+            FuncForBljckCheckFileDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/functions_for_blackjack.py")
+            # Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py")
+            # self._midInstallFileWriter(downloadedFile=SyntaxCheckFileDownload, fileNamePath="syntax_checker.py")
+            self._midInstallFileWriter(downloadedFile=FuncForBljckCheckFileDownload, fileNamePath="functions_for_blackjack.py")
+            # self._midInstallFileWriter(downloadedFile=Windows11MainDownload, fileNamePath="Windows 11.py")
+            # ExtractFiles = zipfile.ZipFile(BytesIO(ProgramFilesDownload.content))
+            # ExtractFiles.extractall(os.getcwd())
+            downloadFilesDict = {"Notepad": ["notepadGUI.py", "syntax_checker.py", "spellcheck.txt"],
+                                "ParodyWindows11": ["Windows 11.py"],
+                                "BlackJack-Python-Game": ["blackjack.py"],
+                                "FileSharing": ["fileSharing.py"],
+                                "fileinspector": ["fileinspector.py"]}
+            os.mkdir("ProgramFiles")
+            # for repo, files in downloadFilesDict.items():
+            #     for file in files:
+            #         print(file, repo, sep=" : ")
+            #         if file == "notepadGUI.py": writeFile = "Notepad.py"
+            #         if file == "fileSharing.py": writeFile = "FileSharing.py"
+            #         try:
+            #             os.mkdir(f"ProgramFiles/{writeFile.removesuffix('.py')}")
+            #         except FileExistsError as error:
+            #             print(f"DEBUG<The install folder already exists.>\n"
+            #             f"--MSG: {error} ")
+            #         self._installFiles(repo, file, str(writeFile))
+            for repository, filesToDownload in downloadFilesDict.items():
+                if repository == "ParodyWindows11":
+                    filesToDownloadWindows11 = ["Windows 11.py", "VERSION.txt", "CHANGELOG.txt", "updateManager.py"]
+                    for file in filesToDownloadWindows11:
+                        self._installFiles("ParodyWindows11", file, file)
+                else:
+                    for file in filesToDownload:
+                        writeFile = file
+                        if file == "notepadGUI.py": writeFile = "Notepad.py"
+                        if file == "fileSharing.py": writeFile = "FileSharing.py"
+                    os.mkdir(f"ProgramFiles/{writeFile.removesuffix('.py')}")
+                    for file in filesToDownload:
+                        self._installFiles(repository, file, f'{writeFile}')
 
-        self.usersetup()
+            self.usersetup()
+        except requests.exceptions.ConnectTimeout:
+            msgbox.showerror("Erorr while connecting to server", "Error occured while trying to connect to"
+                            "our servers. (DEBUG: the program encountered requests.exception.ConnectTimeout error!")
 
 
     def notagreedtoMStc(self):

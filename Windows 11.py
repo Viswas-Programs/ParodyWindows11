@@ -3,13 +3,14 @@ from tkinter import messagebox
 import os
 
 
-def FTRConfigSettings(path, data=None) -> tuple:
+def FTRConfigSettings(path, data: str or None=None) -> tuple:
     if os.access(path, os.F_OK):
         with open(path) as read_config:
             config = read_config.read().splitlines()
     else:
         with open(path, "w") as FTR_write_config: #FirstTimeRun_Write_config, full form.
             FTR_write_config.write(data)
+            config = data.splitlines()
     return config
 THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings("theme_config.txt", f"White\nBlack")
 class Apps(object):
