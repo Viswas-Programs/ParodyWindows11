@@ -21,33 +21,31 @@ def FTRConfigSettings(path, data=None) -> tuple:
             FTR_write_config.write(data)
     return config
 
+try:
+    changelogText = str(requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/CHANGELOG.txt").content.decode(encoding="utf-8"))
+    NEW_VERSION = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/VERSION.txt")
+    version, a = str(NEW_VERSION.content.decode(encoding='utf-8')).split("\n")
+    fileList = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/FILE_CHANGES.txt").content.decode(encoding='utf-8').splitlines()
+except requests.exceptions.ConnectTimeout:
+    msgbox.showerror("Erorr while connecting to server", "Error occured while trying to connect to"
+                    " our servers.\n(DEBUG: the program encountered requests.exception.ConnectTimeout error!)")
+    changelogText = "ERROR: Cannot access the server for the required files and newest updates! Try again later!"
+    version = 1.0
+    fileList = ["NONE"]
 def main():
-    LAST_UPDATE = open("ProgramFiles/LAST_UPDATE.txt", "a+")
-    CURRENT_VERSION = FTRConfigSettings("ProgramFiles/VERSION.txt", "0.1")
+    LAST_UPDATE = open("ProgramFiles/update_config/LAST_UPDATE.txt", "a+")
+    CURRENT_VERSION = FTRConfigSettings("ProgramFiles/update_config/VERSION.txt", "0.1")[0]
     THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings("theme_config.txt", "Black\nWhite")
     root = tkinter.Tk()
     root.title("Update manager")
     root.configure(background=THEME_WINDOW_BG)
     changeeLogScrollbar = ttk.Scrollbar(root)
     changeeLogScrollbar.grid(row=0, column=1, sticky="nsw")
-    try:
-        changelogText = str(requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/CHANGELOG.txt").content.decode(encoding="utf-8"))
-    except requests.exceptions.ConnectTimeout:
-        msgbox.showerror("Erorr while connecting to server", "Error occured while trying to connect to"
-                        "our servers. (DEBUG: the program encountered requests.exception.ConnectTimeout error!")
-        changelogText = "ERROR: Cannot access the server for the required files and newest updates! Try again later!"
     changelogs = tkinter.Text(root, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, yscrollcommand=changeeLogScrollbar.set)
     changelogs.grid(row=0, column=0)
     changelogs.insert(1.0, changelogText)
     changelogs.configure(state="disabled")
     changeeLogScrollbar.configure(command=changelogs.yview, orient=tkinter.VERTICAL)
-    try:
-        NEW_VERSION = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/VERSION.txt")
-        version, a = str(NEW_VERSION.content.decode(encoding='utf-8')).split("\n")
-    except requests.exceptions.ConnectTimeout:
-        msgbox.showerror("Erorr while connecting to server", "Error occured while trying to connect to"
-                        "our servers. (DEBUG: the program encountered requests.exception.ConnectTimeout error!")
-        version = 1.0
     def updateToNew():
         SOURCE_FOLDER = os.getcwd()
         DESTINATION_FOLDER = f"{CURRENT_VERSION}"
@@ -61,12 +59,6 @@ def main():
             if os.path.isfile(source):
                 shutil.copy(source, destination)
                 os.remove(source) # =====
-        try:
-            fileList = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/FILE_CHANGES.txt").content.decode(encoding='utf-8').splitlines()
-        except requests.exceptions.ConnectTimeout:
-            msgbox.showerror("Erorr while connecting to server", "Error occured while trying to connect to"
-                            "our servers. (DEBUG: the program encountered requests.exception.ConnectTimeout error!")
-            fileList = ["NONE"]
         if fileList[-1] == "":
             del fileList[-1]
         for file in fileList:
@@ -82,8 +74,7 @@ def main():
         # ExtractFiles.extractall(os.getcwd())
         LAST_UPDATE.write(f"Program update on {time.strftime('%H:%M:%S') in {datetime.datetime.date()}}")
     def checkForUpdates():
-        nonlocal version
-        if version > CURRENT_VERSION:
+        if version > float(CURRENT_VERSION):
             msgbox.showinfo("Update available", f"Windows 11 v{version} is ready to be installed!"
                             f"\n({CURRENT_VERSION} -> {version})")
             updateButton = tkinter.Button(root, text="Update to latest version!", command=updateToNew,
