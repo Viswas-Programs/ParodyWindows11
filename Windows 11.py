@@ -211,7 +211,7 @@ class Apps(object):
                 fileToStart = externalAppsList.item(indexSelect, 'values')[0]
             else:
                 fileToStart = file
-            os.startfile(fileToStart)
+            os.system(f"python3 '{fileToStart}'")
         def show():
             global externalAppsList
             nonlocal buttonText
@@ -227,7 +227,7 @@ class Apps(object):
             externalAppsList.bind("<<TreeviewSelect>>", load)
             externalAppsList.configure(style="Treeview")
         def loadCustomApp():
-            fileToOpen = filedialog.askopenfilename(title="Select app to run!", filetypes=(".py"))
+            fileToOpen = filedialog.askopenfilename(title="Select app to run!", filetypes=(("Windows 11 Apps", "*.py"), ("All Files", "*.*")))
             load(file=fileToOpen)
         showRefreshBtn = tkinter.Button(externalApps, text=buttonText, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=show)
         showRefreshBtn.grid(row=0, column=0)
