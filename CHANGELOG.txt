@@ -6,6 +6,13 @@ v1.0->
 -Clock widget
 -A basic security system
 -Functional in-construction installer.
-v1.0.1 [IN PROGRESS]->
--Update system
--
+v1.0.1->
+-Online Update system
+-Bug fixes
+v1.1.0->
+-Notification system
+-Bug fixes
+v1.1.1->
+-Implementation of notification system in Update Manager App
+-Added desktop icons!
+-3rd party app support, with a loader to load the external app! (auto find and custom find)

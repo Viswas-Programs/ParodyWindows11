@@ -1,6 +1,8 @@
 import tkinter
 from tkinter import messagebox
 import os
+from pathlib import Path
+from tkinter import filedialog
 
 
 def FTRConfigSettings(path, data: str or None=None) -> tuple:
@@ -13,6 +15,38 @@ def FTRConfigSettings(path, data: str or None=None) -> tuple:
             config = data.splitlines()
     return config
 THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings("theme_config.txt", f"White\nBlack")
+import tkinter.ttk as ttk
+import time
+ROW_COUNT_NOTIFICATION_WINDOW = 0
+class Notifications(object):
+    global ROW_COUNT_NOTIFICATION_WINDOW
+    global notificationsButton
+    def __init__(self):
+        self.NotificationsList = []
+        self.TimeofNotification = []
+        self.actions = []
+    def createNotification(self, msg: str, time: str, action: str):
+        global ROW_COUNT_NOTIFICATION_WINDOW
+        self.NotificationsList.append(msg)
+        self.TimeofNotification.append(time)
+        self.actions.append(action)
+        ROW_COUNT_NOTIFICATION_WINDOW += 1
+        notificationsButton.configure(text=f"Notifications ({len(self.NotificationsList)})")
+    def showNotification(self, title: str, msg: str, time: str, action: str) -> None:
+        messagebox.showinfo(title, msg)
+        self.createNotification(msg=msg, time=time, action=action)
+    def showNotificationsList(self, event=None):
+        notificationsWindow = tkinter.Toplevel(background="black")
+        notificationsButton.configure(text="Notifications (0)")
+        if len(self.NotificationsList) == 0:
+            a = tkinter.Label(notificationsWindow, text="No notifications (yet)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            a.grid(row=0, column=0)
+        for index, notif in enumerate(self.NotificationsList):
+            exec(f'a{index} = tkinter.Label(notificationsWindow, text=f"{notif}\t: {self.TimeofNotification[index]}", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND')
+            exec(f'a{index}.grid(row=ROW_COUNT_NOTIFICATION_WINDOW, column=0)')
+            exec(f"a{index}.bind('<Button-1>', self.actions[index])")
+        notificationsWindow.mainloop()
+notification = Notifications()
 class Apps(object):
     def BlackJack():
         """
@@ -156,12 +190,65 @@ class Apps(object):
     
     def UpdateManager():
         import ProgramFiles.updateManager as updateManager
-        updateManager.main()
-import tkinter.ttk as ttk
-import time
+        updateManager.main(notification)
+    
+    def LoadExternalApps():
+        externalApps = tkinter.Toplevel(background="Black")
+        externalAppsName = []
+        buttonText = "Look for external apps!"
+        def refresh():
+            global externalAppsList
+            for file in Path(os.getcwd()).glob("*SETUP.py"):
+                externalAppsName.append(file)
+            for i in externalAppsList.get_children():
+                externalAppsList.delete(i)
+            for file in range(len(externalAppsName)):
+                externalAppsList.configure(style="Treeview")
+                externalAppsList.insert(parent='', iid=file, text='', index='end', values=[externalAppsName[file]],)
+        def load(file: str = None):
+            if file == None:
+                indexSelect = externalAppsList.focus()
+                fileToStart = externalAppsList.item(indexSelect, 'values')[0]
+            else:
+                fileToStart = file
+            os.startfile(fileToStart)
+        def show():
+            global externalAppsList
+            nonlocal buttonText
+            nonlocal showRefreshBtn
+            buttonText = "Refresh"
+            showRefreshBtn.configure(text=buttonText)
+            externalAppsList = ttk.Treeview(externalApps, style="Treeview")
+            externalAppsList.grid(row=1, column=0, sticky="w")
+            externalAppsList['column'] = "Apps"
+            externalAppsList.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
+            externalAppsList.column("Apps", anchor=tkinter.W, width=600)
+            externalAppsList.heading("Apps", text="Apps", anchor=tkinter.CENTER)
+            externalAppsList.bind("<<TreeviewSelect>>", load)
+            externalAppsList.configure(style="Treeview")
+        def loadCustomApp():
+            fileToOpen = filedialog.askopenfilename(title="Select app to run!", filetypes=(".py"))
+            load(file=fileToOpen)
+        showRefreshBtn = tkinter.Button(externalApps, text=buttonText, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=show)
+        showRefreshBtn.grid(row=0, column=0)
+        loadCusttomBtn = tkinter.Button(externalApps, text="Load Custom App!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=loadCustomApp)
+        loadCusttomBtn.grid(row=0, column=1)
+        externalApps.mainloop()
+            
+
+
+
+ROW_COUNT_DESKTOP_ICONS = 0
+COLUMN_COUNT_DESKTOP_ICONS = 0
+MAX_ROW_DESKTOP = 10
+MAX_COLUMN_DESKTOP = 15
 class GUIButtonCommand(object):
     global launcherCombobox
     global APPS_LIST
+    global ROW_COUNT_DESKTOP_ICONS
+    global COLUMN_COUNT_DESKTOP_ICONS
+    global MAX_COLUMN_DESKTOP
+    global MAX_ROW_DESKTOP
     def launchComboBoxEvent(e):
         Item = launcherComboBox.get()
         exec(f"Apps.{Item}()")
@@ -219,19 +306,39 @@ class GUIButtonCommand(object):
             contextMenu.grab_release()
             if problem:
                 messagebox.showerror("Error", str(problem))
+    def createAppIcon(appName: str, command: str, event=None):
+        """ creates desktop icons!"""
+        global desktopFrame
+        global COLUMN_COUNT_DESKTOP_ICONS, ROW_COUNT_DESKTOP_ICONS
+        if ROW_COUNT_DESKTOP_ICONS > MAX_ROW_DESKTOP:
+            if COLUMN_COUNT_DESKTOP_ICONS > MAX_COLUMN_DESKTOP:
+                messagebox.showerror("Can't place the item! no more space left!")
+            else:
+                COLUMN_COUNT_DESKTOP_ICONS += 1
+        exec(f"{appName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
+        exec(f"{appName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
+        ROW_COUNT_DESKTOP_ICONS += 1
+        exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png')")
+        exec(f"{appName}BTN = tkinter.Button({appName}Frame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command={command})")
+        exec(f"{appName}BTN.IMGREF = {appName}ICON")
+        exec(f"{appName}BTN.grid(row=0, column=0)")
+        exec(f"{appName}LABEL = tkinter.Label({appName}Frame, text=f'{appName}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)")
+        exec(f"{appName}LABEL.grid(row=1, column=0)")
 
 def main():
     global launcherComboBox
     global contextMenu
     global ROOT_WINDOW
     global APPS_LIST
+    global notificationsButton
+    global desktopFrame
     pinned_apps = []
     PINNED_APPS = FTRConfigSettings("ProgramFiles/pinnedApps.txt", str(pinned_apps))
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
     launcherComboBox = ttk.Combobox(ROOT_WINDOW)
     APPS_LIST = ["Notepad", "fileshare", "OnlineBanking", "BlackJack", "ComputerGuesses", 
-                "GuessingGame", "MemoryHog", "FileManager", "UpdateManager"]
+                "GuessingGame", "MemoryHog", "FileManager", "UpdateManager", "LoadExternalApps"]
 
     launcherComboBox['values'] = APPS_LIST
     launcherComboBox['state'] = "readonly"
@@ -245,7 +352,12 @@ def main():
     shutDown.grid(row=0, column=0, padx=5)
     appsFrame.bind("<Button-3>", GUIButtonCommand.popup)
     appsFrame.grid(row=0, column=1, sticky="n")
-
+    notificationsButton = tkinter.Button(ROOT_WINDOW, text="Notifications (0)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command= lambda: notification.showNotificationsList(notification))
+    notificationsButton.grid(row=0, column=3, sticky="ne", padx=5)
+    desktopFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG)
+    GUIButtonCommand.createAppIcon("Notepad", 'Apps.Notepad')
+    GUIButtonCommand.createAppIcon("Files", 'Apps.FileManager')
+    desktopFrame.grid(row=1, column=0)
     ROOT_WINDOW.mainloop()
 def loginVerification():
     global userNameText

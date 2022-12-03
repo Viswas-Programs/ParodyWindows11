@@ -61,7 +61,11 @@ class Installer(object):
             config.write(f"{self.useraccount.get()}\n{self.password.get()}")
         os.system("""python3 "Windows 11.py" """)
         os.remove("Windows 11 INSTALLER.py")
-        exit()
+        os.mkdir("Users")
+        folders = ["Documents", "Downloads", "Music", "Videos", "Pictures", "Desktop"]
+        for folder in folders:
+            os.mkdir(f"Users/{folder}")
+        self.installWindow.destroy()
 
     def usersetup(self):
         """ user setup """
@@ -148,7 +152,7 @@ class Installer(object):
             #         self._installFiles(repo, file, str(writeFile))
             for repository, filesToDownload in downloadFilesDict.items():
                 if repository == "ParodyWindows11":
-                    filesToDownloadWindows11 = ["Windows 11.py", "VERSION.txt", "CHANGELOG.txt", "updateManager.py"]
+                    filesToDownloadWindows11 = ["Windows 11.py", "VERSION.txt", "CHANGELOG.txt", "updateManager.py", "Icons/Files.png", "Icons/Notepad.png"]
                     for file in filesToDownloadWindows11:
                         self._installFiles("ParodyWindows11", file, file)
                 else:

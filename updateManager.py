@@ -6,7 +6,6 @@ from tkinter import ttk
 from tkinter import messagebox as msgbox
 import datetime
 import time
-import urllib3
 
 def FTRConfigSettings(path, data=None) -> tuple:
     if os.access(path, os.F_OK):
@@ -32,7 +31,7 @@ except requests.exceptions.ConnectTimeout:
     changelogText = "ERROR: Cannot access the server for the required files and newest updates! Try again later!"
     version = 1.0
     fileList = ["NONE"]
-def main():
+def main(notification):
     LAST_UPDATE = open("ProgramFiles/update_config/LAST_UPDATE.txt", "a+")
     CURRENT_VERSION = FTRConfigSettings("ProgramFiles/update_config/VERSION.txt", "0.1")[0]
     THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings("theme_config.txt", "Black\nWhite")
@@ -75,6 +74,7 @@ def main():
         LAST_UPDATE.write(f"Program update on {time.strftime('%H:%M:%S') in {datetime.datetime.date()}}")
     def checkForUpdates():
         if version > float(CURRENT_VERSION):
+            notification.showNotification(notification, "Update available!", f"Windows 11 v{version} is ready to be installed!\n{CURRENT_VERSION} => {version}", time.strftime("%H:%M:%S %p"), checkForUpdates)
             msgbox.showinfo("Update available", f"Windows 11 v{version} is ready to be installed!"
                             f"\n({CURRENT_VERSION} -> {version})")
             updateButton = tkinter.Button(root, text="Update to latest version!", command=updateToNew,
