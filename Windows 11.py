@@ -46,6 +46,7 @@ class Notifications(object):
             exec(f'a{index}.grid(row=ROW_COUNT_NOTIFICATION_WINDOW, column=0)')
             exec(f"a{index}.bind('<Button-1>', self.actions[index])")
         notificationsWindow.mainloop()
+        self.NotificationsList, self.actions, self.TimeofNotification = [], [], []
 notification = Notifications()
 class Apps(object):
     def BlackJack():
@@ -55,23 +56,6 @@ class Apps(object):
         """
         import ProgramFiles.Games.blackjack.blackjack as GUIBlackjack
         GUIBlackjack.play()
-
-
-    def GuessingGame():
-        """ guessing game CLI"""
-        import ProgramFiles.Games.CLI_Comp_Guess as CLIGuessingGame
-        CLIGuessingGame.play()
-
-
-    def ComputerGuesses():
-        """ the computer guessing your number. don't have an indefinite answer :D"""
-        import ProgramFiles.Games.CLI_Comp_Guess as CLICompGuess
-        CLICompGuess.play()
-
-
-    def MemoryHog():
-        import ProgramFiles.Utilities.MemoryHoggerGUI as MemHgGUI
-        MemHgGUI.thePointOfNoReturn()
 
     def Notepad():
         import ProgramFiles.Utilities.Notepad.Notepad as notepad
@@ -211,7 +195,13 @@ class Apps(object):
                 fileToStart = externalAppsList.item(indexSelect, 'values')[0]
             else:
                 fileToStart = file
-            os.system(f"python3 '{fileToStart}'")
+            cwd = os.getcwd()
+            os.chdir("/")
+            import platform
+            if platform.system() == "Windows": rmstr = "C:\\"
+            else: rmstr = os.path.abspath("/")
+            os.system(f"python3 '{fileToStart.removeprefix(rmstr)}'")
+            os.chdir(cwd)
         def show():
             global externalAppsList
             nonlocal buttonText
@@ -245,32 +235,36 @@ MAX_COLUMN_DESKTOP = 15
 class GUIButtonCommand(object):
     global launcherCombobox
     global APPS_LIST
+    global PINNED_APPS
     global ROW_COUNT_DESKTOP_ICONS
     global COLUMN_COUNT_DESKTOP_ICONS
     global MAX_COLUMN_DESKTOP
     global MAX_ROW_DESKTOP
-    def launchComboBoxEvent(e):
+    def __init__(self):
+        self.CurrentDesktopIconsList = []
+        self.PINNED_APPS = PINNED_APPS
+    def launchComboBoxEvent(self, e):
         Item = launcherComboBox.get()
         exec(f"Apps.{Item}()")
 
-    def currentTime():
+    def currentTime(self):
         cr_time = time.strftime("%H:%M:%S %p")
         clock = tkinter.Label(ROOT_WINDOW, text=cr_time, background=THEME_WINDOW_BG,
                                 foreground=THEME_FOREGROUND)
-        clock.after(1000, GUIButtonCommand.currentTime)
+        clock.after(1000, self.currentTime)
         clock.grid(row=0, column=2, sticky="ne")
 
-    def pinApps(appToPin):
-        global PINNED_APPS
-        PINNED_APPS = list(PINNED_APPS)
-        PINNED_APPS.append(f"{appToPin}")
+    def pinApps(self, appToPin):
+        global appsFrame
+        self.PINNED_APPS.append(f"{appToPin}")
         with open("ProgramFiles/pinnedApps.txt", "a") as pinnedApps:
             pinnedApps.write(f"{appToPin},\n")
         exec(f"{appToPin} = tkinter.Button(appsFrame, text='{appToPin}', command=Apps.{appToPin},"
-            f"background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)\n{appToPin}.grid(row=0, column={len(PINNED_APPS) - 1})")
+            f"background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)\n{appToPin}.grid(row=0, column={len(self.PINNED_APPS) - 1})")
 
-    def taskbarSettingsGUI(e=None):
+    def taskbarSettingsGUI(self, e=None):
         global PINNED_APPS
+        global GuiInterfaceCommands
         taskbarSettingsWindow = tkinter.Toplevel()
         taskbarSettingsWindow.configure(background=THEME_WINDOW_BG)
         taskbarSettingsWindow.title("Taskbar Settings")
@@ -278,7 +272,7 @@ class GUIButtonCommand(object):
                                             background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         addWidgetsFrame.grid(row=0, column=0)
         addClock = tkinter.Button(addWidgetsFrame, text="Clock", foreground=THEME_FOREGROUND,
-                                    background=THEME_WINDOW_BG, command=GUIButtonCommand.currentTime)
+                                    background=THEME_WINDOW_BG, command=self.currentTime)
         addClock.grid(row=0, column=0)
         pinItems = tkinter.LabelFrame(taskbarSettingsWindow, text="Pin items",
                                         background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -290,11 +284,11 @@ class GUIButtonCommand(object):
                 r += 1
                 if len(PINNED_APPS) == 1 or len(PINNED_APPS) == 2:
                     i = 0
-                exec(f"{app} = tkinter.Button(pinItems, text='{app}', command=lambda: GUIButtonCommand.pinApps('{app}'),"
+                exec(f"{app} = tkinter.Button(pinItems, text='{app}', command=lambda: GuiInterfaceCommands.pinApps('{app}'),"
                     f"background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)\n{app}.grid(row=r, column=0)")
         taskbarSettingsWindow.mainloop()
 
-    def popup(event=None):
+    def popup(self, event=None, *args):
         """ the context menu popup"""
         print("called popup() function")
         problem = None
@@ -306,7 +300,7 @@ class GUIButtonCommand(object):
             contextMenu.grab_release()
             if problem:
                 messagebox.showerror("Error", str(problem))
-    def createAppIcon(appName: str, command: str, event=None):
+    def createAppIcon(self, appName: str, command: str, event=None):
         """ creates desktop icons!"""
         global desktopFrame
         global COLUMN_COUNT_DESKTOP_ICONS, ROW_COUNT_DESKTOP_ICONS
@@ -315,15 +309,42 @@ class GUIButtonCommand(object):
                 messagebox.showerror("Can't place the item! no more space left!")
             else:
                 COLUMN_COUNT_DESKTOP_ICONS += 1
-        exec(f"{appName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
-        exec(f"{appName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
-        ROW_COUNT_DESKTOP_ICONS += 1
-        exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png')")
-        exec(f"{appName}BTN = tkinter.Button({appName}Frame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command={command})")
-        exec(f"{appName}BTN.IMGREF = {appName}ICON")
-        exec(f"{appName}BTN.grid(row=0, column=0)")
-        exec(f"{appName}LABEL = tkinter.Label({appName}Frame, text=f'{appName}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)")
-        exec(f"{appName}LABEL.grid(row=1, column=0)")
+        if appName not in self.CurrentDesktopIconsList:
+            exec(f"{appName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
+            exec(f"{appName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
+            ROW_COUNT_DESKTOP_ICONS += 1
+            exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png')")
+            exec(f"{appName}BTN = tkinter.Button({appName}Frame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command={command})")
+            exec(f"{appName}BTN.IMGREF = {appName}ICON")
+            exec(f"{appName}BTN.grid(row=0, column=0)")
+            exec(f"{appName}LABEL = tkinter.Label({appName}Frame, text=f'{appName}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)")
+            exec(f"{appName}LABEL.grid(row=1, column=0)")
+            self.CurrentDesktopIconsList.append(command.split(".")[1])
+        else:
+            messagebox.showerror("App already exists!", "the app already exists!")
+    def refreshDesktop(self):
+        pass
+    def addNewIcon(self, *args):
+        iconToAdd = None
+        addNewIcon = tkinter.Toplevel(background=THEME_WINDOW_BG)
+        desktopAppsList = ttk.Combobox(addNewIcon)
+        for i, z in enumerate(self.CurrentDesktopIconsList):
+            CURRENT_LIST = APPS_LIST
+            try:
+                CURRENT_LIST = CURRENT_LIST.pop(APPS_LIST.index(z))
+            except Exception as problem:
+                print(f"<<DEBUG: ERROR OCCURED!\n<<ERROR: {problem} >>\n")
+            desktopAppsList['values'] = CURRENT_LIST
+        def updateVariable(event=None):
+            nonlocal iconToAdd
+            iconToAdd = str(desktopAppsList.get())
+        desktopAppsList.bind("<<ComboboxSelected>>", updateVariable)
+        desktopAppsList['state'] = "readonly"
+        desktopAppsList.grid(row=0, column=0, sticky="w")      
+        addIconBtn = tkinter.Button(addNewIcon, text="Add Icon!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: self.createAppIcon(iconToAdd, f"Apps.{iconToAdd}"))
+        addIconBtn.grid(row=0, column=1)
+        addNewIcon.mainloop()
+
 
 def main():
     global launcherComboBox
@@ -332,31 +353,52 @@ def main():
     global APPS_LIST
     global notificationsButton
     global desktopFrame
+    global PINNED_APPS
+    global GuiInterfaceCommands
+    global appsFrame
     pinned_apps = []
+    def popup(event=None, *args):
+        """ the context menu popup"""
+        print("called popup() function")
+        problem = None
+        try:
+            desktopContextMenu.tk_popup(event.x_root, event.y_root, 0)
+        except Exception as PROBLEM:
+            problem = PROBLEM
+        finally:
+            desktopContextMenu.grab_release()
+            if problem:
+                messagebox.showerror("Error", str(problem))
+
     PINNED_APPS = FTRConfigSettings("ProgramFiles/pinnedApps.txt", str(pinned_apps))
+    GuiInterfaceCommands = GUIButtonCommand()
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
     launcherComboBox = ttk.Combobox(ROOT_WINDOW)
-    APPS_LIST = ["Notepad", "fileshare", "OnlineBanking", "BlackJack", "ComputerGuesses", 
-                "GuessingGame", "MemoryHog", "FileManager", "UpdateManager", "LoadExternalApps"]
+    APPS_LIST = ["Notepad", "fileshare", "OnlineBanking", "BlackJack", "FileManager", 
+                "UpdateManager", "LoadExternalApps"]
 
     launcherComboBox['values'] = APPS_LIST
     launcherComboBox['state'] = "readonly"
-    launcherComboBox.bind("<<ComboboxSelected>>", GUIButtonCommand.launchComboBoxEvent)
+    launcherComboBox.bind("<<ComboboxSelected>>", GuiInterfaceCommands.launchComboBoxEvent)
     launcherComboBox.grid(row=0, column=0, sticky="w")
     appsFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, border=5)
-    contextMenu = tkinter.Menu(appsFrame, tearoff=False)
-    contextMenu.add_command(label="Taskbar settings", command=GUIButtonCommand.taskbarSettingsGUI)
+    contextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    contextMenu.add_command(label="Taskbar settings", command=GuiInterfaceCommands.taskbarSettingsGUI)
     shutDown = tkinter.Button(appsFrame, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
                                 command=ROOT_WINDOW.quit)
     shutDown.grid(row=0, column=0, padx=5)
-    appsFrame.bind("<Button-3>", GUIButtonCommand.popup)
+    appsFrame.bind("<Button-3>", GuiInterfaceCommands.popup)
     appsFrame.grid(row=0, column=1, sticky="n")
     notificationsButton = tkinter.Button(ROOT_WINDOW, text="Notifications (0)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command= lambda: notification.showNotificationsList(notification))
     notificationsButton.grid(row=0, column=3, sticky="ne", padx=5)
-    desktopFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG)
-    GUIButtonCommand.createAppIcon("Notepad", 'Apps.Notepad')
-    GUIButtonCommand.createAppIcon("Files", 'Apps.FileManager')
+    desktopFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, border=15)
+    GuiInterfaceCommands.createAppIcon("Notepad", 'Apps.Notepad')
+    GuiInterfaceCommands.createAppIcon("Files", 'Apps.FileManager')
+    desktopContextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    desktopContextMenu.add_command(label="Refresh", command=GuiInterfaceCommands.refreshDesktop)
+    desktopContextMenu.add_command(label="Add new icon", command=GuiInterfaceCommands.addNewIcon)
+    ROOT_WINDOW.bind("<Button-3>", popup)
     desktopFrame.grid(row=1, column=0)
     ROOT_WINDOW.mainloop()
 def loginVerification():

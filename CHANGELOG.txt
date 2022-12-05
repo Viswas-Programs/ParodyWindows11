@@ -16,3 +16,10 @@ v1.1.1->
 -Implementation of notification system in Update Manager App
 -Added desktop icons!
 -3rd party app support, with a loader to load the external app! (auto find and custom find)
+v1.1.2->
+-Added more desktop icons.
+-Right click menu on desktop
+-Add new icons to the desktop (built-in apps only in this version
+-Fixed some bugs that prevented pinning apps to taskbar
+-Removed some really, really trash CLI apps that create inconsistency to the OS. (Computer guess, Memory Hogger, CLI Guessing Game and more. )
+Although note, they can be loaded into the os with the 3rd party app loader.
