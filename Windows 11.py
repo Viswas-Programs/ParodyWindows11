@@ -1,3 +1,4 @@
+from datetime import datetime
 import tkinter
 from tkinter import messagebox
 import os
@@ -54,11 +55,14 @@ class Apps(object):
         blackjack game activator
         :return: None
         """
-        import ProgramFiles.Games.blackjack.blackjack as GUIBlackjack
+        import ProgramFiles.blackjack.blackjack as GUIBlackjack
+        PROCESS_RUNNING = True
         GUIBlackjack.play()
+        PROCESS_RUNNING = False
 
     def Notepad():
-        import ProgramFiles.Utilities.Notepad.Notepad as notepad
+        import ProgramFiles.Notepad.Notepad as notepad
+        PROCESS_RUNNING = True
         def main():
             """ main """
             root = tkinter.Tk()
@@ -74,17 +78,21 @@ class Apps(object):
             notepad.NotepadRun(text_box=text, gui=root, saveTo=saveTo)
         if __name__ == "__main__":
             main()
+        PROCESS_RUNNING = False
 
     def fileshare():
-        import ProgramFiles.Utilities.FileSharing.FileSharing as filesharing
+        import ProgramFiles.FileSharing.FileSharing as filesharing
+        PROCESS_RUNNING = True
         filesharing.main()
+        PROCESS_RUNNING = False
 
     def OnlineBanking():
+        PROCESS_RUNNING = True
         def setup():
-            import ProgramFiles.Utilities.ParodyBank.v5.bankaccountdatabase as setupAcc
+            import ProgramFiles.ParodyBank.v5.bankaccountdatabase as setupAcc
             setupAcc.main()
         def launch():
-            import ProgramFiles.Utilities.ParodyBank.v5.bankaccounts as launchApp
+            import ProgramFiles.ParodyBank.v5.bankaccounts as launchApp
             launchApp.main()
         a = tkinter.Toplevel()
         a.configure(background=THEME_WINDOW_BG)
@@ -99,8 +107,10 @@ class Apps(object):
                                     foreground=THEME_FOREGROUND)
         launch_main.grid(row=1, column=1)
         a.mainloop()
+        PROCESS_RUNNING = False
 
     def FileManager():
+        PROCESS_RUNNING = True
         global THEME_FOREGROUND
         global THEME_WINDOW_BG
         filepath = None
@@ -171,12 +181,16 @@ class Apps(object):
         fileView.bind("<<TreeviewSelect>>", openFileOrFolder)
         fileView.configure(style="Treeview")
         fileManagerWindow.mainloop()
+        PROCESS_RUNNING = False
     
     def UpdateManager():
         import ProgramFiles.updateManager as updateManager
+        PROCESS_RUNNING = True
         updateManager.main(notification)
+        PROCESS_RUNNING = False
     
     def LoadExternalApps():
+        PROCESS_RUNNING = True
         externalApps = tkinter.Toplevel(background="Black")
         externalAppsName = []
         buttonText = "Look for external apps!"
@@ -200,14 +214,14 @@ class Apps(object):
             import platform
             if platform.system() == "Windows": rmstr = "C:\\"
             else: rmstr = os.path.abspath("/")
-            os.system(f"python3 '{fileToStart.removeprefix(rmstr)}'")
+            os.system(f"python3 '{fileToStart.rstrip(rmstr)}'")
             os.chdir(cwd)
         def show():
             global externalAppsList
             nonlocal buttonText
             nonlocal showRefreshBtn
             buttonText = "Refresh"
-            showRefreshBtn.configure(text=buttonText)
+            showRefreshBtn.configure(text=buttonText, command=refresh)
             externalAppsList = ttk.Treeview(externalApps, style="Treeview")
             externalAppsList.grid(row=1, column=0, sticky="w")
             externalAppsList['column'] = "Apps"
@@ -216,6 +230,7 @@ class Apps(object):
             externalAppsList.heading("Apps", text="Apps", anchor=tkinter.CENTER)
             externalAppsList.bind("<<TreeviewSelect>>", load)
             externalAppsList.configure(style="Treeview")
+            refresh()
         def loadCustomApp():
             fileToOpen = filedialog.askopenfilename(title="Select app to run!", filetypes=(("Windows 11 Apps", "*.py"), ("All Files", "*.*")))
             load(file=fileToOpen)
@@ -224,6 +239,7 @@ class Apps(object):
         loadCusttomBtn = tkinter.Button(externalApps, text="Load Custom App!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=loadCustomApp)
         loadCusttomBtn.grid(row=0, column=1)
         externalApps.mainloop()
+        PROCESS_RUNNING = False
             
 
 
@@ -256,11 +272,28 @@ class GUIButtonCommand(object):
 
     def pinApps(self, appToPin):
         global appsFrame
+        exec(f"global {appToPin}BTN")
+        # exec(f"global {appToPin}BTN")
         self.PINNED_APPS.append(f"{appToPin}")
+        appName = appToPin
         with open("ProgramFiles/pinnedApps.txt", "a") as pinnedApps:
-            pinnedApps.write(f"{appToPin},\n")
-        exec(f"{appToPin} = tkinter.Button(appsFrame, text='{appToPin}', command=Apps.{appToPin},"
-            f"background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)\n{appToPin}.grid(row=0, column={len(self.PINNED_APPS) - 1})")
+            pinnedApps.write(f"{appToPin}\n")
+        # exec(f"{appToPin}IMAGE = tkinter.PhotoImage('ProgramFiles/Icons/{appToPin}.png')\n")
+        # exec(f"{appToPin} = tkinter.Button(appsFrame, image={appToPin}IMAGE, compound=tkinter.LEFT, command=Apps.{appToPin},"
+        #     f"background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)\n"
+        #     f"{appToPin}.IMGREF = {appToPin}IMAGE\n"
+        #     f"{appToPin}.grid(row=0, column={len(self.PINNED_APPS) - 1})")
+        # def launchApp(btn, arg=None):
+        #     exec(f"global {appToPin}BTN")
+        #     PROCESS_RUNNING = True
+        #     btn.configure(compound=tkinter.LEFT, text=f'{appToPin}')
+        #     exec(f'Apps.{appToPin}()')
+        #     PROCESS_RUNNING = False
+        #     btn.configure(compound=tkinter.LEFT, text='')
+        exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png').subsample(2, 2)")
+        exec(f"{appName}BTN = tkinter.Button(appsFrame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=Apps.{appToPin})")
+        exec(f"{appName}BTN.IMGREF = {appName}ICON")
+        exec(f"{appName}BTN.grid(row=0, column={len(self.PINNED_APPS) - 1})")
 
     def taskbarSettingsGUI(self, e=None):
         global PINNED_APPS
@@ -299,7 +332,7 @@ class GUIButtonCommand(object):
         finally:
             contextMenu.grab_release()
             if problem:
-                messagebox.showerror("Error", str(problem))
+                notification.showNotification("Critical Error!", str(problem), datetime.now(), None)
     def createAppIcon(self, appName: str, command: str, event=None):
         """ creates desktop icons!"""
         global desktopFrame
@@ -334,6 +367,7 @@ class GUIButtonCommand(object):
                 CURRENT_LIST = CURRENT_LIST.pop(APPS_LIST.index(z))
             except Exception as problem:
                 print(f"<<DEBUG: ERROR OCCURED!\n<<ERROR: {problem} >>\n")
+                notification.showNotification("Critical Error!", str(problem), datetime.now(), None)
             desktopAppsList['values'] = CURRENT_LIST
         def updateVariable(event=None):
             nonlocal iconToAdd
@@ -368,7 +402,7 @@ def main():
         finally:
             desktopContextMenu.grab_release()
             if problem:
-                messagebox.showerror("Error", str(problem))
+                notification.showNotification("Critical Error!", str(problem), datetime.now(), None)
 
     PINNED_APPS = FTRConfigSettings("ProgramFiles/pinnedApps.txt", str(pinned_apps))
     GuiInterfaceCommands = GUIButtonCommand()
@@ -386,7 +420,7 @@ def main():
     contextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     contextMenu.add_command(label="Taskbar settings", command=GuiInterfaceCommands.taskbarSettingsGUI)
     shutDown = tkinter.Button(appsFrame, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
-                                command=ROOT_WINDOW.quit)
+                                command=exit)
     shutDown.grid(row=0, column=0, padx=5)
     appsFrame.bind("<Button-3>", GuiInterfaceCommands.popup)
     appsFrame.grid(row=0, column=1, sticky="n")
@@ -398,8 +432,9 @@ def main():
     desktopContextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     desktopContextMenu.add_command(label="Refresh", command=GuiInterfaceCommands.refreshDesktop)
     desktopContextMenu.add_command(label="Add new icon", command=GuiInterfaceCommands.addNewIcon)
-    ROOT_WINDOW.bind("<Button-3>", popup)
-    desktopFrame.grid(row=1, column=0)
+    desktopFrame.bind("<Button-3>", popup)
+    desktopFrame.grid(row=1, column=0, sticky="news", columnspan=MAX_COLUMN_DESKTOP, rowspan=MAX_ROW_DESKTOP)
+    ROOT_WINDOW.attributes('-fullscreen', True)
     ROOT_WINDOW.mainloop()
 def loginVerification():
     global userNameText
@@ -436,8 +471,8 @@ msg2.grid(row=1, column=0)
 passwordText = tkinter.Entry(loginWindow, foreground=THEME_FOREGROUND, background=THEME_WINDOW_BG)
 passwordText.grid(row=1, column=1)
 passwordText.configure(insertbackground="white", selectbackground='white', selectforeground='black')
-checkTheme(userNameText, passwordText)
 loginBtn = tkinter.Button(loginWindow, text="Login", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
                             command=loginVerification)
 loginBtn.grid(row=2, column=1)
+loginWindow.attributes('-fullscreen', True)
 loginWindow.mainloop()

@@ -22,4 +22,11 @@ v1.1.2->
 -Add new icons to the desktop (built-in apps only in this version
 -Fixed some bugs that prevented pinning apps to taskbar
 -Removed some really, really trash CLI apps that create inconsistency to the OS. (Computer guess, Memory Hogger, CLI Guessing Game and more. )
-Although note, they can be loaded into the os with the 3rd party app loader.
+Although note, they can be loaded into the os with the 3rd party app loader.)
+v1.1.3->
+-Replaced text buttons in taskbar for icons like real operating system
+-Using the notification system for critical errors (caught by the try except clause)
+-Removed the grouping of apps from games and utilities and unified them for easier installation of the OS.
+-Fixed a bug in the third party app loader. [still in works, will be guaranteed the fix in 1.1.3.1]
+-Finally, made the OS like a real OS, with making the OS full screen no matter what. [NOTE, Click on the super key\Windows button to get out of it and access the real os!]
+-Removed the dummy call to checkTheme() function in the login process, since it didn't work there.
