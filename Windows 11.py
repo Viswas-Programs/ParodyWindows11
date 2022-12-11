@@ -1,4 +1,5 @@
 from datetime import datetime
+import sys
 import tkinter
 from tkinter import messagebox
 import os
@@ -441,8 +442,8 @@ def loginVerification():
     global passwordText
     with open("ProgramFiles/accConfiguration.conf", "r") as verify:
         username, password = verify.readlines()
-        username = username.removesuffix('\n')
-        password = password.removesuffix('\n')
+        username = username.rstrip('\n')
+        password = password.rstrip('\n')
         if userNameText.get() == username and passwordText.get() == password:
             loginWindow.destroy()
             main()
@@ -456,23 +457,78 @@ def checkTheme(*widgets):
             widget.configure(insertbackground="white",
                                 selectbackground='white',
                                 selectforeground='black')
+import requests
+def a1():
+    print("=" * int(os.get_terminal_size()))
+    print("repairing system...")
+    try:
+        Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py")
+        with open("Windows 11.py", "w") as writeTo:
+            try:
+                writeTo.write(Windows11MainDownload.content.decode(encoding="UTF-8"))
+            except UnicodeEncodeError as UER:
+                print(f"UnicodeDecodeError occured while repairing 'Windows 11.py'\n--MSG:{UER}")
+    except Exception as PROBLEM:
+        print(f"Repairing Failed!\nREASON: {PROBLEM}")
 DARK_COLOURS = ['black', 'brown', 'blue', 'green', 'red', 'violet', 'purple', 'dark blue', 'dark green',
                 'dark red', 'dark brown', ]
-loginWindow = tkinter.Tk()
-loginWindow.title("Login to Windows 11")
-loginWindow.configure(background=THEME_WINDOW_BG)
-msg = tkinter.Label(loginWindow, text="Enter your Username: ", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-msg.grid(row=0, column=0)
-userNameText = tkinter.Entry(loginWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-userNameText.grid(row=0, column=1)
-userNameText.configure(insertbackground="white", selectbackground='white', selectforeground='black')
-msg2 = tkinter.Label(loginWindow, text="Enter your Password", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-msg2.grid(row=1, column=0)
-passwordText = tkinter.Entry(loginWindow, foreground=THEME_FOREGROUND, background=THEME_WINDOW_BG)
-passwordText.grid(row=1, column=1)
-passwordText.configure(insertbackground="white", selectbackground='white', selectforeground='black')
-loginBtn = tkinter.Button(loginWindow, text="Login", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
-                            command=loginVerification)
-loginBtn.grid(row=2, column=1)
-loginWindow.attributes('-fullscreen', True)
-loginWindow.mainloop()
+def login():
+    global userNameText
+    global passwordText
+    global loginWindow
+    loginWindow = tkinter.Tk()
+    loginWindow.title("Login to Windows 11")
+    loginWindow.configure(background=THEME_WINDOW_BG)
+    msg = tkinter.Label(loginWindow, text="Enter your Username: ", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    msg.grid(row=0, column=0)
+    userNameText = tkinter.Entry(loginWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    userNameText.grid(row=0, column=1)
+    userNameText.configure(insertbackground="white", selectbackground='white', selectforeground='black')
+    msg2 = tkinter.Label(loginWindow, text="Enter your Password", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    msg2.grid(row=1, column=0)
+    passwordText = tkinter.Entry(loginWindow, foreground=THEME_FOREGROUND, background=THEME_WINDOW_BG)
+    passwordText.grid(row=1, column=1)
+    passwordText.configure(insertbackground="white", selectbackground='white', selectforeground='black')
+    loginBtn = tkinter.Button(loginWindow, text="Login", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
+                                command=loginVerification)
+    loginBtn.grid(row=2, column=1)
+    loginWindow.attributes('-fullscreen', True)
+    loginWindow.mainloop()
+if __name__ == "__main__":
+    def a1():
+        print("=" * int(os.get_terminal_size()[0]))
+        print("repairing system...")
+        try:
+            Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py", timeout=40)
+            with open("Windows 11.py", "w") as writeTo:
+                try:
+                    writeTo.write(Windows11MainDownload.content.decode(encoding="UTF-8"))
+                except UnicodeEncodeError as UER:
+                    print(f"UnicodeDecodeError occured while repairing 'Windows 11.py'\n--MSG:{UER}")
+        except Exception as PROBLEM:
+            print(f"Repairing Failed!\nREASON: {PROBLEM}")
+        finally:
+            print("=" * int(os.get_terminal_size()[0]))
+    def a2():
+        print("=" * int(os.get_terminal_size()[0]))
+        login()
+        
+    def a3():
+        print("=" * int(os.get_terminal_size()[0]))
+        print("CurrentWorkingDirectory: ", os.getcwd())
+        appName = input("Enter the file name path to load!")
+        os.system(f"python3 '{appName}'")
+        print("=" * int(os.get_terminal_size()[0]))
+    arguements = sys.argv[1:]
+    if "-safemode" in arguements:
+        while True:
+            print("Safe mode activated, Command Line interface Activated!")
+            while True:
+                userInput1 = int(input("1. Repair your system\n"
+                                "2. Continue to boot to main\n"
+                                "3. Launch an app\n"
+                                "Enter your option >_"))
+                if userInput1 in range(1, 4):
+                    exec(f"a{userInput1}()")
+    else:
+        login()
