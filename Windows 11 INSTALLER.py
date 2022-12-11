@@ -178,3 +178,4 @@ class Installer(object):
                                             "accept the terms to install Windows 11")
 
 install_now = Installer()
+print("The install woud've been finished, please close this if the window doesn't close automatically\n or if the OS is not starting up, please close this window and run Windows 11.py")
