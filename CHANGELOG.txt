@@ -32,5 +32,17 @@ v1.1.3->
 -Removed the dummy call to checkTheme() function in the login process, since it didn't work there.
 v1.1.4->
 -Added a safe mode to the OS, to start with the safe mode, you simply need to start the file with the -safemode parameter while starting to activate it!
+-You can also start the safemode by pressing the escape key in login window aswell as the main window
 -Fixed a major bug where the login system wouldn't work with linux, but will in Windows, so now it's more cross platform.
 -Minor bug fixes.
+=-=-=-=-=-=-=
+[NEW]v2.0!->
+New features/apps-
+-Added new apps. (Web browser, calculator, alarms, IRC-Like chat app etc)
+-Added a new shutdown menu (XP Style)
+-Added shutdown and restarting in safe mode menu.
+-Added a settings app for customization of the desktop!
+-Real File system like folder creations for downloads, documents, music, pictures and all that stuff.
+
+Bug Fixes-
+-Fixed a critical bug in Notifications menu where notifications crammed up in the same row and column and showed 1 that's big to cover everything.
