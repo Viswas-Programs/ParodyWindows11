@@ -10,11 +10,9 @@ Manual Setup:
 
 Step1: Download the windows 11 file
 
-Step2: Download EVERYTHING in programfiles directory to a local directory called "ProgramFiles" without the quotes.
+Step2: Download the ProgramFiles zip file and extract that thing into the environment.
 
-Step3: Download All the icons in Icons folder to a local directory inside of ProgramFiles directory called "Icons" (w/o quotes)
-
-Step4: make a new file "accConfiguration.conf" (yes the file type is .conf) and give your username in first line and password in second line.
+Step3: make a new file "accConfiguration.conf" (yes the file type is .conf) and give your username in first line and password in second line.
 
 Now the directory structure should look similar to this
 
