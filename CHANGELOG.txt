@@ -38,11 +38,19 @@ v1.1.4->
 =-=-=-=-=-=-=
 [NEW]v2.0!->
 New features/apps-
--Added new apps. (Web browser, calculator, alarms, IRC-Like chat app etc)
+-Added new apps. (Web browser, alarms, IRC-Like chat app etc)
 -Added a new shutdown menu (XP Style)
 -Added shutdown and restarting in safe mode menu.
 -Added a settings app for customization of the desktop!
 -Real File system like folder creations for downloads, documents, music, pictures and all that stuff.
+-Added a software store to download trusted apps assured by the FOSS community (exaggeration)!
+-Added error handling if the app is not present in your system or if it's corrupted (just a try except block)
+-Now, taskbar pinning and desktop icons pinning will be saved, and will  be applied to the next start too! (TLDR Changes will be applied)
+
+Technical ->
+-Modularized apps - third party apps need to create the main file in the programfiles directory.
+How this works is that when an app adds the entry in the apps list, ParodyWin11 takes that and adds it in the start menu! so it can be launched from there! See my windows 11 wiki on the repo to find more about this.
+-Removed the "Apps" class because all apps (Except settings), even in-built apps, were removed from the main file and split into different files.
 
 Bug Fixes-
 -Fixed a critical bug in Notifications menu where notifications crammed up in the same row and column and showed 1 that's big to cover everything.
