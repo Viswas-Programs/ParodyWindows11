@@ -146,6 +146,7 @@ class GUIButtonCommand(object):
     def __init__(self):
         self.CurrentDesktopIconsList = []
         self.PINNED_APPS = PINNED_APPS
+        self.TASKBAR_ICON_COUNT = 0
     def launchComboBoxEvent(self, e=None):
         Item = launcherComboBox.get()
         if Item != "ControlPanel":
@@ -162,17 +163,17 @@ class GUIButtonCommand(object):
 
     def pinApps(self, appToPin, writeto=True):
         global appsFrame
+        self.TASKBAR_ICON_COUNT += 1
         exec(f"global {appToPin}BTN")
         # exec(f"global {appToPin}BTN")
-        self.PINNED_APPS.append(f"{appToPin}")
         appName = appToPin
         if writeto:
             with open("ProgramFiles/pinnedAppsTaskbar.txt", "a") as pinnedApps:
-                pinnedApps.write(f"{appToPin}")
+                pinnedApps.write(f"\n{appToPin}")
         exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png').subsample(2, 2)")
         exec(f"{appName}BTN = tkinter.Button(appsFrame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GUIButtonCommand.launchItem(GUIButtonCommand, f'{appToPin}'))")
         exec(f"{appName}BTN.IMGREF = {appName}ICON")
-        exec(f"{appName}BTN.grid(row=0, column={len(self.PINNED_APPS) - 1})")
+        exec(f"{appName}BTN.grid(row=0, column={self.TASKBAR_ICON_COUNT})")
 
     def taskbarSettingsGUI(self, e=None):
         global PINNED_APPS
@@ -224,7 +225,7 @@ class GUIButtonCommand(object):
         if appName not in self.CurrentDesktopIconsList:
             if writeto:
                 with open("ProgramFiles/pinnedAppsDesktop.txt", "a") as updateDesktopIcons:
-                    updateDesktopIcons.write(f"{appName}")
+                    updateDesktopIcons.write(f"\n{appName}")
             exec(f"{appName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
             exec(f"{appName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
             ROW_COUNT_DESKTOP_ICONS += 1
@@ -261,7 +262,7 @@ class GUIButtonCommand(object):
         desktopAppsList.bind("<<ComboboxSelected>>", updateVariable)
         desktopAppsList['state'] = "readonly"
         desktopAppsList.grid(row=0, column=0, sticky="w")      
-        addIconBtn = tkinter.Button(addNewIcon, text="Add Icon!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: self.createAppIcon(iconToAdd, f"Apps.{iconToAdd}"))
+        addIconBtn = tkinter.Button(addNewIcon, text="Add Icon!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: self.createAppIcon(iconToAdd, f"{iconToAdd}"))
         addIconBtn.grid(row=0, column=1) 
         addNewIcon.mainloop()
     def shutdownMenu(self, e=None):
@@ -318,7 +319,6 @@ def main():
     global appsFrame
     global desktopContextMenu
     global COMMAND_APPS_LIST
-    pinned_apps = []
     def popup(event=None, *args):
         """ the context menu popup"""
         print("called popup() function")
@@ -330,7 +330,7 @@ def main():
         finally:
             desktopContextMenu.grab_release()
             if problem:
-                notification.showNotification("Critical Error!", str(problem), datetime.now(), None)
+                notification.showNotification("Critical Error!", str(problem), datetime.now(), lambda: GuiInterfaceCommands.shutdownMenu())
     APPS_LIST = FTRConfigSettings("ProgramFiles/APPS_LIST.txt", "Notepad\nfileshare\nOnlineBanking\nBlackJack\nFileManager\n" 
                 "UpdateManager\nLoadExternalApps\nWebBrowser\nIPChat\nControlPanel\nAlarmsAndTimer\n")
     COMMAND_APPS_LIST = FTRConfigSettings("ProgramFiles/APPS_COMMAND_LST", "ProgramFiles.Notepad.Notepad\nProgramFiles.fileshare\nProgramFiles.OnlineBanking.v5\nProgramFiles.BlackJack.BlackJack\nProgramFiles.FileManager\n" 
@@ -364,7 +364,7 @@ def main():
         except Exception: pass
     for app in PINNED_APPS:
         try:
-            GuiInterfaceCommands.pinApps(f"{app}")
+            GuiInterfaceCommands.pinApps(f"{app}", False)
         except Exception: pass
     desktopContextMenu.add_command(label="Refresh", command=GuiInterfaceCommands.refreshDesktop)
     desktopContextMenu.add_command(label="Add new icon", command=GuiInterfaceCommands.addNewIcon)
@@ -523,26 +523,32 @@ def safeMode() -> None:
             print("=" * int(os.get_terminal_size()[0]))
         NETWORKING = False
         try:
-            import platform
-            if platform.system() == "Windows":
-                os.system("cls")
-            else:
-                os.system("clear")
-        except Exception: pass
-        finally:
-            while True:
-                print("Safe mode activated!\n=-=-=-=WELCOME=-=-=-=")
+            import ProgramFiles.CommandPrompt as cmd
+            cmd.main()
+        except Exception as PRB: 
+            print("Cannot launch safe mode UI, going full CLI!")
+            time.sleep(5)
+            try:
+                import platform
+                if platform.system() == "Windows":
+                    os.system("cls")
+                else:
+                    os.system("clear")
+            except Exception: pass
+            finally:
                 while True:
-                    userInput1 = int(input("1. Reset your system\n"
-                                    "2. Continue to boot to main\n"
-                                    "3. Launch an app\n"
-                                    "4. Shutdown the system\n"
-                                    "5. Restart the system\n"
-                                    "6. Enable networking\n"
-                                    "7. Disable networking\n"
-                                    "Enter your option >_"))
-                    if userInput1 in range(1, 8):
-                        exec(f"a{userInput1}()")
+                    print("Safe mode activated!\n=-=-=-=WELCOME=-=-=-=")
+                    while True:
+                        userInput1 = int(input("1. Reset your system\n"
+                                        "2. Continue to boot to main\n"
+                                        "3. Launch an app\n"
+                                        "4. Shutdown the system\n"
+                                        "5. Restart the system\n"
+                                        "6. Enable networking\n"
+                                        "7. Disable networking\n"
+                                        "Enter your option >_"))
+                        if userInput1 in range(1, 8):
+                            exec(f"a{userInput1}()")
 if __name__ == "__main__":
     arguements = sys.argv[1:]
     if "-safemode" in arguements:
