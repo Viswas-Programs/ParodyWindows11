@@ -526,7 +526,7 @@ def safeMode() -> None:
             import ProgramFiles.CommandPrompt as cmd
             cmd.main()
         except Exception as PRB: 
-            print("Cannot launch safe mode UI, going full CLI!")
+            print("Cannot launch safe mode UI, going full CLI!\n PRB: {}".format(PRB))
             time.sleep(5)
             try:
                 import platform
