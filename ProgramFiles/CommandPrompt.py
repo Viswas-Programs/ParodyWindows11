@@ -1,25 +1,47 @@
 import tkinter
 import os
-os.system("pip install requests")
-import requests
 import shelve
 
 class cmdCommands(object):
-    global root
-    def __init__(self, stdout: tkinter.Text, stdin: tkinter.Entry) -> None:
+    def __init__(self, stdout: tkinter.Text, stdin: tkinter.Entry, root: tkinter.Tk,) -> None:
+        self.ROOT = root
+        self.ADMINISTRATOR = False
         self.UP_ARROW_COUNT = 0
         self.ACCEPT_COMMANDS = True
         self.stdout = stdout
         self.stdin = stdin
         self.LINE_COUNT = 0.0
-        self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user"]
+        self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator"]
         self.INPUTTED_COMMANDS_LIST = []
         self.COMMAND_NOT_FOUND = "\nThe following command doesn't exist!"
         self.showMsg(f"Welcome to ParodyWindows11 Command Interpreter (OS Version 2.0)\nCurrent Working Directory: {os.getcwd()}\n>")
-        try: root.bind("<Up>", self.upArrowBind); root.bind("<Down>", self.downArrowBind)
+        try: self.ROOT.bind("<Up>", self.upArrowBind); self.ROOT.bind("<Down>", self.downArrowBind)
         except Exception as exp: print(f' {exp}')
     def user(self):
-        pass
+        if self.ADMINISTRATOR:
+            try:
+                os.mkdir(os.path.join("ProgramFiles", self.stdin.get().split(' ')[2].lstrip('-')))
+            except Exception: pass
+            finally:
+                with open(f"ProgramFiles/accConfiguration{self.stdin.get().split(' ')[1].lstrip('-')}.conf", "w") as writeConfig:
+                    writeConfig.write(f"{self.stdin.get().split(' ')[2].lstrip('-')}\n{self.stdin.get().split(' ')[3].lstrip('-')}")
+                self.clearStdIn()
+                self.showMsg("\nUser created successfully!")
+        else:
+            self.showMsg("\nPlease enable administrator before editing or creating a new user!")
+    def administrator(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get()) 
+        with open(f"ProgramFiles/accConfiguration{self.stdin.get().split(' ')[1].lstrip('-')}.conf", "r") as checkUser:
+            usrname, pswd = checkUser.readlines()
+            usrname = usrname.rstrip("\n")
+            pswd = pswd.rstrip("\n")
+            if self.stdin.get().split(' ')[2].lstrip('-').rstrip("\n") == usrname and self.stdin.get().split(' ')[3].lstrip('-').rstrip("\n") == pswd:
+                self.ADMINISTRATOR = True
+                self.showMsg("\nSuccesfully turned on administrator mode!")
+                self.ROOT.title("Administrator - Command Interpreter")
+            else:
+                self.showMsg("\nEither the username or the password is incorrect. So authentication failed!")
+        self.clearStdIn()
     def downArrowBind(self, e=None): self.clearStdIn(); self.stdin.insert(tkinter.END, self.INPUTTED_COMMANDS_LIST[-self.UP_ARROW_COUNT+1])
     def upArrowBind(self, e=None):
         self.UP_ARROW_COUNT += 1
@@ -33,10 +55,10 @@ class cmdCommands(object):
         self.stdout.configure(state="disabled")
     def launchCmd(self, e=None):
         if " " not in self.stdin.get(): self.stdin.insert(tkinter.END, "  ")
-        if self.stdin.get().split(" ")[0] in self.COMMAND_LIST and self.ACCEPT_COMMANDS: exec(f"self.{self.stdin.get().split(' ')[0]}()")
+        if self.stdin.get().split(" ")[0] in self.COMMAND_LIST and self.ACCEPT_COMMANDS: self.showMsg(f"\n>{self.stdin.get()}"); exec(f"self.{self.stdin.get().split(' ')[0]}()")
     def clearStdIn(self):
         self.stdin.destroy()
-        self.stdin = tkinter.Entry(root, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=110)
+        self.stdin = tkinter.Entry(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=110)
         self.stdin.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, )
         self.stdin.grid(row=1, column=0)
         self.stdin.bind("<Return>", self.launchCmd)
@@ -50,48 +72,53 @@ class cmdCommands(object):
     def shutdown(self):
         self.clearStdIn()
         self.showMsg("\nShutting down...")
-        root.after(5000, lambda: os._exit(0))
+        self.ROOT.after(5000, lambda: os._exit(0))
     def restart(self):
         self.clearStdIn()
         os.system("cd..")
         os.system("""python3 "Windows 11.py" """)
         exit()
     def sfcRepair(self):
-        def resetConfigurations():
-            try:
-                txtFilesToDelete = ["theme_config.txt", "ProgramFiles/tkweb.txt", "ProgramFiles/pinnedApps.txt"]
-                for fileToDelete in txtFilesToDelete:
-                    try:
-                        os.remove(fileToDelete)
-                    except Exception: pass
-                shelveFilesToDelete = ["ProgramFiles/history", "ProgramFiles/IPChat/_serverConfig", "ProgramFiles/IPChat/serversList"]
-                for shelveToDelete in shelveFilesToDelete:
-                    try:
-                        with shelve.open(shelveToDelete) as deleteIt:
-                            deleteIt.clear()
-                    except Exception: pass
-            except Exception as exp:
-                self.showMsg(f"\nERROR OCCURED While resetting...!Error: {exp}")
-        if self.stdin.get().split(" ")[1] == "-online":
-            self.showMsg("Repairing system...")
-            try:
-                Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py", timeout=40)
+        try: import requests
+        except Exception: pass
+        if self.ADMINISTRATOR:
+            def resetConfigurations():
+                try:
+                    txtFilesToDelete = ["theme_config.txt", "ProgramFiles/tkweb.txt", "ProgramFiles/pinnedApps.txt"]
+                    for fileToDelete in txtFilesToDelete:
+                        try:
+                            os.remove(fileToDelete)
+                        except Exception: pass
+                    shelveFilesToDelete = ["ProgramFiles/history", "ProgramFiles/IPChat/_serverConfig", "ProgramFiles/IPChat/serversList"]
+                    for shelveToDelete in shelveFilesToDelete:
+                        try:
+                            with shelve.open(shelveToDelete) as deleteIt:
+                                deleteIt.clear()
+                        except Exception: pass
+                except Exception as exp:
+                    self.showMsg(f"\nERROR OCCURED While resetting...!Error: {exp}")
+            if self.stdin.get().split(" ")[1] == "-online":
+                self.showMsg("Repairing system...")
+                try:
+                    Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py", timeout=40)
+                    resetConfigurations()
+                    self.showMsg("\nRepair success!")
+                    with open("Windows 11.py", "w") as writeTo:
+                        try:
+                            writeTo.write(Windows11MainDownload.content.decode(encoding="UTF-8"))
+                        except UnicodeEncodeError as UER:
+                            self.showMsg(f"\nUnicodeDecodeError occured while repairing 'Windows 11.py'\n--MSG:{UER}")
+                except Exception as PROBLEM:
+                    self.showMsg(f"\nRepairing Failed!\nREASON: {PROBLEM}")
+            elif self.stdin.get().split(" ")[1] == "-offline":
+                self.showMsg("\nResetting your system...")
                 resetConfigurations()
-                self.showMsg("\nRepair success!")
-                with open("Windows 11.py", "w") as writeTo:
-                    try:
-                        writeTo.write(Windows11MainDownload.content.decode(encoding="UTF-8"))
-                    except UnicodeEncodeError as UER:
-                        self.showMsg(f"\nUnicodeDecodeError occured while repairing 'Windows 11.py'\n--MSG:{UER}")
-            except Exception as PROBLEM:
-                self.showMsg(f"\nRepairing Failed!\nREASON: {PROBLEM}")
-        elif self.stdin.get().split(" ")[1] == "-offline":
-            self.showMsg("\nResetting your system...")
-            resetConfigurations()
-            self.showMsg("\nReset Success!")
+                self.showMsg("\nReset Success!")
+            else:
+                self.showMsg("\nParameter not found.\nHELP: '-online' param for Online repair and '-offline' for a reset ")
+            self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         else:
-            self.showMsg("\nParameter not found.\nHELP: '-online' param for Online repair and '-offline' for a reset ")
-        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+            self.showMsg("\nPlease enable administrator mode before accessing sfcRepair")
         self.clearStdIn()
     def exit(): os._exit(0)
     def cd(self):
@@ -133,7 +160,6 @@ class cmdCommands(object):
         self.showMsg("\nFolder removed succesfully!")
 THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
 def main(): 
-    global root
     def sendCommand(e=None):
         cmdInstance.showMsg(f"\n>{yourCommand.get()}")
         if " " not in yourCommand.get():
@@ -142,18 +168,18 @@ def main():
             exec(f"cmdInstance.{yourCommand.get().split(' ')[0]}()")
         elif not cmdInstance.ACCEPT_COMMANDS: cmdInstance.clear()
         else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
-    root = tkinter.Tk()
-    root.configure(background=THEME_WINDOW_BG)
-    root.title("Command Interpreter")
-    text = tkinter.Text(root, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
+    ROOT = tkinter.Tk()
+    ROOT.configure(background=THEME_WINDOW_BG)
+    ROOT.title("Command Interpreter")
+    text = tkinter.Text(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
     text.grid(row=0, column=0)
-    yourCommand = tkinter.Entry(root, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    yourCommand = tkinter.Entry(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
     yourCommand.grid(row=1, column=0)
     cmdInstance = cmdCommands(text, yourCommand)
     yourCommand.focus()
     yourCommand.bind("<Return>", sendCommand)
-    root.mainloop()
+    ROOT.mainloop()
 
 if __name__ == "__main__":
     main()

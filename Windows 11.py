@@ -23,8 +23,6 @@ def FTRConfigSettings(path, data: str=None, prepCodeBool=False, prepCode=None) -
             config = data.splitlines()
     return config
 THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings("theme_config.txt", f"Black\nWhite")
-searchHistory = FTRConfigSettings("ProgramFiles/history.txt", "")
-searchHistory = list(searchHistory[0:])
 # emailSetup = FTRConfigSettings("PRogramFiles/emails.txt", "SETUP NEEDED!")[0]
 import tkinter.ttk as ttk
 import time
@@ -59,16 +57,15 @@ class Notifications(object):
         notificationsWindow.mainloop()
         self.NotificationsList, self.actions, self.TimeofNotification = [], [], []
 notification = Notifications()
-import subprocess
 class Settings():
     from tkinter import colorchooser
-    import tkinter
     def __init__(Settings):
+        import psutil
         Settings.SHOWN_HOMEPAGE = False
         Settings.SHOWN_PERSONALIZATION = False
         Settings.SHOWN_ADVANCED = False
         Settings.SHOWN_APPSLIST = False
-        Settings.total_memory = "ERROR FINDING MEMORY AMOUNT!"
+        Settings.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
         Settings.settingsWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
         btnFrame = tkinter.Frame(Settings.settingsWindow, background=THEME_WINDOW_BG)
         btnFrame.grid(row=0, column=0)
@@ -141,8 +138,8 @@ class GUIButtonCommand(object):
     global MAX_COLUMN_DESKTOP
     global MAX_ROW_DESKTOP
     def launchItem(self, app, e=None):
-        exec(f"import {COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{app}')]} as {app}")
-        exec(f'{app}.main()')
+        exec(f"import {COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{app}')]}")
+        exec(f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{app}')]}.main()")
     def __init__(self):
         self.CurrentDesktopIconsList = []
         self.PINNED_APPS = PINNED_APPS
@@ -168,7 +165,7 @@ class GUIButtonCommand(object):
         # exec(f"global {appToPin}BTN")
         appName = appToPin
         if writeto:
-            with open("ProgramFiles/pinnedAppsTaskbar.txt", "a") as pinnedApps:
+            with open(f"ProgramFiles/{username}/pinnedAppsTaskbar.txt", "a") as pinnedApps:
                 pinnedApps.write(f"\n{appToPin}")
         exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png').subsample(2, 2)")
         exec(f"{appName}BTN = tkinter.Button(appsFrame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GUIButtonCommand.launchItem(GUIButtonCommand, f'{appToPin}'))")
@@ -224,7 +221,7 @@ class GUIButtonCommand(object):
                 COLUMN_COUNT_DESKTOP_ICONS += 1
         if appName not in self.CurrentDesktopIconsList:
             if writeto:
-                with open("ProgramFiles/pinnedAppsDesktop.txt", "a") as updateDesktopIcons:
+                with open(f"ProgramFiles/{username}/pinnedAppsDesktop.txt", "a") as updateDesktopIcons:
                     updateDesktopIcons.write(f"\n{appName}")
             exec(f"{appName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
             exec(f"{appName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
@@ -266,21 +263,28 @@ class GUIButtonCommand(object):
         addIconBtn.grid(row=0, column=1) 
         addNewIcon.mainloop()
     def shutdownMenu(self, e=None):
-        global shutdownImage
-        global restartImage
+        if username == "GUEST":
+            for dirpath, dirname, filename in os.walk("ProgramFiles/GUEST"):
+                for file in filename:
+                    os.remove(f"ProgramFiles/GUEST/{file}")
+            os.rmdir("ProgramFiles/GUEST")
         def restart():
             if safeModeRestartVar.get() == 1:
-                children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
-                for child in children:
-                    child.destroy()
-                os.system("""python3 "Windows 11.py" -safemode """)
-                exit()
+                try:
+                    children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
+                    for child in children:
+                        child.destroy()
+                finally:
+                    os.system("""python3 "Windows 11.py" -safemode """)
+                    exit()
             else:
-                children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
-                for child in children:
-                    child.destroy()
-                os.system(""" python3 "Windows 11.py" """)
-                exit()
+                try:
+                    children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
+                    for child in children:
+                        child.destroy()
+                finally:
+                    os.system(""" python3 "Windows 11.py" """)
+                    exit()
 
         shutdownWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
         a = tkinter.Label(shutdownWindow, text="What you want to do now?", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -331,13 +335,13 @@ def main():
             desktopContextMenu.grab_release()
             if problem:
                 notification.showNotification("Critical Error!", str(problem), datetime.now(), lambda: GuiInterfaceCommands.shutdownMenu())
-    APPS_LIST = FTRConfigSettings("ProgramFiles/APPS_LIST.txt", "Notepad\nfileshare\nOnlineBanking\nBlackJack\nFileManager\n" 
+    APPS_LIST = FTRConfigSettings(f"ProgramFiles/{username}/APPS_LIST.txt", "Notepad\nfileshare\nOnlineBanking\nBlackJack\nFileManager\n" 
                 "UpdateManager\nLoadExternalApps\nWebBrowser\nIPChat\nControlPanel\nAlarmsAndTimer\n")
-    COMMAND_APPS_LIST = FTRConfigSettings("ProgramFiles/APPS_COMMAND_LST", "ProgramFiles.Notepad.Notepad\nProgramFiles.fileshare\nProgramFiles.OnlineBanking.v5\nProgramFiles.BlackJack.BlackJack\nProgramFiles.FileManager\n" 
+    COMMAND_APPS_LIST = FTRConfigSettings(f"ProgramFiles/{username}/APPS_COMMAND_LST", "ProgramFiles.Notepad.Notepad\nProgramFiles.fileshare\nProgramFiles.OnlineBanking.v5\nProgramFiles.BlackJack.BlackJack\nProgramFiles.FileManager\n" 
                 "ProgramFiles.UpdateManager\nProgramFiles.LoadExternalApps\nProgramFiles.WebBrowser\nProgramFiles.IPChat\nApps.ControlPanel\nProgramFiles.AlarmsAndTimer\n")
     print(COMMAND_APPS_LIST)
-    PINNED_APPS_DESKTOP = FTRConfigSettings("ProgramFiles/pinnedAppsDesktop.txt", "Notepad\nFileManager")
-    PINNED_APPS = FTRConfigSettings("ProgramFiles/pinnedAppsTaskbar.txt", "FileManager")
+    PINNED_APPS_DESKTOP = FTRConfigSettings(f"ProgramFiles/{username}/pinnedAppsDesktop.txt", "Notepad\nFileManager")
+    PINNED_APPS = FTRConfigSettings(f"ProgramFiles/{username}/pinnedAppsTaskbar.txt", "FileManager")
     GuiInterfaceCommands = GUIButtonCommand()
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
@@ -377,15 +381,23 @@ def main():
 def loginVerification(e=None):
     global userNameText
     global passwordText
-    with open("ProgramFiles/accConfiguration.conf", "r") as verify:
-        username, password = verify.readlines()
-        username = username.rstrip('\n')
-        password = password.rstrip('\n')
-        if userNameText.get() == username and passwordText.get() == password:
-            loginWindow.destroy()
-            main()
-        else:
-            messagebox.showerror("Incorrect Username or Password", "The password or username (or both) are incorrect. try again!")
+    global userNum
+    global username
+    if int(userNum.get()) != 0:
+        with open(f"ProgramFiles/accConfiguration{userNum.get()}.conf", "r") as verify:
+            username, password = verify.readlines()
+            username = username.rstrip('\n')
+            password = password.rstrip('\n')
+            if userNameText.get() == username and passwordText.get() == password:
+                loginWindow.destroy()
+                main()
+            else:
+                messagebox.showerror("Incorrect Username or Password", "The password or username (or both) are incorrect. try again!")
+    else:
+        loginWindow.destroy()
+        username = "GUEST"
+        os.mkdir("ProgramFiles/GUEST")
+        main()
 
 def checkTheme(widget):
     if THEME_WINDOW_BG in DARK_COLOURS:
@@ -407,6 +419,7 @@ def login():
         safeMode()
     global userNameText
     global passwordText
+    global userNum
     global loginWindow
     loginWindow = tkinter.Tk()
     loginWindow.title("Login to Windows 11")
@@ -423,10 +436,16 @@ def login():
     passwordText.grid(row=1, column=1)
     passwordText.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
     userNameText.bind("<Tab>", passwordText.focus)
-    passwordText.bind("<Return>", loginVerification)
+    userNameText.bind("<Return>", passwordText.focus)
+    msg3 = tkinter.Label(loginWindow, text="Enter your user number", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    userNum = tkinter.Entry(loginWindow, foreground=THEME_FOREGROUND, background=THEME_WINDOW_BG)
+    userNum.grid(row=2, column=1)
+    userNum.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
+    msg3.grid(row=2, column=0)
+    userNum.bind("<Return>", loginVerification)
     loginBtn = tkinter.Button(loginWindow, text="Login", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
                                 command=loginVerification)
-    loginBtn.grid(row=2, column=1)
+    loginBtn.grid(row=3, column=1)
     shutdownBtn = tkinter.Button(loginWindow, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
                                 command=lambda: GUIButtonCommand.shutdownMenu(GUIButtonCommand))
     shutdownBtn.grid(row=0, column=MAX_COLUMN_DESKTOP)
@@ -524,7 +543,30 @@ def safeMode() -> None:
         NETWORKING = False
         try:
             import ProgramFiles.CommandPrompt as cmd
-            cmd.main()
+            import tkinter
+            global root
+            def sendCommand(e=None):
+                cmdInstance.showMsg(f"\n>{yourCommand.get()}")
+                if " " not in yourCommand.get():
+                    yourCommand.insert(tkinter.END, "  ")
+                if yourCommand.get().split(" ")[0] in cmdInstance.COMMAND_LIST and cmdInstance.ACCEPT_COMMANDS:
+                    exec(f"cmdInstance.{yourCommand.get().split(' ')[0]}()")
+                elif not cmdInstance.ACCEPT_COMMANDS: cmdInstance.clear()
+                else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
+            root = tkinter.Tk()
+            root.configure(background=THEME_WINDOW_BG)
+            root.attributes("-fullscreen", True)
+            root.title("Safe mode - Command Interpreter")
+            text = tkinter.Text(root, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
+            text.grid(row=0, column=0)
+            yourCommand = tkinter.Entry(root, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=130)
+            yourCommand.grid(row=1, column=0)
+            cmdInstance = cmd.cmdCommands(text, yourCommand, root)
+            cmdInstance.showMsg("\nCan't login to main windows 11, this is safe mode!")
+            yourCommand.focus()
+            yourCommand.bind("<Return>", sendCommand)
+            root.mainloop()
         except Exception as PRB: 
             print("Cannot launch safe mode UI, going full CLI!\n PRB: {}".format(PRB))
             time.sleep(5)

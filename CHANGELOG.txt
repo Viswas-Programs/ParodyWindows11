@@ -46,11 +46,17 @@ New features/apps-
 -Added a software store to download trusted apps assured by the FOSS community (exaggeration)!
 -Added error handling if the app is not present in your system or if it's corrupted (just a try except block)
 -Now, taskbar pinning and desktop icons pinning will be saved, and will  be applied to the next start too! (TLDR Changes will be applied)
+-Added a command prompt program to access features that arent in the GUI of the shell. will add new commands as we progress
+-Users (any user can have their own apps)
+-In safe mode, if main Windows 11 can't be launched, it then tries to launch the command prompt, if it fails even then, it launches the built in safe mode!
+-Reverted the installer to downloading zipfiles as it's becoming more complicated to manage things.
+-Introduction with the new Guest account!
 
 Technical ->
 -Modularized apps - third party apps need to create the main file in the programfiles directory.
 How this works is that when an app adds the entry in the apps list, ParodyWin11 takes that and adds it in the start menu! so it can be launched from there! See my windows 11 wiki on the repo to find more about this.
 -Removed the "Apps" class because all apps (Except settings), even in-built apps, were removed from the main file and split into different files.
+-Now you can add any third party app to any user you want but inside the user folder!
 
 Bug Fixes-
 -Fixed a critical bug in Notifications menu where notifications crammed up in the same row and column and showed 1 that's big to cover everything.
