@@ -24,13 +24,13 @@ YOURENV/
 
 ---------------------------ALLICONS
 
+------------------<YOUR_USER_NAME>/
+
+---------------------------<YOUR_USER_FILES>
+
 ------------------All Apps
 
-------------------accConfiguration.conf
-
----------Users/
-
-------------------All folder stuff
+------------------accConfiguration1.conf
 
 ---------Windows 11.py
 
