@@ -1,7 +1,7 @@
 import tkinter
 from tkinter import ttk
 import os
-from tkinter import messagebox
+from ProgramFiles.errorHandler import messagebox
 THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
 def main():
     try:
@@ -36,10 +36,8 @@ def main():
                 fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
         def openFileOrFolder(*event):
             nonlocal filepath
-            SFI = fileView.selection()
             selectedFileIndex = fileView.focus()
             selectedFile = fileView.item(selectedFileIndex, 'values')[0]
-            print(selectedFile, SFI, SFI[0])
             if os.path.isdir(f"{os.path.join(filepath, selectedFile)}"):
                 filepath = os.path.join(filepath, selectedFile)
                 lookUpFiles(filepath)
@@ -83,6 +81,27 @@ def main():
         # driveSelection.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
         # driveSelection.column("Drives", anchor=tkinter.W, width=100)
         # driveSelection.heading("Drives", text="Drives", anchor=tkinter.CENTER)
+        def delete(*args):
+            import shutil
+            selectedFileIndex = fileView.focus()
+            selectedFile = fileView.item(selectedFileIndex, 'values')[0]
+            if os.path.isdir(selectedFile): shutil.rmtree(selectedFile)
+            else: os.remove(selectedFile)
+            fileView.delete(selectedFileIndex)
+        def popup(event=None, *args):
+            """ the context menu popup"""
+            print("called popup() function")
+            problem = None
+            try:
+                files.tk_popup(event.x_root, event.y_root, 0)
+            except Exception as PROBLEM:
+                problem = PROBLEM
+                print(problem)
+            finally:
+                files.grab_release()
+        files = tkinter.Menu(mainFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+        files.add_command(label="Open", command=openFileOrFolder)
+        files.add_command(label="Delete", command=delete)
         commandBar.grid(row=1, column=0)
         fileView = ttk.Treeview(mainFrame, style="Treeview")
         fileView.grid(row=2, column=0, sticky="w")
@@ -90,7 +109,8 @@ def main():
         fileView.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
         fileView.column("Files", anchor=tkinter.W, width=600)
         fileView.heading("Files", text="Files", anchor=tkinter.CENTER)
-        fileView.bind("<<TreeviewSelect>>", openFileOrFolder)
+        fileView.bind("<Double-1>", openFileOrFolder)
+        fileView.bind("<Button-3>", popup)
         fileView.configure(style="Treeview")
         fileManagerWindow.mainloop()
         PROCESS_RUNNING = False

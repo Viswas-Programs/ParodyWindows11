@@ -1,7 +1,7 @@
 import tkinter
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
-from tkinter import messagebox
+from ProgramFiles.errorHandler import messagebox
 import shelve
 THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
 def receive():

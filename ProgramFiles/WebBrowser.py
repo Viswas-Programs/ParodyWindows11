@@ -1,6 +1,5 @@
 import tkinter
 from tkinterweb import HtmlFrame
-import tkinter.messagebox as messagebox
 import shelve
 from datetime import datetime
 PROCESS_RUNNING = True

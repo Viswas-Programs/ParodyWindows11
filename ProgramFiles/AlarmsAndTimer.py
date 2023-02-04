@@ -58,3 +58,5 @@ def main():
     alarmBtn = tkinter.Button(sidebar, text="Alarm", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=showAlarms)
     alarmBtn.grid(row=1, column=0)
     alarmWindow.mainloop()
+if __name__ == "__main__":
+    main()

@@ -1,4 +1,6 @@
 Windows 11 INSTALLER.py
-CHAGNELOG.txt
-VERSION.txt
 Windows 11.py
+ProgramFiles.zip
+CHANGELOG.txt
+VERSION.txt
+FILE_CHANGES.txt

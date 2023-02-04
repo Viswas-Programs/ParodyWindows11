@@ -11,22 +11,58 @@ class cmdCommands(object):
         self.stdout = stdout
         self.stdin = stdin
         self.LINE_COUNT = 0.0
-        self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator"]
+        self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator", "startFile", "mk", "rm", "cmd"]
         self.INPUTTED_COMMANDS_LIST = []
         self.COMMAND_NOT_FOUND = "\nThe following command doesn't exist!"
-        self.showMsg(f"Welcome to ParodyWindows11 Command Interpreter (OS Version 2.0)\nCurrent Working Directory: {os.getcwd()}\n>")
+        self.showMsg(f"Welcome to ParodyWindows11 Command Interpreter (OS Version 2.1)\nCurrent Working Directory: {os.getcwd()}\n>")
         try: self.ROOT.bind("<Up>", self.upArrowBind); self.ROOT.bind("<Down>", self.downArrowBind)
         except Exception as exp: print(f' {exp}')
+    def cmd(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+        if self.stdin.get().split(' ')[1].lstrip("-") == "restart":
+            self.ROOT.destroy()
+            def sendCommand(e=None):
+                self.showMsg(f"\n>{yourCommand.get()}")
+                if " " not in yourCommand.get():
+                    yourCommand.insert(tkinter.END, "  ")
+                if yourCommand.get().split(" ")[0] in self.COMMAND_LIST and self.ACCEPT_COMMANDS:
+                    self.launchCmd()
+                elif not self.ACCEPT_COMMANDS: self.showMsg("\nThe command prompt is busy"); self.clearStdIn()
+                else: self.showMsg(self.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
+            ROOT = tkinter.Tk()
+            ROOT.configure(background=THEME_WINDOW_BG)
+            ROOT.title("Command Interpreter")
+            text = tkinter.Text(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=120)
+            text.grid(row=0, column=0)
+            text.insert(tkinter.END, f"Welcome to ParodyWindows 11 Command Interpreter (OS Version 2.1)\nCurrent Working Directory: {os.getcwd()}")
+            yourCommand = tkinter.Entry(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
+            yourCommand.grid(row=1, column=0)
+            yourCommand.focus()
+            yourCommand.bind("<Return>", sendCommand)
+            ROOT.mainloop()
+        else:
+            self.clear()
+            self.clearStdIn()
+            self.showMsg(f"\nWelcome to ParodyWindows11 Command Interpreter (OS Version 2.1)\nCurrent Working Directory: {os.getcwd()}")
     def user(self):
         if self.ADMINISTRATOR:
-            try:
-                os.mkdir(os.path.join("ProgramFiles", self.stdin.get().split(' ')[2].lstrip('-')))
-            except Exception: pass
-            finally:
-                with open(f"ProgramFiles/accConfiguration{self.stdin.get().split(' ')[1].lstrip('-')}.conf", "w") as writeConfig:
-                    writeConfig.write(f"{self.stdin.get().split(' ')[2].lstrip('-')}\n{self.stdin.get().split(' ')[3].lstrip('-')}")
-                self.clearStdIn()
-                self.showMsg("\nUser created successfully!")
+            from pathlib import Path
+            if self.stdin.get().split(' ')[1].lstrip('-') != "list":
+                try:
+                    os.mkdir(os.path.join("ProgramFiles", self.stdin.get().split(' ')[2].lstrip('-')))
+                except Exception: pass
+                finally:
+                    with open(f"ProgramFiles/accConfiguration{self.stdin.get().split(' ')[1].lstrip('-')}.conf", "w") as writeConfig:
+                        writeConfig.write(f"{self.stdin.get().split(' ')[2].lstrip('-')}\n{self.stdin.get().split(' ')[3].lstrip('-')}")
+                    self.clearStdIn()
+                    self.showMsg("\nUser created successfully!")
+            else:
+                self.showMsg("\nCurrent User List: ")
+                for dirpath, dirnames, filenames in os.walk("ProgramFiles"):
+                    for file in Path(dirpath).glob("accConfiguration*.conf"):
+                        with open(file,) as showUsers:
+                            self.showMsg(f"\n {showUsers.readlines()[0]} ")
         else:
             self.showMsg("\nPlease enable administrator before editing or creating a new user!")
     def administrator(self):
@@ -120,7 +156,7 @@ class cmdCommands(object):
         else:
             self.showMsg("\nPlease enable administrator mode before accessing sfcRepair")
         self.clearStdIn()
-    def exit(): os._exit(0)
+    def exit(self): self.ROOT.destroy();  
     def cd(self):
         import platform
         if self.stdin.get().split(" ")[1] not in  ["..", "/", " ", "  ", ""]:
@@ -158,6 +194,25 @@ class cmdCommands(object):
         os.rmdir(self.stdin.get().split(" ")[1])
         self.clearStdIn()
         self.showMsg("\nFolder removed succesfully!")
+    def startFile(self):
+        import subprocess
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+        try:
+            self.showMsg("\nSuccesfully started file!")
+            subprocess.Popen(["python3", self.stdin.get().split(" ")[1]])
+        except Exception: self.showMsg(f"\nCannot start the specified file, due to a technical error. \nError at {str(self.startFile)}")
+    def mk(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+        with open(self.stdin.get().split(" ")[2], "w") as CREATE_FILE: CREATE_FILE.writelines(self.stdin.get().split(" ")[1].replace("\\n", "\n"))
+        self.clearStdIn()
+        self.showMsg("\nCreated the file successfully!")
+    def rm(self):
+        if self.ADMINISTRATOR:
+            self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+            os.remove(self.stdin.get().split(" ")[1])
+            self.showMsg("\nRemoved the file successfully!")
+        else: self.showMsg("\nPlease enable administrator mode before removing a file")
+        self.clearStdIn()
 THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
 def main(): 
     def sendCommand(e=None):
@@ -176,7 +231,7 @@ def main():
     yourCommand = tkinter.Entry(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
     yourCommand.grid(row=1, column=0)
-    cmdInstance = cmdCommands(text, yourCommand)
+    cmdInstance = cmdCommands(text, yourCommand, root=ROOT)
     yourCommand.focus()
     yourCommand.bind("<Return>", sendCommand)
     ROOT.mainloop()
