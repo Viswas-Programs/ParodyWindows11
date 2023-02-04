@@ -90,6 +90,8 @@ Bug Fixes ->
 -You couldn't shutdown if you weren't logged in, and once you call it from guest account, the files are deleted immediately without doing anything.
 -For a long time, the default apps weren't being shipped with the OS, but in the apps list, they all had entries. So, now, it ships with the software! (Bundled). 
 	Now you could obviously uninstall them in no time, delete the folder, the app launcher, and remove the entries in 	<username>/APPS_COMMAND_LST and <username>/APPS_LIST.txt, as simple as that! (The file extensions differ, the command list 	has no file extension, 	((-while the apps list has a .txt extension)
+-The app importer, if fails, now will show a error message, instead of doing nothing;
+	This was not the intentional behaviour, I developed this in 1.6 or smth, but the problem was that the File name was the same 	name as my folder name, so python took the file name instead (self-importing), and so, didn't give an error. Now it's fixed!
 
 
 
