@@ -12,7 +12,7 @@ Step1: Download the windows 11 file
 
 Step2: Download the ProgramFiles zip file and extract that thing into the environment.
 
-Step3: make a new file "accConfiguration.conf" (yes the file type is .conf) and give your username in first line and password in second line.
+Step3: make a new file "accConfiguration1.conf" (yes the file type is .conf) and give your username in first line and password in second line.
 
 Now the directory structure should look similar to this
 
@@ -24,13 +24,13 @@ YOURENV/
 
 ---------------------------ALLICONS
 
+------------------<YOUR_USER_NAME>/
+
+---------------------------<YOUR_USER_FILES>
+
 ------------------All Apps
 
-------------------accConfiguration.conf
-
----------Users/
-
-------------------All folder stuff
+------------------accConfiguration1.conf
 
 ---------Windows 11.py
 
