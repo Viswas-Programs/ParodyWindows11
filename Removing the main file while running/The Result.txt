@@ -1,0 +1,8 @@
+It was easy to delete it, and it was all fun and games untill you reboot! it won't boot up!
+Simply because the shell cannot find the Windows 11 File!
+To fix this, you need to cd into the ProgramFiles directory, and run the Command Prompt
+Then, cd back to the Main ParodyWindows11 Folder where winodws file once existed.
+There, then run sfcRepair -online command. Boom, it will work!
+
+Damage:
+5/10 - NO harm intended, just fun, easily repairable!
