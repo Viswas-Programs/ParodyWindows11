@@ -90,5 +90,8 @@ def main():
     for i, app in enumerate(appsList):
         externalAppsList.insert(parent='', iid=i, text='', index=i, values=[app],)
     rootWn.mainloop()
+ROOT = rootWn
+def focusIn(): ROOT.state(newstate='normal'); 
+def focusOut(): ROOT.state(newstate='iconic'); 
 if __name__ == "__main__":
     main()

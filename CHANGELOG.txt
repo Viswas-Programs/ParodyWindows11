@@ -76,6 +76,8 @@ Bug Fixes-
 
 v2.1->
 Features ->
+-Added a new linux bash installer, that is tested, to use it, run the 'dos2unix' command on the bash script, and then run it! 
+-Now, the Shell, comes with a user, called 'defaultuser0' with password 'SYSTEM' (inspired from enderman youtube channel about defaultuser0 from Windows 10 OOBE)
 -Added BSOD If something goes wrong at the high level
 -Added a safe mode GUI, but the fallbacks still exist. So if the GUI doesn't load up, it gets to Built in safe mode (hardcoded)
 -Added new, user-specific themeing. so if one user keeps one theme, the other one, just has it's own theme.

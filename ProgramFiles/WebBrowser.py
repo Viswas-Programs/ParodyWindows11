@@ -123,3 +123,5 @@ def main():
     root.mainloop()
     searchHistory.close()
     PROCESS_RUNNING = False
+def focusIn(): root.state(newstate='normal'); 
+def focusOut(): root.state(newstate='iconic'); 

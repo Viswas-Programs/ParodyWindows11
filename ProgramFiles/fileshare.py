@@ -177,6 +177,7 @@ def recieveFiles():
     submit.grid(row=3, column=0)
     recieve_files.mainloop()
 def main():
+    global control_window
     control_window = tkinter.Tk()
     control_window.configure(background=THEME_WINDOW_BG)
     a = tkinter.Label(master=control_window,
@@ -198,3 +199,5 @@ def main():
                                         command=recieveFiles)
     recieve_files_btn.grid(row=0, column=2)
     control_window.mainloop()
+def focusIn(): control_window.state(newstate='normal'); 
+def focusOut(): control_window.state(newstate='iconic'); 

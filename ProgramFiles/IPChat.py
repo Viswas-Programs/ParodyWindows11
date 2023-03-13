@@ -142,3 +142,5 @@ def main():
     receive_thread = Thread(target=receive)
     receive_thread.start()
     top.mainloop()
+def focusIn(): top.state(newstate='normal'); 
+def focusOut(): top.state(newstate='iconic'); 

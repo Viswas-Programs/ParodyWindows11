@@ -65,3 +65,6 @@ def main():
     loadCusttomBtn.grid(row=0, column=1)
     externalApps.mainloop()
     PROCESS_RUNNING = False
+ROOT = externalApps
+def focusIn(): ROOT.state(newstate='normal'); 
+def focusOut(): ROOT.state(newstate='iconic'); 

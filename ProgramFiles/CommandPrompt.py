@@ -135,15 +135,23 @@ class cmdCommands(object):
                     self.showMsg(f"\nERROR OCCURED While resetting...!Error: {exp}")
             if self.stdin.get().split(" ")[1] == "-online":
                 self.showMsg("Repairing system...")
+                import zipfile
+                from io import BytesIO
                 try:
-                    Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py", timeout=40)
-                    resetConfigurations()
-                    self.showMsg("\nRepair success!")
+                    Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py", timeout=10)
+                    ProgramFilesMainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/ProgramFiles.zip", timeout=40)
                     with open("Windows 11.py", "w") as writeTo:
                         try:
                             writeTo.write(Windows11MainDownload.content.decode(encoding="UTF-8"))
                         except UnicodeEncodeError as UER:
                             self.showMsg(f"\nUnicodeDecodeError occured while repairing 'Windows 11.py'\n--MSG:{UER}")
+                    if os.access("ProgramFiles", os.F_OK) and os.path.isdir("ProgramFiles"):
+                        import pathlib3x
+                        Location = pathlib3x.Path("ProgramFiles")
+                        Location.rmtree(ignore_errors=True)
+                    PrograFile = zipfile.ZipFile(BytesIO(ProgramFilesMainDownload.content))
+                    PrograFile.extractall("ProgramFiles")
+                    self.showMsg("\nRepair success!")
                 except Exception as PROBLEM:
                     self.showMsg(f"\nRepairing Failed!\nREASON: {PROBLEM}")
             elif self.stdin.get().split(" ")[1] == "-offline":
@@ -191,7 +199,9 @@ class cmdCommands(object):
         self.clearStdIn()
         self.showMsg("\nFolder created succesfully!")
     def rmd(self):
-        os.rmdir(self.stdin.get().split(" ")[1])
+        import pathlib3x
+        Location = pathlib3x.Path(self.stdin.get().split(" ")[1])
+        Location.rmtree(ignore_errors=True)
         self.clearStdIn()
         self.showMsg("\nFolder removed succesfully!")
     def startFile(self):
@@ -215,6 +225,7 @@ class cmdCommands(object):
         self.clearStdIn()
 THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
 def main(): 
+    global ROOT
     def sendCommand(e=None):
         cmdInstance.showMsg(f"\n>{yourCommand.get()}")
         if " " not in yourCommand.get():
@@ -236,5 +247,8 @@ def main():
     yourCommand.bind("<Return>", sendCommand)
     ROOT.mainloop()
 
+
+def focusIn(): ROOT.state(newstate='normal'); 
+def focusOut(): ROOT.state(newstate='iconic'); 
 if __name__ == "__main__":
     main()

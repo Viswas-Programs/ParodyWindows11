@@ -58,6 +58,7 @@ def main():
             addressBar.delete(0, tkinter.END)
             addressBar.insert(tkinter.END, path)
             lookUpFiles(path=path)
+        global fileManagerWindow
         fileManagerWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
         fileManagerWindow.title("File Manager")
         ttk.Style(fileManagerWindow).configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -116,6 +117,7 @@ def main():
         PROCESS_RUNNING = False
     except Exception as exp:
         messagebox.showerror("Can't load app!", f"App can't run! please re-install the app!\nPROB:{exp}")
-
+def focusIn(): fileManagerWindow.state(newstate='normal'); 
+def focusOut(): fileManagerWindow.state(newstate='iconic'); 
 if __name__ == "__main__":
     main()

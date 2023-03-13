@@ -16,3 +16,4 @@ v3.3->
 -Bug fixes
 v3.3.1 ->
 -Made sure that the message for Linux only systems, about the title bar function, is not shown more than 1 time. (Being not spammy is nice innit?)
+v3.3.2

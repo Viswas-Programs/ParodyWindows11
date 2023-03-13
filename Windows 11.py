@@ -2,6 +2,7 @@ from __future__ import print_function
 from datetime import datetime
 import sys
 import os
+print("Starting OS...")
     
 def FTRConfigSettings(path, data: str=None, prepCodeBool=False, prepCode=None) -> tuple:
     if prepCodeBool: exec(prepCode)
@@ -23,6 +24,7 @@ def FTRConfigSettings(path, data: str=None, prepCodeBool=False, prepCode=None) -
             config = data.splitlines()
     return config
 THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings("theme_config.txt", f"Black\nWhite")
+print("Configuring Themes...")
 # emailSetup = FTRConfigSettings("PRogramFiles/emails.txt", "SETUP NEEDED!")[0]
 import tkinter.ttk as ttk
 import time
@@ -60,6 +62,7 @@ class Notifications(object):
         notificationsWindow.mainloop()
         self.NotificationsList, self.actions, self.TimeofNotification = [], [], []
 notification = Notifications()
+print("Starting up Notification Services...")
 class Settings():
     from tkinter import colorchooser
     def __init__(Settings):
@@ -148,13 +151,16 @@ class GUIButtonCommand(object):
     global COLUMN_COUNT_DESKTOP_ICONS
     global MAX_COLUMN_DESKTOP
     global MAX_ROW_DESKTOP
-    def launchItem(self, app, e=None):
-        exec(f"import {COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{app}')]}")
-        exec(f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{app}')]}.main()")
     def __init__(self):
         self.CurrentDesktopIconsList = []
         self.PINNED_APPS = PINNED_APPS
         self.TASKBAR_ICON_COUNT = 0
+    def launchItem(self, app, e=None):
+        progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{app}')]}"
+        print(progAppImport)
+        exec(f"import {progAppImport}")
+        exec(f"ProgramFiles.{app}.main()")
+        print("App closed?")
     def launchComboBoxEvent(self, e=None):
         Item = launcherComboBox.get()
         if Item != "ControlPanel":
@@ -319,8 +325,9 @@ class GUIButtonCommand(object):
         tkinter.Label(shutdownWindow, text="Restart", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=2, column=1)
         shutdownWindow.mainloop()
 
-
+print("Loaded GUI Option Modules...")
 def main():
+    print("Loaded operating system!")
     global THEME_WINDOW_BG, THEME_FOREGROUND
     THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings(f"ProgramFiles/{username}/theme_config.txt", "Black\nWhite")
     global children
@@ -355,9 +362,10 @@ def main():
                 "UpdateManager\nLoadExternalApps\nWebBrowser\nIPChat\nControlPanel\nAlarmsAndTimer\n")
     COMMAND_APPS_LIST = FTRConfigSettings(f"ProgramFiles/{username}/APPS_COMMAND_LST", "ProgramFiles.CommandPrompt\nProgramFiles.Notepad\nProgramFiles.fileshare\nProgramFiles.OnlineBanking.v5\nProgramFiles.BlackJack.BlackJack\nProgramFiles.FileManager\n" 
                 "ProgramFiles.UpdateManager\nProgramFiles.LoadExternalApps\nProgramFiles.WebBrowser\nProgramFiles.IPChat\nApps.ControlPanel\nProgramFiles.AlarmsAndTimer\n")
-    print(COMMAND_APPS_LIST)
+    print("Loaded apps")
     PINNED_APPS_DESKTOP = FTRConfigSettings(f"ProgramFiles/{username}/pinnedAppsDesktop.txt", "Notepad\nFileManager")
     PINNED_APPS = FTRConfigSettings(f"ProgramFiles/{username}/pinnedAppsTaskbar.txt", "FileManager")
+    print("Loading your settings")
     GuiInterfaceCommands = GUIButtonCommand()
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
@@ -395,6 +403,7 @@ def main():
     children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
     ROOT_WINDOW.mainloop()
 def loginVerification(e=None):
+    print("Checking credentials")
     global userNameText
     global passwordText
     global userNum
@@ -425,9 +434,10 @@ def checkTheme(widget):
 DARK_COLOURS = ["black", 'brown', 'blue', 'green', 'red', 'violet', 'purple', 'dark blue', 'dark green',
                 'dark red', 'dark brown', ]
 def login():
+    print("Starting up OS...")
     import tkinter
     def safeModePREPTask(e=None):
-        with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write(str(3))
+        with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write("0")
         msg.destroy()
         msg2.destroy()
         userNameText.destroy()
@@ -487,15 +497,23 @@ def bsod(obj, supportCode) -> None:
             os.system(""" python3 "Windows 11.py" """)
             exit()
         import tkinter
-        with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write(str(attempts + 1))
-        bsodWind = tkinter.Tk()
-        bsodWind.geometry("600x480")
-        bsodWind.configure(background="blue")
-        bsodWind.attributes("-fullscreen", True)
-        tkinter.Label(bsodWind, background="Blue", foreground="White", text=text, font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
-        with open("ProgramFiles/CRASHLOGS", "a") as UPDATE_CRASH_LOGS: UPDATE_CRASH_LOGS.write(f"\n{supportCode} occured on {datetime.now()} on {obj}")
-        bsodWind.after(10000, restart)
-        bsodWind.mainloop()
+        try:
+            with open("ProgramFiles/CBSRESTARTATTEMPT", "r") as ATTEMPTREAD: attempts = int(ATTEMPTREAD.read())
+            with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write(str(attempts+1))
+        except Exception as EXP: exp = EXP; 
+        finally:
+            bsodWind = tkinter.Tk()
+            bsodWind.geometry("600x480")
+            bsodWind.configure(background="blue")
+            bsodWind.attributes("-fullscreen", True)
+            tkinter.Label(bsodWind, background="Blue", foreground="White", text=text, font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
+            
+            try: 
+                if exp: tkinter.Label(bsodWind, background="Blue", foreground="White", text=f"During above error, another error occured: {exp}", font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
+            except Exception: pass
+            with open("ProgramFiles/CRASHLOGS", "a") as UPDATE_CRASH_LOGS: UPDATE_CRASH_LOGS.write(f"\n{supportCode} occured on {datetime.now()} on {obj}")
+            bsodWind.after(10000, restart)
+            bsodWind.mainloop()
     except Exception as EXP: print(text, EXP)
 cmdImg = None
 img = None
@@ -636,7 +654,7 @@ def safeMode() -> None:
         else:
             try:
                 autoRecoveryEnv()
-                with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write(str(0))
+                with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write("0")
             except Exception as PRB: 
                 print("Cannot launch safe mode UI, going full CLI!\n PRB: {}".format(PRB))
                 time.sleep(5)
@@ -662,34 +680,35 @@ def safeMode() -> None:
                             if userInput1 in range(1, 8):
                                 exec(f"a{userInput1}()")
             finally: 
-                with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write(str(0))
+                with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write("0")
 
 if __name__ == "__main__":
     arguements = sys.argv[1:]
-    if "-safemode" in arguements:
-        safeMode()
+    if not os.access("ProgramFiles", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
     else:
-        try:
-            import tkinter
-            from ProgramFiles.errorHandler import messagebox
-            import requests
-            import shelve
-            import os
-        except Exception as PROBLEM:
-            try:
-                import platform
-                if platform.system() == "Windows":
-                    os.system("cls")
-                else:
-                    os.system("clear")
-            except Exception: pass
-            print(f"Safe mode activated due to one of the modules not present. \n DEBUG: {PROBLEM}")
-            time.sleep(5)
-            safeMode()
+        if not os.access("ProgramFiles/CommandPrompt.py", os.F_OK) or not os.access("ProgramFiles/errorHandler.py", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
         else:
-            if not os.access("ProgramFiles", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
+            if "-safemode" in arguements:
+                safeMode()
             else:
-                if not os.access("ProgramFiles/CommandPrompt.py", os.F_OK) and not os.access("ProgramFiles/errorHandler.py", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
-            try:
-                login()
-            except Exception as EXP: bsod(login, f"LOGIN_FAILURE('{EXP}')")
+                try:
+                    import tkinter
+                    from ProgramFiles.errorHandler import messagebox
+                    import requests
+                    import shelve
+                    import os
+                except Exception as PROBLEM:
+                    try:
+                        import platform
+                        if platform.system() == "Windows":
+                            os.system("cls")
+                        else:
+                            os.system("clear")
+                    except Exception: pass
+                    print(f"Safe mode activated due to one of the modules not present. \n DEBUG: {PROBLEM}")
+                    time.sleep(5)
+                    safeMode()
+                else:
+                    try:
+                        login()
+                    except Exception as EXP: bsod(login, f"LOGIN_FAILURE('{EXP}')")

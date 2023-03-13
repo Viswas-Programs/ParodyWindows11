@@ -2,6 +2,7 @@ import tkinter
 from ProgramFiles.errorHandler import messagebox
 def main():
     try:
+        global root
         import ProgramFiles.Notepad_v3.notepadGUI as notepad
         PROCESS_RUNNING = True
         root = tkinter.Tk()
