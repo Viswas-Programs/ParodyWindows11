@@ -97,7 +97,7 @@ def reloadWebsite(e=None):
         frame.load_website(searches[searchNo-1])
         if DARK_THEME: frame.enable_dark_theme(True, True)
 
-def main():
+def main(*args):
     global root
     global mainFrame
     global frame

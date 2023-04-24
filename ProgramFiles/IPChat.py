@@ -92,7 +92,7 @@ def getServerList(e=None):
     serverListLB.bind("<<ListboxSelect>>", connect)
     serverListWn.mainloop()
 
-def main():
+def main(*args):
     global my_msg
     global msg_list
     global BUFSIZ

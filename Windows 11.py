@@ -2,6 +2,13 @@ from __future__ import print_function
 from datetime import datetime
 import sys
 import os
+import shelve
+import tkinter
+import tkinter.ttk as ttk
+import time
+from tkinter import colorchooser
+SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
+THEME_WINDOW_BG, THEME_FOREGROUND = SYS_CONFIG["THEME"]
 print("Starting OS...")
     
 def FTRConfigSettings(path, data: str=None, prepCodeBool=False, prepCode=None) -> tuple:
@@ -23,11 +30,6 @@ def FTRConfigSettings(path, data: str=None, prepCodeBool=False, prepCode=None) -
             FTR_write_config.write(data)
             config = data.splitlines()
     return config
-THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings("theme_config.txt", f"Black\nWhite")
-print("Configuring Themes...")
-# emailSetup = FTRConfigSettings("PRogramFiles/emails.txt", "SETUP NEEDED!")[0]
-import tkinter.ttk as ttk
-import time
 ROW_COUNT_NOTIFICATION_WINDOW = 0
 class Notifications(object):
     global ROW_COUNT_NOTIFICATION_WINDOW
@@ -64,7 +66,6 @@ class Notifications(object):
 notification = Notifications()
 print("Starting up Notification Services...")
 class Settings():
-    from tkinter import colorchooser
     def __init__(Settings):
         import psutil
         Settings.SHOWN_HOMEPAGE = False
@@ -155,15 +156,24 @@ class GUIButtonCommand(object):
         self.CurrentDesktopIconsList = []
         self.PINNED_APPS = PINNED_APPS
         self.TASKBAR_ICON_COUNT = 0
-    def launchItem(self, app, e=None):
-        progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{app}')]}"
+    def launchItem(self, app: str, e=None):
+        if "/" in app:
+            appSplit = app.split("/")
+            appToLaunch = app.replace("/", ".")
+            realAppName = appSplit.pop(1)
+            appToLaunch = appToLaunch.rstrip(realAppName)
+            appSplit.append(realAppName.lower().replace(" ", ""))
+            appToLaunch += appSplit[1]
+        else:    
+            appToLaunch = app.lower().replace(" ", "")
+        progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
         print(progAppImport)
         exec(f"import {progAppImport}")
-        exec(f"ProgramFiles.{app}.main()")
+        exec(f"ProgramFiles.{appToLaunch}.main('{username}', notification)")
         print("App closed?")
     def launchComboBoxEvent(self, e=None):
         Item = launcherComboBox.get()
-        if Item != "ControlPanel":
+        if Item != "Control Panel":
             self.launchItem(Item)
         else:
             Settings()
@@ -329,12 +339,14 @@ print("Loaded GUI Option Modules...")
 def main():
     print("Loaded operating system!")
     global THEME_WINDOW_BG, THEME_FOREGROUND
-    THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings(f"ProgramFiles/{username}/theme_config.txt", "Black\nWhite")
+    # THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings(f"ProgramFiles/{username}/theme_config.txt", "Black\nWhite")
     global children
     def safeModePREPTask(e=None):
         for child in children:
             child.destroy()
         safeMode()
+    global SYS_CONFIG
+    global USER_CONFIG
     global launcherComboBox
     global contextMenu
     global ROOT_WINDOW
@@ -346,6 +358,12 @@ def main():
     global appsFrame
     global desktopContextMenu
     global COMMAND_APPS_LIST
+    SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
+    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
+    APPS_LIST, COMMAND_APPS_LIST = USER_CONFIG["APPS"]
+    THEME_WINDOW_BG, THEME_FOREGROUND = USER_CONFIG["THEME"]
+    PINNED_APPS, PINNED_APPS_DESKTOP = USER_CONFIG["PINNED"]
+    print("Loaded apps and user settings!")
     def popup(event=None, *args):
         """ the context menu popup"""
         print("called popup() function")
@@ -358,14 +376,6 @@ def main():
             desktopContextMenu.grab_release()
             if problem:
                 notification.showNotification("Critical Error!", str(problem), datetime.now(), lambda: GuiInterfaceCommands.shutdownMenu())
-    APPS_LIST = FTRConfigSettings(f"ProgramFiles/{username}/APPS_LIST.txt", "CommandPrompt\nNotepad\nfileshare\nOnlineBanking\nBlackJack\nFileManager\n" 
-                "UpdateManager\nLoadExternalApps\nWebBrowser\nIPChat\nControlPanel\nAlarmsAndTimer\n")
-    COMMAND_APPS_LIST = FTRConfigSettings(f"ProgramFiles/{username}/APPS_COMMAND_LST", "ProgramFiles.CommandPrompt\nProgramFiles.Notepad\nProgramFiles.fileshare\nProgramFiles.OnlineBanking.v5\nProgramFiles.BlackJack.BlackJack\nProgramFiles.FileManager\n" 
-                "ProgramFiles.UpdateManager\nProgramFiles.LoadExternalApps\nProgramFiles.WebBrowser\nProgramFiles.IPChat\nApps.ControlPanel\nProgramFiles.AlarmsAndTimer\n")
-    print("Loaded apps")
-    PINNED_APPS_DESKTOP = FTRConfigSettings(f"ProgramFiles/{username}/pinnedAppsDesktop.txt", "Notepad\nFileManager")
-    PINNED_APPS = FTRConfigSettings(f"ProgramFiles/{username}/pinnedAppsTaskbar.txt", "FileManager")
-    print("Loading your settings")
     GuiInterfaceCommands = GUIButtonCommand()
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
@@ -402,6 +412,8 @@ def main():
     ROOT_WINDOW.bind("<Escape>", safeModePREPTask)
     children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
     ROOT_WINDOW.mainloop()
+    SYS_CONFIG.close()
+    USER_CONFIG.close()
 def loginVerification(e=None):
     print("Checking credentials")
     global userNameText
@@ -423,21 +435,19 @@ def loginVerification(e=None):
     else:
         loginWindow.destroy()
         username = "GUEST"
-        os.mkdir("ProgramFiles/GUEST")
+        try:
+            os.mkdir("ProgramFiles/GUEST")
+        except FileExistsError:
+            # The user data somehow exists? let's use that then!
+            pass # pass for now!
         main()
 
-def checkTheme(widget):
-    if THEME_WINDOW_BG in DARK_COLOURS:
-        widget.configure(insertbackground=THEME_FOREGROUND,
-                            selectbackground=THEME_FOREGROUND,
-                            selectforeground=THEME_WINDOW_BG)
 DARK_COLOURS = ["black", 'brown', 'blue', 'green', 'red', 'violet', 'purple', 'dark blue', 'dark green',
                 'dark red', 'dark brown', ]
 def login():
     print("Starting up OS...")
-    import tkinter
     def safeModePREPTask(e=None):
-        with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write("0")
+        SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
         msg.destroy()
         msg2.destroy()
         userNameText.destroy()
@@ -496,10 +506,8 @@ def bsod(obj, supportCode) -> None:
             time.sleep(5)
             os.system(""" python3 "Windows 11.py" """)
             exit()
-        import tkinter
         try:
-            with open("ProgramFiles/CBSRESTARTATTEMPT", "r") as ATTEMPTREAD: attempts = int(ATTEMPTREAD.read())
-            with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write(str(attempts+1))
+            SYS_CONFIG["CBSRESTARTATTEMPT"] += 1
         except Exception as EXP: exp = EXP; 
         finally:
             bsodWind = tkinter.Tk()
@@ -525,9 +533,9 @@ def autoRecoveryEnv() -> None:
     recoveryWin = tkinter.Tk()
     recoveryWin.configure(background="Black")
     recoveryWin.attributes("-fullscreen", True)
-    def launchCmd(e=None): import ProgramFiles.CommandPrompt; ProgramFiles.CommandPrompt.main()
+    def launchCmd(e=None): import ProgramFiles.commandprompt; ProgramFiles.commandprompt.main()
     def reprSysCMDL(e=None):
-        import ProgramFiles.CommandPrompt
+        import ProgramFiles.commandprompt
         ROOT = tkinter.Tk()
         ROOT.configure(background=THEME_WINDOW_BG)
         ROOT.title("Command Interpreter")
@@ -536,167 +544,220 @@ def autoRecoveryEnv() -> None:
         yourCommand = tkinter.Entry(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
         yourCommand.grid(row=1, column=0)
-        cmdInstance = ProgramFiles.CommandPrompt.cmdCommands(text, yourCommand, root=ROOT)
+        cmdInstance = ProgramFiles.commandprompt.cmdCommands(text, yourCommand, root=ROOT)
         yourCommand.focus()
         cmdInstance.ADMINISTRATOR = True
         yourCommand.insert(tkinter.END, "sfcRepair -online")
         cmdInstance.sfcRepair()
         ROOT.mainloop()
+    try:
+        exec(f"continueICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/continue.png')")
+        exec(f"continueBTN = tkinter.Button(recoveryWin, image=continueICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=login, text='Continue to main', compound=tkinter.LEFT)")
+        exec(f"continueBTN.IMGREF = continueICON")
+        exec(f"continueBTN.grid(row=0, column=0)")
 
-    exec(f"continueICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/continue.png')")
-    exec(f"continueBTN = tkinter.Button(recoveryWin, image=continueICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=login, text='Continue to main', compound=tkinter.LEFT)")
-    exec(f"continueBTN.IMGREF = continueICON")
-    exec(f"continueBTN.grid(row=0, column=0)")
+        exec(f"repairICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/repair.png')")
+        exec(f"repairBTN = tkinter.Button(recoveryWin, image=repairICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=reprSysCMDL, text='Repair system', compound=tkinter.LEFT)")
+        exec(f"repairBTN.IMGREF = repairICON")
+        exec(f"repairBTN.grid(row=1, column=0)")
 
-    exec(f"repairICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/repair.png')")
-    exec(f"repairBTN = tkinter.Button(recoveryWin, image=repairICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=reprSysCMDL, text='Repair system', compound=tkinter.LEFT)")
-    exec(f"repairBTN.IMGREF = repairICON")
-    exec(f"repairBTN.grid(row=1, column=0)")
-
-    exec(f"cmdICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/CommandPrompt.png')")
-    exec(f"cmdBTN = tkinter.Button(recoveryWin, image=cmdICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=launchCmd, text='Launch Command Prompt', compound=tkinter.LEFT)")
-    exec(f"cmdBTN.IMGREF = cmdICON")
-    exec(f"cmdBTN.grid(row=0, column=1)")
-    recoveryWin.mainloop()
-def safeMode() -> None:
-        global attempts
-        def a1():
-            def resetConfigurations():
+        exec(f"cmdICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/commandprompt.png')")
+        exec(f"cmdBTN = tkinter.Button(recoveryWin, image=cmdICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=launchCmd, text='Launch Command Prompt', compound=tkinter.LEFT)")
+        exec(f"cmdBTN.IMGREF = cmdICON")
+        exec(f"cmdBTN.grid(row=0, column=1)")
+        recoveryWin.mainloop()
+    except Exception: print("ERROR OCCURED WHILE LOADING AUTORECOVERYENV..."); recoveryWin.destroy(); safeMode(forceNoARENV=True)
+def safeMode(forceNoARENV=False) -> None:
+    def a1():
+        def resetConfigurations():
+            userToreset = input("Enter the username of the user to reset the user too... [Type in defaultuser0 to only do system wise reset]")
+            if userToreset.lower() != "defaultuser0":
                 try:
-                    txtFilesToDelete = ["theme_config.txt", "ProgramFiles/tkweb.txt", "ProgramFiles/pinnedApps.txt"]
-                    for fileToDelete in txtFilesToDelete:
-                        try:
-                            os.remove(fileToDelete)
-                        except Exception: pass
-                    shelveFilesToDelete = ["ProgramFiles/history", "ProgramFiles/IPChat/_serverConfig", "ProgramFiles/IPChat/serversList"]
-                    for shelveToDelete in shelveFilesToDelete:
-                        try:
-                            with shelve.open(shelveToDelete) as deleteIt:
-                                deleteIt.clear()
-                        except Exception: pass
+                    with shelve.open(f"ProgramFiles/{userToreset}/USER_CONFIG") as deleteIt: deleteIt.clear()
                 except Exception as exp:
                     print(f"ERROR OCCURED While resetting...!Error: {exp}")
-            print("=" * int(os.get_terminal_size()[0]))
-            if NETWORKING:
-                onlineOrOffline = input("Do you want to perform online repair? [Y/N](Y for online, N for offline, A for abort)")
-                if onlineOrOffline == "Y" or onlineOrOffline == 'y':
-                    print("repairing system...")
+            try:
+                shelveFilesToDelete = ["ProgramFiles/history", "ProgramFiles/IPChat/_serverConfig", "ProgramFiles/IPChat/serversList"]
+                for shelveToDelete in shelveFilesToDelete:
                     try:
-                        Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py", timeout=40)
-                        resetConfigurations()
-                        with open("Windows 11.py", "w") as writeTo:
-                            try:
-                                writeTo.write(Windows11MainDownload.content.decode(encoding="UTF-8"))
-                            except UnicodeEncodeError as UER:
-                                print(f"UnicodeDecodeError occured while repairing 'Windows 11.py'\n--MSG:{UER}")
-                    except Exception as PROBLEM:
-                        print(f"Repairing Failed!\n<<<REASON: {PROBLEM}")
-                    finally:
-                        print("=" * int(os.get_terminal_size()[0]))
-                elif onlineOrOffline == "N" or onlineOrOffline == "n":
-                    print("Resetting your system!")
+                        with shelve.open(shelveToDelete) as deleteIt:
+                            deleteIt.clear()
+                    except Exception: pass
+            except Exception as exp:
+                print(f"ERROR OCCURED While resetting...!Error: {exp}")
+        print("=" * int(os.get_terminal_size()[0]))
+        if NETWORKING:
+            onlineOrOffline = input("Do you want to perform online repair? [Y/N](Y for online, N for offline, A for abort)")
+            if onlineOrOffline == "Y" or onlineOrOffline == 'y':
+                print("repairing system...")
+                try:
+                    Windows11MainDownload = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/Windows 11.py", timeout=40)
                     resetConfigurations()
+                    with open("Windows 11.py", "w") as writeTo:
+                        try:
+                            writeTo.write(Windows11MainDownload.content.decode(encoding="UTF-8"))
+                        except UnicodeEncodeError as UER:
+                            print(f"UnicodeDecodeError occured while repairing 'Windows 11.py'\n--MSG:{UER}")
+                except Exception as PROBLEM:
+                    print(f"Repairing Failed!\n<<<REASON: {PROBLEM}")
+                finally:
                     print("=" * int(os.get_terminal_size()[0]))
-                else:
-                    print("=" * int(os.get_terminal_size()[0]))
-            else:
-                print("Resetting your system")
+            elif onlineOrOffline == "N" or onlineOrOffline == "n":
+                print("Resetting your system!")
                 resetConfigurations()
                 print("=" * int(os.get_terminal_size()[0]))
-
-        def a2():
-            print("=" * int(os.get_terminal_size()[0]))
-            login()
-            
-        def a3():
-            print("=" * int(os.get_terminal_size()[0]))
-            print("CurrentWorkingDirectory: ", os.getcwd())
-            appName = input("Enter the file name path to load!")
-            os.system(f"python3 {appName} ")
-            print("=" * int(os.get_terminal_size()[0]))
-        
-        def a4():
-            print("=" * int(os.get_terminal_size()[0]))
-            print("Shutting down...")
-            exit()
-        
-        def a5():
-            print("=" * int(os.get_terminal_size()[0]))
-            opt = input("Do you want to restart in safe mode or normal mode?\n"
-                        "1. Safe Mode\n"
-                        "2. Normal Mode\n"
-                        "Enter your option >_")
-            if int(opt) == 1: 
+            else:
                 print("=" * int(os.get_terminal_size()[0]))
-                os.system("""python3 "Windows 11.py" -safemode """)
-                exit()
-            else: 
-                os.system("""python3 "Windows 11.py" """)
-                print("=" * int(os.get_terminal_size()[0]))
-                exit()
-        def a6():
-            print("=" * int(os.get_terminal_size()[0]))
-            nonlocal NETWORKING
-            NETWORKING = True
-            print("Enabled networking!")
-            print("=" * int(os.get_terminal_size()[0]))
-
-        def a7():
-            print("=" * int(os.get_terminal_size()[0]))
-            nonlocal NETWORKING
-            NETWORKING = False
-            print("Disabled networking!")
-            print("=" * int(os.get_terminal_size()[0]))
-        NETWORKING = False
-        with open("ProgramFiles/CBSRESTARTATTEMPT") as CBSRESTARTATTEMPT: attempts = int(CBSRESTARTATTEMPT.read())
-        if attempts < 2:
-            bsod(main, "MODULE_NOT_FOUND_ERROR")
         else:
+            print("Resetting your system")
+            resetConfigurations()
+            print("Successfully resetted your system. Now, you MUST RUN the shell under the -config parameter. That can be done from Command Prompt! [Or from python code]")
+            print("=" * int(os.get_terminal_size()[0]))
+
+    def a2(): print("=" * int(os.get_terminal_size()[0])); login()    
+    def a3():
+        print("=" * int(os.get_terminal_size()[0]))
+        print("CurrentWorkingDirectory: ", os.getcwd())
+        appName = input("Enter the file name path to load!")
+        os.system(f"python3 {appName} ")
+        print("=" * int(os.get_terminal_size()[0]))
+    def a4(): print("=" * int(os.get_terminal_size()[0])); print("Shutting down...") ; sys._exit(0)
+    
+    def a5():
+        print("=" * int(os.get_terminal_size()[0]))
+        opt = input("Do you want to restart in safe mode or normal mode?\n"
+                    "1. Safe Mode\n"
+                    "2. Normal Mode\n"
+                    "Enter your option >_")
+        if int(opt) == 1: 
+            print("=" * int(os.get_terminal_size()[0]))
+            os.system("""python3 "Windows 11.py" -safemode """)
+            exit()
+        else: 
+            os.system("""python3 "Windows 11.py" """)
+            print("=" * int(os.get_terminal_size()[0]))
+            exit()
+    def a6():
+        print("=" * int(os.get_terminal_size()[0]))
+        nonlocal NETWORKING
+        try: requests.get("http://theoldnet.com")
+        except Exception as prob: print(f"Operation failed!\nReason: {prob}")
+        else: NETWORKING = True ; print("Enabled networking!")
+        print("=" * int(os.get_terminal_size()[0]))
+
+    def a7():
+        print("=" * int(os.get_terminal_size()[0]))
+        nonlocal NETWORKING
+        NETWORKING = False
+        print("Disabled networking!")
+        print("=" * int(os.get_terminal_size()[0]))
+    NETWORKING = False
+    try:
+        if forceNoARENV: raise NotImplementedError("The program is forcing to use safe mode CLI... skipping Auto Recovery Environment...")
+        autoRecoveryEnv()
+        SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
+    except Exception as PRB:
+        try:
+            def sendCommand(e=None):
+                cmdInstance.showMsg(f"\n>{yourCommand.get()}")
+                if " " not in yourCommand.get():
+                    yourCommand.insert(tkinter.END, "  ")
+                if yourCommand.get().split(" ")[0] in cmdInstance.COMMAND_LIST and cmdInstance.ACCEPT_COMMANDS:
+                    exec(f"cmdInstance.{yourCommand.get().split(' ')[0]}()")
+                elif not cmdInstance.ACCEPT_COMMANDS: cmdInstance.clear()
+                else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
+            import ProgramFiles.commandprompt as cmd
+            root= tkinter.Tk()
+            root.configure(background=THEME_WINDOW_BG)
+            root.attributes("-fullscreen", True) 
+            text = tkinter.Text(root, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
+            text.grid(row=0, column=0)
+            yourCommand = tkinter.Entry(root, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
+            yourCommand.grid(row=1, column=0)
+            cmdInstance = cmd.cmdCommands(text, yourCommand, root)
+            yourCommand.focus()
+            yourCommand.bind("<Return>", sendCommand)
+            cmdInstance.showMsg("\nYou're in a safe mode back up CLI mode. This is a fullscreen Command Prompt"
+                                "\nThe system failed to boot. if you can diagnose & repair the system, you can use the available commands\n"
+                                "Or else, type in the command 'restart' and your system will reboot")
+        except Exception as PRB:
+            print(f"Cannot launch safe mode UI, going full CLI!\n PRB: {PRB}")
+            time.sleep(5)
             try:
-                autoRecoveryEnv()
-                with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write("0")
-            except Exception as PRB: 
-                print("Cannot launch safe mode UI, going full CLI!\n PRB: {}".format(PRB))
-                time.sleep(5)
-                try:
-                    import platform
-                    if platform.system() == "Windows":
-                        os.system("cls")
-                    else:
-                        os.system("clear")
-                except Exception: pass
-                finally:
+                import platform
+                if platform.system() == "Windows":
+                    os.system("cls")
+                else:
+                    os.system("clear")
+            except Exception: pass
+            finally:
+                while True:
+                    print("Safe mode activated!\n=-=-=-=WELCOME=-=-=-=")
                     while True:
-                        print("Safe mode activated!\n=-=-=-=WELCOME=-=-=-=")
-                        while True:
-                            userInput1 = int(input("1. Reset your system\n"
-                                            "2. Continue to boot to main\n"
-                                            "3. Launch an app\n"
-                                            "4. Shutdown the system\n"
-                                            "5. Restart the system\n"
-                                            "6. Enable networking\n"
-                                            "7. Disable networking\n"
-                                            "Enter your option >_"))
-                            if userInput1 in range(1, 8):
-                                exec(f"a{userInput1}()")
-            finally: 
-                with open("ProgramFiles/CBSRESTARTATTEMPT", "w") as CBSRESTARTATTEMPT: CBSRESTARTATTEMPT.write("0")
+                        userInput1 = int(input("1. Reset your system\n"
+                                        "2. Continue to boot to main\n"
+                                        "3. Launch an app\n"
+                                        "4. Shutdown the system\n"
+                                        "5. Restart the system\n"
+                                        "6. Enable networking\n"
+                                        "7. Disable networking\n"
+                                        "Enter your option >_"))
+                        if userInput1 in range(1, 8):
+                            exec(f"a{userInput1}()")
+    finally: 
+        SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
 
 if __name__ == "__main__":
     arguements = sys.argv[1:]
     if not os.access("ProgramFiles", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
     else:
-        if not os.access("ProgramFiles/CommandPrompt.py", os.F_OK) or not os.access("ProgramFiles/errorHandler.py", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
+        if not os.access("ProgramFiles/commandprompt.py", os.F_OK) or not os.access("ProgramFiles/errorHandler.py", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
         else:
             if "-safemode" in arguements:
                 safeMode()
+            elif "-config" in arguements:
+                username = input("Enter the username to create first run settings: ")
+                foreground = input("Enter your user's preffered foreground colour: ")
+                background = input("Enter your user's preffered background colour: ")
+                import shelve
+                SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
+                try:
+                    os.mkdir(f"ProgramFiles/{username}")
+                except Exception:
+                    print("User already exists, skipping user creation tasks...")
+                finally:
+                    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
+                USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore"]
+                USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
+                USER_CONFIG["THEME"] = [background, foreground]
+                SYS_CONFIG["THEME"] = ["Black", "White"] 
+                SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
+                print("Initialized new entries!")
+            elif "-configchange" in arguements:
+                print("You have entered the configuration manager! Press CTRL+C anytime to exit!\n")
+                configchoice = input("System or User config change?")
+                if "system" in configchoice.lower():
+                    infoSysSelectSTR = "SYS_CONFIG"
+                    SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
+                else:
+                    infoSysSelectSTR = "USER_CONFIG"
+                    username = input("Type in the username whose settings are going to be changed!: ")
+                    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
+                print("The respective configuration module has been imported!\n"
+                        f"Now, type in '{infoSysSelectSTR}[<CONFIG_NAME>] = <CONFIG>;' and then press enter to finish\n"
+                        "New code lines and line endings MUST BE represented by the ; character!")
+                code_to_execute = input("Start here>")
+                for i, code in enumerate(code_to_execute.split(";")):
+                    try: exec(code)
+                    except Exception as PROB: print(f"Error has occured! Error: {PROB}\n\nRestart the system with the same parameter to enter this mode!")
+                    else: print(f"Line {i+1} executed successfully! Reboot your system and observe whether the changes applied correctly!")
+                    
             else:
                 try:
                     import tkinter
                     from ProgramFiles.errorHandler import messagebox
                     import requests
-                    import shelve
-                    import os
                 except Exception as PROBLEM:
                     try:
                         import platform

@@ -51,7 +51,7 @@ def show(e=None):
 def loadCustomApp():
     fileToOpen = filedialog.askopenfilename(title="Select app to run!", filetypes=(("Windows 11 Apps", "*.py"), ("All Files", "*.*")))
     load(file=fileToOpen)
-def main():
+def main(*args):
     global externalAppsName
     global buttonText
     global externalApps
@@ -65,6 +65,3 @@ def main():
     loadCusttomBtn.grid(row=0, column=1)
     externalApps.mainloop()
     PROCESS_RUNNING = False
-ROOT = externalApps
-def focusIn(): ROOT.state(newstate='normal'); 
-def focusOut(): ROOT.state(newstate='iconic'); 

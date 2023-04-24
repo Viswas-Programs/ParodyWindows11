@@ -3,7 +3,7 @@ from tkinter import ttk
 import os
 from ProgramFiles.errorHandler import messagebox
 THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
-def main():
+def main(*args):
     try:
         PROCESS_RUNNING = True
         global THEME_FOREGROUND

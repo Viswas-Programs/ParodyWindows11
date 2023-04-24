@@ -1,4 +1,4 @@
-def main():
+def main(*args):
     try:
         import ProgramFiles.Blackjack.blackjack
         ProgramFiles.Blackjack.blackjack.main()

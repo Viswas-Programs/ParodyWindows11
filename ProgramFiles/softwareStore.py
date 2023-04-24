@@ -4,7 +4,9 @@ import tkinter.messagebox as messagebox
 import os
 import json
 import tkinter.ttk as ttk
+import shelve
 
+global usrname
 rootWn = tkinter.Tk()
 def FTRConfigSettings(path, data: str=None, prepCodeBool=False, prepCode=None) -> tuple:
     if prepCodeBool: exec(prepCode)
@@ -25,16 +27,16 @@ def FTRConfigSettings(path, data: str=None, prepCodeBool=False, prepCode=None) -
             FTR_write_config.write(data)
             config = data.splitlines()
     return config
-THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings(os.path.join(os.getcwd(), "theme_config.txt"), "Black\nWhite")
+THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
 def showDescription(e=None):
     def uninstallProgram(e=None):
         try:
-            with open(f"ProgramFiles/{userNo.get()}/APPS_LIST.txt", "wr") as uninstallProgram:
+            with open(f"ProgramFiles/{usrname}/APPS_LIST.txt", "wr") as uninstallProgram:
                 prevProgramList = str(uninstallProgram.read()).split("\n")
                 prevProgramList.pop(prevProgramList.index(item))
                 newProgramList = "".join(app for app in prevProgramList)
                 uninstallProgram.write(newProgramList)
-            with open(f"ProgramFiles/{userNo.get()}/APPS_COMMAND_LIST.txt", "wr") as uninstallProgramC:
+            with open(f"ProgramFiles/{usrname}/APPS_COMMAND_LIST.txt", "wr") as uninstallProgramC:
                 prevProgramList = str(uninstallProgramC.read()).split("\n")
                 prevProgramList.pop(prevProgramList.index(item))
                 newProgramList = "".join(app for app in prevProgramList)
@@ -53,15 +55,16 @@ def showDescription(e=None):
     wn = tkinter.Toplevel(background=THEME_WINDOW_BG)
     item = str(externalAppsList.item(externalAppsList.focus(), 'values')[0])
     tkinter.Label(wn, text=appsList[item][0], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).pack()
-    if item not in FTRConfigSettings(f"ProgramFiles/{userNo.get()}/APPS_LIST.txt", ""):
+    if item not in FTRConfigSettings(f"ProgramFiles/{usrname}/APPS_LIST.txt", ""):
         tkinter.Button(wn, text="Install", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=installProgram).pack()
     else:
         tkinter.Button(wn, text="Uninstall", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=uninstallProgram).pack()
     wn.mainloop()
-def main():
+def main(username, notification):
+    global usrname
+    usrname = username
     global externalAppsList
     global appsList
-    global userNo
     try:
         appsList = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/softwareStoreApps.json", timeout=10)
         appsList = appsList.json()
@@ -75,12 +78,8 @@ def main():
             messagebox.showerror("Can't load local apps list!", f"Error: {PRB}")
         rootWn.configure(background=THEME_WINDOW_BG)
     rootWn.title("Software Store")
-    tkinter.Label(rootWn, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="User number-").grid(row=1, column=0)
-    userNo = tkinter.Entry(rootWn, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    userNo.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
-    userNo.grid(row=1, column=1)
     externalAppsList = ttk.Treeview(rootWn, style="Treeview")
-    externalAppsList.grid(row=2, column=0, sticky="w")
+    externalAppsList.grid(row=1, column=0, sticky="w")
     externalAppsList['column'] = "Apps"
     externalAppsList.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
     externalAppsList.column("Apps", anchor=tkinter.W, width=600)

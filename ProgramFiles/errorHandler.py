@@ -1,5 +1,5 @@
-import tkinter
-THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
+import tkinter, shelve
+THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
 returner_ASKYESNOCANCEL = "Job pend"
 returner_SHOWERROR = "Job pend"
 

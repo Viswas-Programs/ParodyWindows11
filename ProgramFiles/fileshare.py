@@ -176,7 +176,7 @@ def recieveFiles():
                             command=submit_form)
     submit.grid(row=3, column=0)
     recieve_files.mainloop()
-def main():
+def main(*args):
     global control_window
     control_window = tkinter.Tk()
     control_window.configure(background=THEME_WINDOW_BG)

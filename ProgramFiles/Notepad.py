@@ -1,6 +1,6 @@
 import tkinter
 from ProgramFiles.errorHandler import messagebox
-def main():
+def main(username, notifications):
     try:
         global root
         import ProgramFiles.Notepad_v3.notepadGUI as notepad

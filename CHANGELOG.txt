@@ -95,8 +95,12 @@ Bug Fixes ->
 -The app importer, if fails, now will show a error message, instead of doing nothing;
 	This was not the intentional behaviour, I developed this in 1.6 or smth, but the problem was that the File name was the same 	name as my folder name, so python took the file name instead (self-importing), and so, didn't give an error. Now it's fixed!
 
+v2.2 ->
+Features -> 
+-Added a new system and user config system that doesn't involve text files
+-Finally, now app names can be separated with spaces and names can involve capital letters! [But the app file itself should be fully lowercase no spaces if you're developing an app for this shell (which is unlikely)]
 
-
-
-
-
+Bug Fixes ->
+-Fixed a bug where if the auto recovery environment fails to load icons, it would be stuck in a black screen with no way of escape.
+  Now it has a fallback full screen command prompt that it defaults to when it can't load icons!
+-Fixed a bug with Update Manager

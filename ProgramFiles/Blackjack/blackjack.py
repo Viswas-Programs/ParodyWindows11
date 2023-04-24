@@ -89,9 +89,9 @@ def exitter():
     :return: None
     """
     from tkinter import messagebox
-    text = "Are you sure you want to corrupt the runtime of this game?\n" \
-           "Note that the code of the game won't be changed at all!"
-    warning = tkinter.messagebox.askokcancel("CAUTION!", text)
+    text = ("Are you sure you want to corrupt the runtime of this game?\n"
+           "Note that the code of the game won't be changed at all!")
+    warning = messagebox.askokcancel("CAUTION!", text)
     if warning:
         import random
         destroyer = ["function", "frame"]

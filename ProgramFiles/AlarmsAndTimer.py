@@ -47,7 +47,7 @@ def showAlarms(e=None):
     SHOWN_TIMER = False
     alarmFrame = tkinter.Frame(alarmWindow, background=THEME_WINDOW_BG)
     alarmFrame.grid(row=0, column=1)
-def main():
+def main(*args):
     global alarmWindow
     global sidebar
     alarmWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
