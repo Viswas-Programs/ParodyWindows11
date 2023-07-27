@@ -14,10 +14,10 @@ import typing
 import socket
 try:
     import requests
+    from cryptography.fernet import Fernet
 except Exception as EXP: messagebox.showerror("Can't import update modules!!", f"PROBLEM OCCURED. \n {EXP}")
 import zipfile
 from io import BytesIO
-from cryptography.fernet import Fernet
 
 MSG_SHOWN = False
 if platform.system() == "Windows":

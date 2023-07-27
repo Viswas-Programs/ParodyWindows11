@@ -179,12 +179,32 @@ class GUIButtonCommand(object):
             Settings()
         
     def currentTime(self):
-        cr_time = time.strftime("%H:%M:%S %p")
-        clock = tkinter.Label(ROOT_WINDOW, text=cr_time, background=THEME_WINDOW_BG,
-                                foreground=THEME_FOREGROUND)
-        clock.after(1000, self.currentTime)
-        clock.grid(row=0, column=2, sticky="ne")
+        global clock
+        global ClockRepeatID
+        print(USER_CONFIG["CLOCK-WIDGET"])
+        if USER_CONFIG["CLOCK-WIDGET"] == 0:
+            def recurringClockFunction(e=None):
+                global ClockRepeatID
+                cr_time = time.strftime("%H:%M:%S %p")
+                clock = tkinter.Label(ROOT_WINDOW, text=cr_time, background=THEME_WINDOW_BG,
+                                        foreground=THEME_FOREGROUND)
+                ClockRepeatID = clock.after(1000, recurringClockFunction)
+                clock.grid(row=0, column=2, sticky="ne")
+            USER_CONFIG["CLOCK-WIDGET"] = 1
+            recurringClockFunction()
 
+        else:
+            try: 
+               cr_time="NULL"
+               print("Made time NULL")
+               clock.after_cancel(ClockRepeatID)
+               print("Cancelled the recurring tasks")
+               clock.destroy()
+               print("Destroyed the clock widget")
+               USER_CONFIG["CLOCK-WIDGET"] = 0
+               print("Made the boolean false!")
+            except Exception as E:
+                messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}")
     def pinApps(self, appToPin, writeto=True):
         global appsFrame
         self.TASKBAR_ICON_COUNT += 1
@@ -221,8 +241,8 @@ class GUIButtonCommand(object):
                 r += 1
                 if len(PINNED_APPS) == 1 or len(PINNED_APPS) == 2:
                     i = 0
-                exec(f"{app} = tkinter.Button(pinItems, text='{app}', command=lambda: GuiInterfaceCommands.pinApps('{app}'),"
-                    f"background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)\n{app}.grid(row=r, column=0)")
+                exec(f"{app} = tkinter.Button(pinItems, text='{app}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.pinApps('{app}'),"
+                    f")\n{app}.grid(row=r, column=0)")
         taskbarSettingsWindow.mainloop()
 
     def popup(self, event=None, *args):
@@ -360,6 +380,7 @@ def main():
     global COMMAND_APPS_LIST
     SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
     USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
+
     APPS_LIST, COMMAND_APPS_LIST = USER_CONFIG["APPS"]
     THEME_WINDOW_BG, THEME_FOREGROUND = USER_CONFIG["THEME"]
     PINNED_APPS, PINNED_APPS_DESKTOP = USER_CONFIG["PINNED"]
@@ -383,7 +404,17 @@ def main():
     launcherComboBox['values'] = APPS_LIST
     launcherComboBox['state'] = "readonly"
     launcherComboBox.bind("<<ComboboxSelected>>", GuiInterfaceCommands.launchComboBoxEvent)
+    def recurringClockFunc():
+            global clock
+            global ClockRepeatID
+            cr_time = time.strftime("%H:%M:%S %p")
+            clock = tkinter.Label(ROOT_WINDOW, text=cr_time, background=THEME_WINDOW_BG,
+                                    foreground=THEME_FOREGROUND)
+    
+            ClockRepeatID = clock.after(1000, recurringClockFunc)
+            clock.grid(row=0, column=2, sticky="ne")
     launcherComboBox.grid(row=0, column=0, sticky="w")
+    if USER_CONFIG["CLOCK-WIDGET"] == 1: recurringClockFunc()
     appsFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, border=5)
     contextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     contextMenu.add_command(label="Taskbar settings", command=GuiInterfaceCommands.taskbarSettingsGUI)
