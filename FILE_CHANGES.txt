@@ -1,4 +1,3 @@
-Windows 11 INSTALLER.py
 Windows 11.py
 ProgramFiles.zip
 CHANGELOG.txt

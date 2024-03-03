@@ -113,3 +113,10 @@ Bug fixes ->
 -Fixed a bug with notepad with not checking the uncommon installed modules for crytography module
 
 Also for a note: this project is still active, just not developing it that active, but it will never die ;D. this update is like after 2 months or smth
+
+v2.3.5 -> 
+Features ->
+-New photo viewer app.
+
+Bug Fixes ->
+-Fixed crash bug when clock widget key is missing, now it'll skip if it's not there.

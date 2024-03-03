@@ -414,7 +414,9 @@ def main():
             ClockRepeatID = clock.after(1000, recurringClockFunc)
             clock.grid(row=0, column=2, sticky="ne")
     launcherComboBox.grid(row=0, column=0, sticky="w")
-    if USER_CONFIG["CLOCK-WIDGET"] == 1: recurringClockFunc()
+    try:
+        if USER_CONFIG["CLOCK-WIDGET"] == 1: recurringClockFunc()
+    except: pass
     appsFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, border=5)
     contextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     contextMenu.add_command(label="Taskbar settings", command=GuiInterfaceCommands.taskbarSettingsGUI)
@@ -759,7 +761,7 @@ if __name__ == "__main__":
                     print("User already exists, skipping user creation tasks...")
                 finally:
                     USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
-                USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore"]
+                USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer"]
                 USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
                 USER_CONFIG["THEME"] = [background, foreground]
                 SYS_CONFIG["THEME"] = ["Black", "White"] 
