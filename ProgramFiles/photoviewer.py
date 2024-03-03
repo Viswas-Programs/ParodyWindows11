@@ -20,6 +20,8 @@ def openFile(prevOrNext):
         FOLDER_MODE = False
         nextBtn.configure(state="disabled"); backBtn.configure(state='disabled')
         file1 = askopenfilename(title="Open an image file", filetypes=(("PNG Images", "*.png"), ("JPG Images", "*.jpg"), ("JPEG Images", "*.jpeg")))
+        root.lift()
+        root.focus_force()
     photo = tkinter.PhotoImage(file=file1, master=root)
     imageViewer.configure(image=photo)
     if prevOrNext: file1 += f" [CURRENT INDEX: {str(CURRENT_INDEX+1)}]"
@@ -30,6 +32,8 @@ def openFile(prevOrNext):
 def openFolder():
     global CURRENT_INDEX, IMAGES, folder, FOLDER_MODE
     folder = askdirectory(title="Open a folder")
+    root.lift()
+    root.focus_force()
     files = os.listdir(folder)
     IMAGES = []
     CURRENT_INDEX = 0
