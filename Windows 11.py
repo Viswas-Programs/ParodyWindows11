@@ -751,12 +751,17 @@ if __name__ == "__main__":
                 safeMode()
             elif "-config" in arguements:
                 username = input("Enter the username to create first run settings: ")
+                password = input("Enter your user's password")
                 foreground = input("Enter your user's preffered foreground colour: ")
                 background = input("Enter your user's preffered background colour: ")
+                userNumber = input("Enter your user's wanted user number (can be any number)")
                 import shelve
                 SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
                 try:
                     os.mkdir(f"ProgramFiles/{username}")
+                    with open(f"ProgramFiles/accConfiguration{userNumber}", "r") as WRITE:
+                        WRITE.write(f"{username}\n{password}")
+
                 except Exception:
                     print("User already exists, skipping user creation tasks...")
                 finally:
