@@ -29,9 +29,12 @@ def on_closing(event=None):
     try:
         my_msg.set("{quit}")
         send()
+        client_socket.close()
     except Exception as PROBLEM:
-        messagebox.showerror("Program Can't Close!", f"<<DEBUG: {PROBLEM}>>\nThe chatter app cannot close the normal way (ie, saying 'leaving chat' automatically) due to error\nSo, program is force quitting... ")
+        messagebox.showerror("Program Can't Close!", f"<<DEBUG: {PROBLEM}>>\nThe chatter app cannot close the normal way (ie, saying 'leaving chat' automatically) due to error\nSo, program is force quitting... ", top, quitOnResponse=True)
+    finally:
         top.destroy()
+
 def configureServer(event=None):
     def configureS(e=None):
         global HOST

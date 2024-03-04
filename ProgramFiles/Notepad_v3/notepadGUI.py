@@ -8,7 +8,7 @@ import platform
 import shelve
 import tkinter
 from tkinter import filedialog, ttk, font, colorchooser
-from tkinter import messagebox
+from ProgramFiles.errorHandler import messagebox
 import ProgramFiles.Notepad_v3.syntax_checker as syntax_checker
 import typing
 import socket
@@ -147,7 +147,7 @@ class NotepadRun(object):
             version, branch, a = str(self.UPDATER_FILE.content.decode(encoding='utf-8')).split("\n")
         except Exception: version = 3.3; branch = "STABLE"; 
         if float(version) > float(self.CURRENT_VERSION):
-            messagebox.showinfo("Update available!", f"Version {version} of Notepad is available to download! kindly download this update.\n", None)
+            messagebox.showinfo("Update available!", f"Version {version} of Notepad is available to download! kindly download this update.\n", self.root)
             self.update = tkinter.Label(self.root,
                                         text="An update is available!",
                                         background=self.THEME_WINDOW_BG,
@@ -203,8 +203,8 @@ class NotepadRun(object):
             subprocess.Popen(["python3", str(fullpath)])
             exit()
 
-        check = messagebox.askyesno('Reboot required!', 'Do you want to restart the program now, or '
-                                                        'later manually?')
+        check = messagebox.askyesnocancel('Reboot required!', 'Do you want to restart the program now, or '
+                                                        'later manually?', self.root)
         if check == 1:
             restart()
 
@@ -510,9 +510,9 @@ Never gonna run around and desert you""")
                             self.text.tag_configure('hide', elide=True)
                             self.saveTo.insert(1.0, filePath)
                         else:
-                            messagebox.showerror("Access denied", "The password is incorrect!", None)
+                            messagebox.showerror("Access denied", "The password is incorrect!", self.root)
                     else:
-                        messagebox.showerror("Access denied", "The username is incorrect!", None)
+                        messagebox.showerror("Access denied", "The username is incorrect!", self.root)
 
                 check.split()
                 index_no_usrname = check.find("usrname=")
@@ -564,11 +564,11 @@ Never gonna run around and desert you""")
                 print("No file selected")
             else:
                 messagebox.showerror("File not found!", "The selected file doesn't exist! so, we "
-                                                        "can't open it. reverted changes", None)
+                                                        "can't open it. reverted changes", self.root)
         except UnicodeDecodeError:
             messagebox.showerror("Cannot Open File",
                                  "This editor doesn't support this format! file"
-                                 "cannot be opened! No changes made!", None)
+                                 "cannot be opened! No changes made!", self.root)
 
     def addDoubleQuotes(self, event=None):
         """ add double quotes"""
@@ -592,7 +592,7 @@ Never gonna run around and desert you""")
             self.root.title("Notepad GUI v3.3")
         else:
             messagebox.showerror("File doesn't exist",
-                                 "The file you are trying to delete doesn't exist!", None)
+                                 "The file you are trying to delete doesn't exist!", self.root)
 
     def clear(self, event=None):
         """ clear text """
@@ -626,7 +626,7 @@ Never gonna run around and desert you""")
         finally:
             self.contextMenu.grab_release()
             if problem:
-                messagebox.showerror("Error", str(problem), None)
+                messagebox.showerror("Error", str(problem), self.root)
 
     def zoom_in(self, event=None):
         """ zoom in to the text!"""
@@ -839,7 +839,7 @@ Never gonna run around and desert you""")
                 """ submits the form to self._sendFiles()"""
                 self._sendFiles(ip_address.get(), port.get(), fileSelect)
             key = b'KEYKEYKEY123456123456'
-            messagebox.showinfo("Key", f"Key is {key}", None)
+            messagebox.showinfo("Key", f"Key is {key}", self.root)
             encryption = Fernet(key)
             send_file_gui = tkinter.Tk()
             send_file_gui.configure(background=self.THEME_WINDOW_BG,)
@@ -947,20 +947,18 @@ Never gonna run around and desert you""")
             alert = messagebox.askyesnocancel(
                 "Save the file?",
                 "This is an unsaved document. so do you wanna save em and, "
-                "close this?", )
-            print("CAME FROM ALERT")
-            print(type(alert))
-            if alert == True:
+                "close this?", self.root)
+            if alert == 1:
                 self.save()
                 self.root.destroy()
-            elif alert == False:
+            elif alert == 0:
                 self.root.destroy()
             else:
                 pass
         elif self.saved:
             self.root.destroy()
 
-    def _title_bar(self, window: tkinter.Tk or tkinter.Toplevel, mode_val:
+    def _title_bar(self, window, mode_val:
     typing.Literal[20, 0]):
         """
         MORE INFO:
@@ -982,7 +980,7 @@ Never gonna run around and desert you""")
             if not MSG_SHOWN:
                 messagebox.showinfo(f"Function not supported for "
                                      f"{platform.system()}!", "The Title-Bar changer function is not "
-                                     f"supported for {platform.system()}, the program will continue", None)
+                                     f"supported for {platform.system()}, the program will continue", self.root)
                 MSG_SHOWN = True
 
     def _sendFiles(self, sender_ip, port, file_path):
@@ -1013,7 +1011,7 @@ Never gonna run around and desert you""")
                 # we use sendall to assure transimission in busy networks
                 file_to_send = encryption.encrypt(bytes_read)
                 s.sendall(file_to_send)
-        messagebox.showinfo("Success", f"Connected and sent to {sender_ip}", None)
+        messagebox.showinfo("Success", f"Connected and sent to {sender_ip}", self.root)
 
         # close the socket
         s.close()
@@ -1033,7 +1031,7 @@ Never gonna run around and desert you""")
         client_socket, address = s.accept()
         # if below code is executed, that means the sender is connected
         print(f"[+] {address} is connected.")
-        messagebox.showinfo("Connection successful", f"{address} is connected to your computer")
+        messagebox.showinfo("Connection successful", f"{address} is connected to your computer", self.root)
         received = client_socket.recv(BUFFER_SIZE).decode()
         filename, filesize = received.split(SEPARATOR)
         # remove absolute path if there is
