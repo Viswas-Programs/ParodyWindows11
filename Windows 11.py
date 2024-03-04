@@ -527,12 +527,12 @@ def login():
     loginWindow.mainloop()
 
 def bsod(obj, supportCode) -> None:
-    text = f"A problem has occured on ParodyWin11 and has been shutdown to prevent further damage\n"\
-            "If this is the first time you're seeing this stop screen, please make sure you have proper configuration files"\
-            "in the right place.\n\nIf the problem still exists, please contact your administrator or have a "\
-            "look at this informative page on stop codes! (support link)\n\nSupport: \nhttps://github.com/Viswas-Programs/ParodyWindows11/wiki/STOP_CODES\n\n"\
-            f"Technical information: {obj} Failed to load properly (Improperly loaded!)\nSupport Code: {supportCode}\n"\
-            "Restarting in a moment..."
+    text = f"""A problem has occured on ParodyWin11 and has been shutdown to prevent further damage\n
+If this is the first time you're seeing this stop screen, please make sure you have proper configuration files 
+in the right place.\n\nIf the problem still exists, please contact your administrator or have a 
+look at this informative page on stop codes! (support link)\n\nSupport: \nhttps://github.com/Viswas-Programs/ParodyWindows11/wiki/STOP_CODES\n\n"\
+Technical information: {obj} Failed to load properly (Improperly loaded!)\nSupport Code: {supportCode}\n"
+Restarting in a moment..."""
     try:
         def restart():
             bsodWind.destroy()
