@@ -11,7 +11,6 @@ ProgramFiles/Icons/UpdateManager.png
 ProgramFiles/pinnedApps.txt
 ProgramFiles/update_config/LAST_UPDATE.txt
 ProgramFiles/update_config/VERSION.txt
-ProgramFiles/updateManager.py
 Icons/TEST.txt
 Icons/TEST.txt
 Icons/TEST.txt
@@ -72,14 +71,9 @@ ProgramFiles/Icons/CommandPrompt.png
 ProgramFiles/fileinspectorSETUP.py
 ProgramFiles/accConfiguration1.conf
 ProgramFiles/APPS_COMMAND_LST
-ProgramFiles/softwareStore.py
 ProgramFiles/fileinspectorSETUP.py
 ProgramFiles/APPS_LIST.txt
 __pycache__/syntax_checker.cpython-311.pyc
-Icons/repair.png
-Icons/info.png
-Icons/error.png
-Icons/continue.png
 ProgramFiles/__pycache__/BlackJack.cpython-311.pyc
 ProgramFiles/__pycache__/errorHandler.cpython-310.pyc
 ProgramFiles/__pycache__/errorHandler.cpython-311.pyc
@@ -89,8 +83,6 @@ ProgramFiles/Blackjack/__pycache__/blackjack.cpython-311.pyc
 ProgramFiles/Blackjack/__pycache__/functions_for_blackjack.cpython-311.pyc
 ProgramFiles/Notepad_v3/__pycache__/notepadGUI.cpython-311.pyc
 ProgramFiles/Notepad_v3/__pycache__/syntax_checker.cpython-311.pyc
-updateManager.py
-syntax_checker.py
 softwareStoreApps.json
 softwareStoreApps.json
 Documents/This is a test PDF VIEW MODE.pdf
@@ -123,3 +115,11 @@ ProgramFiles/Viswas/theme_config.txt
 /ProgramFiles/theme_config.txt
 /PW11.code-workspace
 /PW11.pyproj
+ProgramFiles/HeheBoi69420/USER_CONFIG.dir
+ProgramFiles/HeheBoi69420/USER_CONFIG.dat
+ProgramFiles/HeheBoi69420/USER_CONFIG.bak
+ProgramFiles/accConfiguration3.conf
+ProgramFiles/HeheBoi/USER_CONFIG.bak
+ProgramFiles/HeheBoi/USER_CONFIG.dat
+ProgramFiles/HeheBoi/USER_CONFIG.dir
+ProgramFiles/accConfiguration4.conf
