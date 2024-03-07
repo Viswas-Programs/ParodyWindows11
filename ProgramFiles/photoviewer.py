@@ -51,7 +51,7 @@ def aboutThis():
     theContent = tkinter.Label(aboutWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, 
                                text="""This is a basic photo viewer program created for an app in "ParodyWindows11"\n
 That's the creator's desktop shell / desktop UI like interface in Python. \n
-LAST UPDATED: 03/03/2024. Made by HeheBoi420 (discord aswell)""")
+LAST UPDATED: 04/03/2024. Made by HeheBoi420 (discord aswell)""")
     theContent.grid(row=0, column=0)
     aboutWindow.title("About Photo Viewer")
     aboutWindow.mainloop()

@@ -8,7 +8,11 @@ import tkinter.ttk as ttk
 import time
 from tkinter import colorchooser
 SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
-THEME_WINDOW_BG, THEME_FOREGROUND = SYS_CONFIG["THEME"]
+try:
+    THEME_WINDOW_BG, THEME_FOREGROUND = SYS_CONFIG["THEME"]
+except Exception:
+    THEME_WINDOW_BG = "Black"
+    THEME_FOREGROUND = "White"
 print("Starting OS...")
     
 def FTRConfigSettings(path, data: str=None, prepCodeBool=False, prepCode=None) -> tuple:
@@ -18,11 +22,9 @@ def FTRConfigSettings(path, data: str=None, prepCodeBool=False, prepCode=None) -
             # print(bytes(read_config.read(), encoding='utf-8').decode(encoding='utf-8') == "")
             read_config_out = read_config.read()
             if bytes(read_config_out, encoding='utf-8').decode(encoding='utf-8') == "":
-                print("in if")
                 with open(path, "w") as writeData: writeData.write(data)
                 updateRead =  open(path, "r")
                 read_config = updateRead
-                print("wrote data")
                 updateRead.close()
             config = read_config_out.splitlines()
     else:
@@ -65,36 +67,36 @@ class Notifications(object):
         self.NotificationsList, self.actions, self.TimeofNotification = [], [], []
 notification = Notifications()
 print("Starting up Notification Services...")
-class Settings():
-    def __init__(Settings):
+class settings():
+    def __init__(self):
         import psutil
-        Settings.SHOWN_HOMEPAGE = False
-        Settings.SHOWN_PERSONALIZATION = False
-        Settings.SHOWN_ADVANCED = False
-        Settings.SHOWN_APPSLIST = False
-        Settings.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
-        Settings.settingsWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
-        btnFrame = tkinter.Frame(Settings.settingsWindow, background=THEME_WINDOW_BG)
+        self.SHOWN_HOMEPAGE = False
+        self.SHOWN_PERSONALIZATION = False
+        self.SHOWN_ADVANCED = False
+        self.SHOWN_APPSLIST = False
+        self.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
+        self.settingsWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
+        btnFrame = tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
         btnFrame.grid(row=0, column=0)
-        homeBtn = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Home", command=Settings.homePage)
+        homeBtn = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Home", command=self.homePage)
         homeBtn.grid(row=0, column=0)
-        personalizeBtn = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Personalization", command=Settings.personalization)
+        personalizeBtn = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Personalization", command=self.personalization)
         personalizeBtn.grid(row=1, column=0)
-        Settings.setting = tkinter.Frame(Settings.settingsWindow, background=THEME_WINDOW_BG)
-        Settings.setting.grid(row=0, column=1)
-    def homePage(Settings):
-        if Settings.SHOWN_PERSONALIZATION or Settings.SHOWN_APPSLIST: Settings.setting.destroy()
-        Settings.setting =  tkinter.Frame(Settings.settingsWindow, background=THEME_WINDOW_BG)
-        Settings.setting.grid(row=0, column=1)
-        Settings.SHOWN_HOMEPAGE = True
-        infoText = f""" Windows 11 v2.0\nSystem RAM: {Settings.total_memory}\nBackground={THEME_WINDOW_BG}\n"""
+        self.setting = tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
+        self.setting.grid(row=0, column=1)
+    def homePage(self):
+        if self.SHOWN_PERSONALIZATION or self.SHOWN_APPSLIST: self.setting.destroy()
+        self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
+        self.setting.grid(row=0, column=1)
+        self.SHOWN_HOMEPAGE = True
+        infoText = f""" Windows 11 v2.3.5\nSystem RAM: {self.total_memory}\nBackground={THEME_WINDOW_BG}\n"""
         f"""Foreground={THEME_FOREGROUND}\n\nFor more info, please visit the respective categories! Thank you :)"""
-        a = tkinter.Label(Settings.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=infoText).grid(row=0, column=0)
-    def personalization(Settings):
+        a = tkinter.Label(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=infoText).grid(row=0, column=0)
+    def personalization(self):
         def changeBg():
             global children
             global THEME_WINDOW_BG
-            colorToUse = Settings.colorchooser.askcolor(title="Select background!")
+            colorToUse = colorchooser.askcolor(title="Select background!")
             THEME_WINDOW_BG = colorToUse[1]
             crBg.configure(text=f"Current Background = {THEME_WINDOW_BG}")
             if systemChangeTheme.get(): 
@@ -111,7 +113,7 @@ class Settings():
         def changeFg():
             global children
             global THEME_FOREGROUND
-            colorToUse = Settings.colorchooser.askcolor(title="Select foreground!")
+            colorToUse = self.colorchooser.askcolor(title="Select foreground!")
             THEME_FOREGROUND = colorToUse[1]
             crFg.configure(text=f"Current foreground = {THEME_FOREGROUND}")
             if systemChangeTheme.get(): 
@@ -123,20 +125,20 @@ class Settings():
                     ROOT_WINDOW.configure(background=THEME_WINDOW_BG,)
                 except Exception: pass
             ROOT_WINDOW.update()
-        if Settings.SHOWN_HOMEPAGE or Settings.SHOWN_ADVANCED or Settings.SHOWN_PERSONALIZATION: Settings.setting.destroy()
-        Settings.setting =  tkinter.Frame(Settings.settingsWindow, background=THEME_WINDOW_BG)
-        Settings.setting.grid(row=0, column=1)
-        crBg = tkinter.Label(Settings.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=f"Current Background = {THEME_WINDOW_BG}")
+        if self.SHOWN_HOMEPAGE or self.SHOWN_ADVANCED or self.SHOWN_PERSONALIZATION: self.setting.destroy()
+        self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
+        self.setting.grid(row=0, column=1)
+        crBg = tkinter.Label(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=f"Current Background = {THEME_WINDOW_BG}")
         crBg.grid(row=0, column=0)
-        changeBackground = tkinter.Button(Settings.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Change Background!", command=changeBg)
+        changeBackground = tkinter.Button(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Change Background!", command=changeBg)
         changeBackground.grid(row=0, column=1)
-        crFg = tkinter.Label(Settings.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=f"Current foreground = {THEME_FOREGROUND}")
+        crFg = tkinter.Label(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=f"Current foreground = {THEME_FOREGROUND}")
         crFg.grid(row=1, column=0)
-        changeForeground = tkinter.Button(Settings.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Changr foreground!", command=changeFg)
+        changeForeground = tkinter.Button(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Changr foreground!", command=changeFg)
         changeForeground.grid(row=1, column=1)
         ttk.Style().configure("TCheckbutton", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         systemChangeTheme = tkinter.IntVar()
-        applyToSystem = ttk.Checkbutton(Settings.setting, text="Also apply changes to system theme!", variable=systemChangeTheme)
+        applyToSystem = ttk.Checkbutton(self.setting, text="Also apply changes to system theme!", variable=systemChangeTheme)
         applyToSystem.grid(row=2, column=0)
 
 
@@ -176,7 +178,7 @@ class GUIButtonCommand(object):
         if Item != "Control Panel":
             self.launchItem(Item)
         else:
-            Settings()
+            settings()
         
     def currentTime(self):
         global clock
@@ -219,19 +221,19 @@ class GUIButtonCommand(object):
         exec(f"{appName}BTN.IMGREF = {appName}ICON")
         exec(f"{appName}BTN.grid(row=0, column={self.TASKBAR_ICON_COUNT})")
 
-    def taskbarSettingsGUI(self, e=None):
+    def taskbarselfGUI(self, e=None):
         global PINNED_APPS
         global GuiInterfaceCommands
-        taskbarSettingsWindow = tkinter.Toplevel()
-        taskbarSettingsWindow.configure(background=THEME_WINDOW_BG)
-        taskbarSettingsWindow.title("Taskbar Settings")
-        addWidgetsFrame = tkinter.LabelFrame(taskbarSettingsWindow, text="Add widgets", 
+        taskbarselfWindow = tkinter.Toplevel()
+        taskbarselfWindow.configure(background=THEME_WINDOW_BG)
+        taskbarselfWindow.title("Taskbar self")
+        addWidgetsFrame = tkinter.LabelFrame(taskbarselfWindow, text="Add widgets", 
                                             background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         addWidgetsFrame.grid(row=0, column=0)
         addClock = tkinter.Button(addWidgetsFrame, text="Clock", foreground=THEME_FOREGROUND,
                                     background=THEME_WINDOW_BG, command=self.currentTime)
         addClock.grid(row=0, column=0)
-        pinItems = tkinter.LabelFrame(taskbarSettingsWindow, text="Pin items",
+        pinItems = tkinter.LabelFrame(taskbarselfWindow, text="Pin items",
                                         background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         pinItems.grid(row=1, column=0)
         r = -1
@@ -243,7 +245,7 @@ class GUIButtonCommand(object):
                     i = 0
                 exec(f"{app} = tkinter.Button(pinItems, text='{app}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.pinApps('{app}'),"
                     f")\n{app}.grid(row=r, column=0)")
-        taskbarSettingsWindow.mainloop()
+        taskbarselfWindow.mainloop()
 
     def popup(self, event=None, *args):
         """ the context menu popup"""
@@ -325,7 +327,7 @@ class GUIButtonCommand(object):
                     for child in children:
                         child.destroy()
                 finally:
-                    os.system("""python3 "Windows 11.py" -safemode """)
+                    os.system("""python "Windows 11.py" -safemode """)
                     exit()
             else:
                 try:
@@ -333,7 +335,7 @@ class GUIButtonCommand(object):
                     for child in children:
                         child.destroy()
                 finally:
-                    os.system(""" python3 "Windows 11.py" """)
+                    os.system(""" python "Windows 11.py" """)
                     exit()
 
         shutdownWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
@@ -359,7 +361,7 @@ print("Loaded GUI Option Modules...")
 def main():
     print("Loaded operating system!")
     global THEME_WINDOW_BG, THEME_FOREGROUND
-    # THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings(f"ProgramFiles/{username}/theme_config.txt", "Black\nWhite")
+    # THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigself(f"ProgramFiles/{username}/theme_config.txt", "Black\nWhite")
     global children
     def safeModePREPTask(e=None):
         for child in children:
@@ -419,7 +421,7 @@ def main():
     except: pass
     appsFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, border=5)
     contextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    contextMenu.add_command(label="Taskbar settings", command=GuiInterfaceCommands.taskbarSettingsGUI)
+    contextMenu.add_command(label="Taskbar settings", command=GuiInterfaceCommands.taskbarselfGUI)
     shutDown = tkinter.Button(appsFrame, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
                                 command=GuiInterfaceCommands.shutdownMenu)
     shutDown.grid(row=0, column=0, padx=5)
@@ -537,7 +539,7 @@ Restarting in a moment..."""
         def restart():
             bsodWind.destroy()
             time.sleep(5)
-            os.system(""" python3 "Windows 11.py" """)
+            os.system(""" python "Windows 11.py" """)
             exit()
         try:
             SYS_CONFIG["CBSRESTARTATTEMPT"] += 1
@@ -652,7 +654,7 @@ def safeMode(forceNoARENV=False) -> None:
         print("=" * int(os.get_terminal_size()[0]))
         print("CurrentWorkingDirectory: ", os.getcwd())
         appName = input("Enter the file name path to load!")
-        os.system(f"python3 {appName} ")
+        os.system(f"python {appName} ")
         print("=" * int(os.get_terminal_size()[0]))
     def a4(): print("=" * int(os.get_terminal_size()[0])); print("Shutting down...") ; sys._exit(0)
     
@@ -664,10 +666,10 @@ def safeMode(forceNoARENV=False) -> None:
                     "Enter your option >_")
         if int(opt) == 1: 
             print("=" * int(os.get_terminal_size()[0]))
-            os.system("""python3 "Windows 11.py" -safemode """)
+            os.system("""python "Windows 11.py" -safemode """)
             exit()
         else: 
-            os.system("""python3 "Windows 11.py" """)
+            os.system("""python "Windows 11.py" """)
             print("=" * int(os.get_terminal_size()[0]))
             exit()
     def a6():
@@ -711,9 +713,9 @@ def safeMode(forceNoARENV=False) -> None:
             cmdInstance = cmd.cmdCommands(text, yourCommand, root)
             yourCommand.focus()
             yourCommand.bind("<Return>", sendCommand)
-            cmdInstance.showMsg("\nYou're in a safe mode back up CLI mode. This is a fullscreen Command Prompt"
-                                "\nThe system failed to boot. if you can diagnose & repair the system, you can use the available commands\n"
-                                "Or else, type in the command 'restart' and your system will reboot")
+            cmdInstance.showMsg("""\nYou're in a safe mode back up CLI mode. This is a fullscreen Command Prompt
+\nThe system failed to boot. if you can diagnose & repair the system, you can use the available commands\n
+Or else, type in the command 'restart' and your system will reboot""")
         except Exception as PRB:
             print(f"Cannot launch safe mode UI, going full CLI!\n PRB: {PRB}")
             time.sleep(5)
@@ -728,14 +730,14 @@ def safeMode(forceNoARENV=False) -> None:
                 while True:
                     print("Safe mode activated!\n=-=-=-=WELCOME=-=-=-=")
                     while True:
-                        userInput1 = int(input("1. Reset your system\n"
-                                        "2. Continue to boot to main\n"
-                                        "3. Launch an app\n"
-                                        "4. Shutdown the system\n"
-                                        "5. Restart the system\n"
-                                        "6. Enable networking\n"
-                                        "7. Disable networking\n"
-                                        "Enter your option >_"))
+                        userInput1 = int(input("""1. Reset your system\n
+2. Continue to boot to main\n
+3. Launch an app\n
+4. Shutdown the system\n
+5. Restart the system\n
+6. Enable networking\n
+7. Disable networking\n
+  Enter your option >_"""))
                         if userInput1 in range(1, 8):
                             exec(f"a{userInput1}()")
     finally: 
@@ -758,15 +760,16 @@ if __name__ == "__main__":
                 import shelve
                 SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
                 try:
-                    os.mkdir(f"ProgramFiles/{username}")
-                    with open(f"ProgramFiles/accConfiguration{userNumber}", "r") as WRITE:
+                    with open(f"ProgramFiles/accConfiguration{userNumber}", "w") as WRITE:
                         WRITE.write(f"{username}\n{password}")
+                    os.mkdir(f"ProgramFiles/{username}")
+                    
 
                 except Exception:
                     print("User already exists, skipping user creation tasks...")
                 finally:
                     USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
-                USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer"]
+                USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel"]
                 USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
                 USER_CONFIG["THEME"] = [background, foreground]
                 SYS_CONFIG["THEME"] = ["Black", "White"] 
@@ -796,6 +799,11 @@ if __name__ == "__main__":
                     import tkinter
                     from ProgramFiles.errorHandler import messagebox
                     import requests
+                    if SYS_CONFIG["CBSRESTARTATTEMPT"] > 3:
+                        try: 
+                            autoRecoveryEnv()
+                        except:
+                            safeMode()
                 except Exception as PROBLEM:
                     try:
                         import platform

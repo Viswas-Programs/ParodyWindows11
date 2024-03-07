@@ -120,3 +120,9 @@ Features ->
 
 Bug Fixes ->
 -Fixed crash bug when clock widget key is missing, now it'll skip if it's not there.
+
+v2.3.7 ->
+Bug Fixes ->
+-Fixed bugs with Notepad not using special messagebox handler
+-error handler is now fixed, messageboxes work!
+-[CMD]To actually create a user when used the create user commands

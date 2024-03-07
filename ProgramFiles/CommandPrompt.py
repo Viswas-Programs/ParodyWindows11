@@ -56,6 +56,10 @@ class cmdCommands(object):
                 finally:
                     with open(f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf", "w") as writeConfig:
                         writeConfig.write(f"{self.getParams(2, ' ').lstrip('-')}\n{self.getParams(3, ' ').lstrip('-')}")
+                    USER_CONFIG = shelve.open(f"ProgramFiles/{self.getParams(2, ' ').lstrip('-')}")
+                    USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer"]
+                    USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
+                    USER_CONFIG.close()
                     self.clearStdIn()
                     self.showMsg("\nUser created successfully!")
             else:
@@ -63,7 +67,7 @@ class cmdCommands(object):
                 for dirpath, dirnames, filenames in os.walk("ProgramFiles"):
                     for file in Path(dirpath).glob("accConfiguration*.conf"):
                         with open(file,) as showUsers:
-                            self.showMsg(f"\n {showUsers.readlines()[0]} ")
+                            self.showMsg(f"\n-> {showUsers.readlines()[0]} ")
         else:
             self.showMsg("\nPlease enable administrator before editing or creating a new user!")
     def administrator(self):
