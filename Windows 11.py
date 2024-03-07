@@ -760,7 +760,7 @@ if __name__ == "__main__":
                 import shelve
                 SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
                 try:
-                    with open(f"ProgramFiles/accConfiguration{userNumber}", "w") as WRITE:
+                    with open(f"ProgramFiles/accConfiguration{userNumber}.conf", "w") as WRITE:
                         WRITE.write(f"{username}\n{password}")
                     os.mkdir(f"ProgramFiles/{username}")
                     
