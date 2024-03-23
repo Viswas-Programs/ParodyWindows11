@@ -183,7 +183,6 @@ class GUIButtonCommand(object):
     def currentTime(self):
         global clock
         global ClockRepeatID
-        print(USER_CONFIG["CLOCK-WIDGET"])
         if USER_CONFIG["CLOCK-WIDGET"] == 0:
             def recurringClockFunction(e=None):
                 global ClockRepeatID
@@ -216,7 +215,8 @@ class GUIButtonCommand(object):
         if writeto:
             with open(f"ProgramFiles/{username}/pinnedAppsTaskbar.txt", "a") as pinnedApps:
                 pinnedApps.write(f"\n{appToPin}")
-        exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png').subsample(2, 2)")
+        appName.replace(" ", "")
+        exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png', master=ROOT_WINDOW).subsample(2, 2)")
         exec(f"{appName}BTN = tkinter.Button(appsFrame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GUIButtonCommand.launchItem(GUIButtonCommand, f'{appToPin}'))")
         exec(f"{appName}BTN.IMGREF = {appName}ICON")
         exec(f"{appName}BTN.grid(row=0, column={self.TASKBAR_ICON_COUNT})")
@@ -272,6 +272,7 @@ class GUIButtonCommand(object):
             if writeto:
                 with open(f"ProgramFiles/{username}/pinnedAppsDesktop.txt", "a") as updateDesktopIcons:
                     updateDesktopIcons.write(f"\n{appName}")
+            appName = appName.replace(" ", "")
             exec(f"{appName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
             exec(f"{appName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
             ROW_COUNT_DESKTOP_ICONS += 1
@@ -431,14 +432,6 @@ def main():
     notificationsButton.grid(row=0, column=3, sticky="ne", padx=5)
     desktopFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, border=15)
     desktopContextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    for app in PINNED_APPS_DESKTOP:
-        try:
-            GuiInterfaceCommands.createAppIcon(f"{app}", f"{app}", False)
-        except Exception: pass
-    for app in PINNED_APPS:
-        try:
-            GuiInterfaceCommands.pinApps(f"{app}", False)
-        except Exception: pass
     desktopContextMenu.add_command(label="Refresh", command=GuiInterfaceCommands.refreshDesktop)
     desktopContextMenu.add_command(label="Add new icon", command=GuiInterfaceCommands.addNewIcon)
     desktopFrame.bind("<Button-3>", popup)
@@ -446,6 +439,14 @@ def main():
     ROOT_WINDOW.attributes('-fullscreen', True)
     ROOT_WINDOW.bind("<Escape>", safeModePREPTask)
     children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
+    for app in PINNED_APPS_DESKTOP:
+        try:
+            GuiInterfaceCommands.createAppIcon(f"{app}", f"{app}", False)
+        except Exception as EXP: messagebox.showerror("Error pinning app", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=ROOT_WINDOW)
+    for app in PINNED_APPS:
+        try:
+            GuiInterfaceCommands.pinApps(f"{app}", False)
+        except Exception: pass
     ROOT_WINDOW.mainloop()
     SYS_CONFIG.close()
     USER_CONFIG.close()
@@ -532,8 +533,8 @@ def bsod(obj, supportCode) -> None:
     text = f"""A problem has occured on ParodyWin11 and has been shutdown to prevent further damage\n
 If this is the first time you're seeing this stop screen, please make sure you have proper configuration files 
 in the right place.\n\nIf the problem still exists, please contact your administrator or have a 
-look at this informative page on stop codes! (support link)\n\nSupport: \nhttps://github.com/Viswas-Programs/ParodyWindows11/wiki/STOP_CODES\n\n"\
-Technical information: {obj} Failed to load properly (Improperly loaded!)\nSupport Code: {supportCode}\n"
+look at this informative page on stop codes! (support link)\n\nSupport: \nhttps://github.com/Viswas-Programs/ParodyWindows11/wiki/STOP_CODES\n\n
+Technical information: {obj} Failed to load properly (Improperly loaded!)\nSupport Code: {supportCode}\n
 Restarting in a moment..."""
     try:
         def restart():
