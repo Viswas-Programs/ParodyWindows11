@@ -2,9 +2,18 @@ import tkinter
 from tkinter import ttk
 import os
 from ProgramFiles.errorHandler import messagebox
-import ProgramFiles.fileRouters as fileRouters 
 THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
+RETURN_VALUE = None
+PROCESS_RUNNING = False
 def main(*args):
+    global PROCESS_RUNNING
+    if args[0] == "file-mode":
+        actualFileTypes = []
+        for item in args[2]:
+            extension: str = item[1]
+            extension = extension.split(".")[-1]
+            actualFileTypes.append(extension)
+
     try:
         PROCESS_RUNNING = True
         global THEME_FOREGROUND
@@ -33,32 +42,59 @@ def main(*args):
             for i in fileView.get_children():
                 fileView.delete(i)
             for file in range(len(filesInFolder)):
-                fileView.configure(style="Treeview")
-                fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
+                if (args[0] and args[0] == "folder-mode"):
+                    if os.path.isdir(os.path.join(filepath, filesInFolder[file])):
+                        fileView.configure(style="Treeview")
+                        fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
+                else:
+                    fileView.configure(style="Treeview")
+                    print(actualFileTypes, filesInFolder[file].split(".")[-1])
+                    if (os.path.isdir(os.path.join(filepath, filesInFolder[file]))) or  filesInFolder[file].split(".")[-1] in actualFileTypes:
+                        fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
         def openFileOrFolder(*event):
             nonlocal filepath
+            global RETURN_VALUE
             selectedFileIndex = fileView.focus()
             selectedFile = fileView.item(selectedFileIndex, 'values')[0]
             if os.path.isdir(f"{os.path.join(filepath, selectedFile)}"):
                 filepath = os.path.join(filepath, selectedFile)
                 lookUpFiles(filepath)
             else:
-                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], args[-1])
+                RETURN_VALUE = os.path.join(filepath, selectedFile)
+                fileManagerWindow.quit()
+                return RETURN_VALUE
+        def selectFolder(*event):
+            global RETURN_VALUE
+            print("function called", type(fileView.focus()))
+            if len(fileView.focus()) == 0:
+                RETURN_VALUE = filepath
+                print(RETURN_VALUE)
+                fileManagerWindow.quit()
+                return RETURN_VALUE
+            else: 
+                selectedFolderIndx = fileView.focus()
+                selectedFolder = fileView.item(selectedFolderIndx, 'values')[0]
+                RETURN_VALUE = filepath + "/" +  selectedFolder
+                fileManagerWindow.quit()
+                return RETURN_VALUE      
 
         def goBackFolder(path: str):  
             if "\\" in path:
                 path = path.replace("\\", "/")
+                print(path)
             folderSplit = path.split("/")
             if folderSplit[-1] == '':
                 folderSplit.pop(-1)
             folderSplit.pop(-1)
+            print(folderSplit)
             path = str().join(f"{folder}/" for folder in folderSplit)
+            print(path)
             addressBar.delete(0, tkinter.END)
             addressBar.insert(tkinter.END, path)
             lookUpFiles(path=path)
         global fileManagerWindow
         fileManagerWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
-        fileManagerWindow.title("File Manager")
+        if (args[0] and args[0] == "folder-mode"):  fileManagerWindow.title(args[1])
         ttk.Style(fileManagerWindow).configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         mainFrame = tkinter.Frame(fileManagerWindow, background=THEME_WINDOW_BG)
         mainFrame.grid(row=0, column=0)
@@ -74,6 +110,9 @@ def main(*args):
         commandBar = tkinter.Frame(mainFrame, background=THEME_WINDOW_BG)
         newFolderBtn = tkinter.Button(commandBar, text="New Folder!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=newFolder)
         newFolderBtn.grid(row=0, column=0)
+        if (args[0] == "folder-mode"):
+            selectFolderBtn = tkinter.Button(commandBar, text="Select Folder", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=selectFolder)
+            selectFolderBtn.grid(row=0, column=1)
         # driveSelection = ttk.Treeview(mainFrame, style="Treeview")
         # driveSelection.grid(row=0, column=0, sticky="w")
         # driveSelection['column'] = "Drives"
@@ -89,13 +128,18 @@ def main(*args):
             fileView.delete(selectedFileIndex)
         def popup(event=None, *args):
             """ the context menu popup"""
+            print("called popup() function")
             problem = None
             try:
                 files.tk_popup(event.x_root, event.y_root, 0)
             except Exception as PROBLEM:
-                messagebox.showerror("Error in right click menu", f"Error in right click menu. \nPROB:{PROBLEM}")
+                problem = PROBLEM
+                print(problem)
             finally:
                 files.grab_release()
+        files = tkinter.Menu(mainFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+        files.add_command(label="Open", command=openFileOrFolder)
+        files.add_command(label="Delete", command=delete)
         commandBar.grid(row=1, column=0)
         fileView = ttk.Treeview(mainFrame, style="Treeview")
         fileView.grid(row=2, column=0, sticky="w")
@@ -106,23 +150,18 @@ def main(*args):
         fileView.bind("<Double-1>", openFileOrFolder)
         fileView.bind("<Button-3>", popup)
         fileView.configure(style="Treeview")
-        files = tkinter.Menu(mainFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-        files.add_command(label="Open", command=openFileOrFolder)
-        files.add_command(label="Open With", command=lambda: fileRouters.openWithSettings(fileManagerWindow, str(os.path.join(filepath, fileView.item(fileView.focus(), 'values')[0])).replace("\\", "/"), args[-1], args[0], args[1] ))
-        files.add_command(label="Delete", command=delete)
-        fileManagerWindow.protocol("WM_DELETE_WINDOW", fileManagerWindow.quit)
-        lookUpFiles(addressBar.get())
         fileManagerWindow.mainloop()
         fileManagerWindow.destroy()
+        print("Return Val: " + RETURN_VALUE)
         PROCESS_RUNNING = False
+        return RETURN_VALUE
     except Exception as exp:
         messagebox.showerror("Can't load app!", f"App can't run! please re-install the app!\nPROB:{exp}")
-    finally: 
-        return True
 def focusIn(): fileManagerWindow.state(newstate='normal'); 
 def focusOut(): fileManagerWindow.state(newstate='iconic'); 
-def endTask():
-    fileManagerWindow.destroy()
-    return True
+def askdirectory(title="Open a Folder"):
+    return main("folder-mode", title)
+def askopenfilename(title="Open a File", filetypes: tuple = (("All files", "*.*"))):
+    return main("file-mode", title, filetypes)
 if __name__ == "__main__":
     main()

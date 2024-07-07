@@ -11,12 +11,13 @@ class cmdCommands(object):
         self.stdout = stdout
         self.stdin = stdin
         self.LINE_COUNT = 0.0
-        self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator", "startFile", "mk", "rm", "cmd"]
+        self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator", "startFile", "mk", "rm", "cmd", "sendToRootTerminal"]
         self.INPUTTED_COMMANDS_LIST = []
         self.COMMAND_NOT_FOUND = "\nThe following command doesn't exist!"
         self.showMsg(f"Welcome to ParodyWindows11 Command Interpreter (OS Version 2.2)\nCurrent Working Directory: {os.getcwd()}\n>")
         try: self.ROOT.bind("<Up>", self.upArrowBind); self.ROOT.bind("<Down>", self.downArrowBind)
         except Exception as exp: print(f' {exp}')
+        return None
     def cmd(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         if self.stdin.get().split(' ')[1].lstrip("-") == "restart":
@@ -29,9 +30,9 @@ class cmdCommands(object):
                     self.launchCmd()
                 elif not self.ACCEPT_COMMANDS: self.showMsg("\nThe command prompt is busy"); self.clearStdIn()
                 else: self.showMsg(self.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
-            ROOT = tkinter.Tk()
-            ROOT.configure(background=THEME_WINDOW_BG)
-            ROOT.title("Command Interpreter")
+            self.ROOT = tkinter.Tk()
+            self.ROOT.configure(background=THEME_WINDOW_BG)
+            self.ROOT.title("Command Interpreter")
             text = tkinter.Text(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=120)
             text.grid(row=0, column=0)
             text.insert(tkinter.END, f"Welcome to ParodyWindows 11 Command Interpreter (OS Version 2.2)\nCurrent Working Directory: {os.getcwd()}")
@@ -57,8 +58,11 @@ class cmdCommands(object):
                     with open(f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf", "w") as writeConfig:
                         writeConfig.write(f"{self.getParams(2, ' ').lstrip('-')}\n{self.getParams(3, ' ').lstrip('-')}")
                     USER_CONFIG = shelve.open(f"ProgramFiles/{self.getParams(2, ' ').lstrip('-')}")
-                    USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer"]
+                    USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel"]
                     USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
+                    USER_CONFIG["THEME"] = ["Black", "White"]
+                    USER_CONFIG["CLOCK-WIDGET"] = 0
+                    USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
                     USER_CONFIG.close()
                     self.clearStdIn()
                     self.showMsg("\nUser created successfully!")
@@ -231,6 +235,13 @@ class cmdCommands(object):
         self.clearStdIn()
     def getParams(self, paramToGet: int, includeParamSeparator: str) -> str:
         return self.stdin.get().split(' ')[paramToGet].lstrip(includeParamSeparator)
+    def sendToRootTerminal(self):
+        if self.ADMINISTRATOR: 
+            self.showMsg("\nRUNNING COMMAND...")
+            os.system(self.stdin.get().replace("sendToRootTerminal -", ""))
+            self.showMsg("\nCOMMAND SUCCESFULLY RAN!")
+        else: 
+            self.showMsg("\nYou don't have permissions to run this command! Enable Administrator Mode and try again.")
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
 def main(*args): 
     global ROOT
@@ -245,6 +256,7 @@ def main(*args):
     ROOT = tkinter.Tk()
     ROOT.configure(background=THEME_WINDOW_BG)
     ROOT.title("Command Interpreter")
+    ROOT.protocol("WM_DELETE_WINDOW", ROOT.quit)
     text = tkinter.Text(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
     text.grid(row=0, column=0)
     yourCommand = tkinter.Entry(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -254,9 +266,14 @@ def main(*args):
     yourCommand.focus()
     yourCommand.bind("<Return>", sendCommand)
     ROOT.mainloop()
+    ROOT.destroy()
+    return True
 
 
 def focusIn(): ROOT.state(newstate='normal'); 
 def focusOut(): ROOT.state(newstate='iconic'); 
+def endTask():
+    ROOT.destroy()
+    return True
 if __name__ == "__main__":
     main()

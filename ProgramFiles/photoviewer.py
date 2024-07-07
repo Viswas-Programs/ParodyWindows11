@@ -1,8 +1,12 @@
 import tkinter
 import os
-from tkinter.filedialog import askopenfilename, askdirectory
+from ProgramFiles.fileaskhandlers import askopenfilename, askdirectory
+import ProgramFiles.errorHandler as ERH
 THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
 FOLDER_MODE = False
+SET_MS = 5000
+SLIDESHOW_MODE = False
+
 def openFile(prevOrNext):
     global FOLDER_MODE, CURRENT_INDEX
     global photo
@@ -28,10 +32,17 @@ def openFile(prevOrNext):
     imageName.configure(text=file1)
     imageViewer.image = photo
     root.image = photo
+def forceOpenFile(fileName: str):
+    photo = tkinter.PhotoImage(file=fileName, master=root)
+    imageViewer.configure(image=photo)
+    imageName.configure(text=fileName)
+    imageViewer.image = photo
+    root.image = photo
 
 def openFolder():
     global CURRENT_INDEX, IMAGES, folder, FOLDER_MODE
     folder = askdirectory(title="Open a folder")
+    print(folder)
     root.lift()
     root.focus_force()
     files = os.listdir(folder)
@@ -55,7 +66,43 @@ LAST UPDATED: 04/03/2024. Made by HeheBoi420 (discord aswell)""")
     theContent.grid(row=0, column=0)
     aboutWindow.title("About Photo Viewer")
     aboutWindow.mainloop()
-def main(*args):
+
+def changeMsSlideShow():
+    def setSlideshowMode():
+        global SET_MS, SLIDESHOW_MODE
+        SLIDESHOW_MODE = not SLIDESHOW_MODE
+        status.configure(text=f"Status: {SLIDESHOW_MODE}")
+        labelText()
+    def setSlideshowMS():
+        global SET_MS, SLIDESHOW_MODE
+        try:
+            if int(ms.get()) > 0:
+                SET_MS = int(ms.get())
+                print(SET_MS, SLIDESHOW_MODE)
+                ERH.messagebox.showinfo("Success", "Succesfully changed slideshow delay time. ", editWindow, quitOnResponse=True)
+            else:
+                ERH.messagebox.showerror("Error!", "The provided delay is less than or equal to 0!", editWindow)
+        except Exception as EXP:
+            ERH.messagebox.showerror("Error!", f"Error occured while setting delay! \n Problem: \n{EXP}")
+
+    editWindow = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
+    status = tkinter.Label(editWindow, text=f"Status: {SLIDESHOW_MODE}", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    status.grid(row=0, column=0)
+    lblText = ""
+    def labelText():
+        nonlocal lblText
+        if SLIDESHOW_MODE: lblText = "Disable slide show mode"
+        else: lblText = "Enable slide show mode"
+        return lblText
+    changeStatus = tkinter.Button(editWindow, text=labelText(), background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=setSlideshowMode)
+    changeStatus.grid(row=0, column=1)
+    ms = tkinter.Entry(editWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    ms.grid(row=1, column=0)
+    setMs = tkinter.Button(editWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Set ms!", command=setSlideshowMS)
+    setMs.grid(row=1, column=1)
+    editWindow.mainloop()
+def main(username, notification, fileopenHandle, *args):
+    global SLIDESHOW_MODE
     global imageViewer, root, imageName, nextBtn, backBtn
     root = tkinter.Tk()
     root.configure(background=THEME_WINDOW_BG)
@@ -64,6 +111,7 @@ def main(*args):
     fileMenu = tkinter.Menu(_MENU, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     fileMenu.add_command(label="Open a file", command=lambda: openFile(0))
     fileMenu.add_command(label="Open a folder", command=openFolder)
+    fileMenu.add_command(label="Slide show settings", command=changeMsSlideShow)
     aboutMenu = tkinter.Menu(_MENU, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     aboutMenu.add_command(label="About This", command=aboutThis)
     _MENU.add_cascade(label="File", menu=fileMenu)
@@ -78,9 +126,20 @@ def main(*args):
     nextBtn.grid(row=0, column=2)
     imageViewer = tkinter.Label(root, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     imageViewer.grid(row=1, column=1)
+    def loopUp(): 
+        root.after(SET_MS, loopUp)
+        if SLIDESHOW_MODE and FOLDER_MODE: openFile(1)
+    root.after(SET_MS, loopUp)
     root.state("zoomed")
     root.title("Photo Viewer")
+    if (fileopenHandle): forceOpenFile(fileopenHandle)
+    root.protocol("WM_DELETE_WINDOW", root.quit)
     root.mainloop()
+    root.destroy()
+    return True
 
+def endTask():
+    root.destroy()
+    return True
 if __name__ == "__main__":
     main()

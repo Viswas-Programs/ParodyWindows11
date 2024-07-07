@@ -1,7 +1,10 @@
 import tkinter
 from ProgramFiles.errorHandler import messagebox
-def main(username, notifications):
+PROCESS_RUNNING = False
+def main(username, notifications, filename, *args):
+    global PROCESS_RUNNING
     try:
+        
         global root
         import ProgramFiles.Notepad_v3.notepadGUI as notepad
         PROCESS_RUNNING = True
@@ -15,7 +18,14 @@ def main(username, notifications):
                             font=("Arial Rounded MT Bold",
                                     12))
         saveTo.grid(row=1, column=0)
-        notepad.NotepadRun(text_box=text, gui=root, saveTo=saveTo)
+        notepad.NotepadRun(text_box=text, gui=root, saveTo=saveTo, file_to_open=filename)
+        print("notepadrun quit ig")
         PROCESS_RUNNING = False
     except Exception as exp:
         messagebox.showerror("Can't load app!", f"App not found! please re-install the app!\nPROB:{exp}", root=None)
+    print("PROCESS ENDED FOR NOTEPAD")
+    return True
+
+def endTask():
+    root.destroy()
+    return True

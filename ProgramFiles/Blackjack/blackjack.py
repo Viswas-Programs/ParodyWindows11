@@ -425,9 +425,14 @@ def main():
     player1Hand = []
     player1HandT2 = []
     player2Hand = []
+    display.protocol("WM_DELETE_WINDOW", display.quit)
     initialDeal()
     display.mainloop()
+    display.destroy()
+    return True
 
-
+def endTask():
+    display.destroy()
+    return True
 if __name__ == "__main__":
     main()

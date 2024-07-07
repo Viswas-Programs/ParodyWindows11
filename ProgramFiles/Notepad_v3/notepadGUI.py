@@ -8,8 +8,15 @@ import platform
 import shelve
 import tkinter
 from tkinter import filedialog, ttk, font, colorchooser
-from ProgramFiles.errorHandler import messagebox
-import ProgramFiles.Notepad_v3.syntax_checker as syntax_checker
+try:
+    from ProgramFiles.errorHandler import messagebox
+    import ProgramFiles.Notepad_v3.syntax_checker as syntax_checker
+except ModuleNotFoundError:
+    import tkinter.messagebox as messagebox
+    try: 
+        import Notepad_v3.syntax_checker as syntax_checker
+    except: 
+        import syntax_checker
 import typing
 import socket
 try:
@@ -18,6 +25,7 @@ try:
 except Exception as EXP: messagebox.showerror("Can't import update modules!!", f"PROBLEM OCCURED. \n {EXP}")
 import zipfile
 from io import BytesIO
+import sys
 
 MSG_SHOWN = False
 if platform.system() == "Windows":
@@ -49,7 +57,7 @@ class NotepadRun(object):
     """ notepad run, so that people can use objects without GUI"""
 
     def __init__(self, text_box: tkinter.Text, gui: tkinter.Tk, saveTo:
-    tkinter.Text, file_to_open: str=None):
+    tkinter.Text, file_to_open: str=None) -> bool:
         print(f"Program started at {datetime.datetime.now()}")
         self.CURRENT_VERSION, self.UPDATE_BRANCH = versionFind()
         self.fileopen = file_to_open
@@ -142,6 +150,7 @@ class NotepadRun(object):
         self.saveTo.configure(background=self.THEME_TYPING_WIDGETS_BG)
         self.text.configure(foreground=self.THEME_FOREGROUND, borderwidth=5)
         self.saveTo.configure(foreground=self.THEME_FOREGROUND, borderwidth=5)
+        if (self.fileopen): self.open_file_default()
         try:
             self.UPDATER_FILE = requests.get("https://raw.githubusercontent.com/Viswas-Programs/Notepad/main/VERSION.txt", timeout=5)
             version, branch, a = str(self.UPDATER_FILE.content.decode(encoding='utf-8')).split("\n")
@@ -162,10 +171,10 @@ class NotepadRun(object):
             self.wannaUpdate.grid(row=0, column=5, padx=20)
             self.root.bind("<Alt-d>", self.updater)
         self.root.mainloop()
-        print(
-            f"Exited the program at {datetime.datetime.now()}!\nadding an input"
-            " so that from py console the console will show logs!")
-        input()
+        self.root.destroy()
+        del self
+        print("NotepadGUI V3 qit")
+        return None
     def showChangelogs(self):
         """ changelog """
         CHANGELOGS = tkinter.Toplevel()
@@ -944,19 +953,26 @@ Never gonna run around and desert you""")
         """ closing message!"""
         print("called on_close() function")
         if not self.saved:
-            alert = messagebox.askyesnocancel(
+            try:
+                alert = messagebox.askyesnocancel(
                 "Save the file?",
                 "This is an unsaved document. so do you wanna save em and, "
                 "close this?", self.root)
+            except: 
+                alert = messagebox.askyesnocancel(
+                "Save the file?",
+                "This is an unsaved document. so do you wanna save em and, "
+                "close this?")
             if alert == 1:
                 self.save()
-                self.root.destroy()
+                self.root.quit()
             elif alert == 0:
-                self.root.destroy()
+                self.root.quit()
             else:
                 pass
         elif self.saved:
-            self.root.destroy()
+            self.root.quit()
+        return True
 
     def _title_bar(self, window, mode_val:
     typing.Literal[20, 0]):
@@ -1059,7 +1075,7 @@ Never gonna run around and desert you""")
         if self.fileopen != None:
             self.readFile(file=self.fileopen)
 
-def main():
+def main(initialFileOpener=None):
     """ main """
     root = tkinter.Tk()
     root.title("Notepad GUI v3.3 STABLE")
@@ -1071,8 +1087,14 @@ def main():
                           font=("Arial Rounded MT Bold",
                                 12))
     saveTo.grid(row=1, column=0)
-    NotepadRun(text_box=text, gui=root, saveTo=saveTo)
+    NotepadRun(text_box=text, gui=root, saveTo=saveTo, file_to_open =initialFileOpener)
+    return True
 
 
 if __name__ == "__main__":
-    main()
+    params = sys.argv[1:]
+    fileToOpen = None
+    if "-fileOpen" in params:
+        indx = params.index("-fileOpen")
+        fileToOpen = params[indx+1]
+    main(fileToOpen.lstrip("-"))

@@ -1,5 +1,10 @@
 import tkinter
-from tkinterweb import HtmlFrame
+try:
+    from tkinterweb import HtmlFrame
+except ModuleNotFoundError:
+    import os
+    os.system("pip3 install tkinterweb")
+    from tkinterweb import HtmlFrame
 import shelve
 from datetime import datetime
 PROCESS_RUNNING = True
@@ -120,8 +125,12 @@ def main(*args):
     exec(f"optionsBTN = tkinter.Button(btnFrame, image=optionsICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=optionsWindow)")
     exec(f"optionsBTN.IMGREF = optionsICON")
     exec(f"optionsBTN.grid(row=0, column=4)")
+    root.protocol("WM_DELETE_WINDOW", root.quit)
     root.mainloop()
     searchHistory.close()
+    
     PROCESS_RUNNING = False
+    root.quit()
+    return True
 def focusIn(): root.state(newstate='normal'); 
 def focusOut(): root.state(newstate='iconic'); 

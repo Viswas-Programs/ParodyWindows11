@@ -60,7 +60,7 @@ def showDescription(e=None):
     else:
         tkinter.Button(wn, text="Uninstall", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=uninstallProgram).pack()
     wn.mainloop()
-def main(username, notification):
+def main(username, notification, *args):
     global usrname
     usrname = username
     global externalAppsList
@@ -88,9 +88,15 @@ def main(username, notification):
     externalAppsList.configure(style="Treeview")
     for i, app in enumerate(appsList):
         externalAppsList.insert(parent='', iid=i, text='', index=i, values=[app],)
+    rootWn.protocol("WM_DELETE_WINDOW", rootWn.quit)
     rootWn.mainloop()
+    rootWn.destroy()
+    return True
 ROOT = rootWn
-def focusIn(): ROOT.state(newstate='normal'); 
+def focusIn(): ROOT.state(newstate='normal'); ROOT.focus()
 def focusOut(): ROOT.state(newstate='iconic'); 
+def endTask():
+    ROOT.destroy()
+    return True
 if __name__ == "__main__":
     main()

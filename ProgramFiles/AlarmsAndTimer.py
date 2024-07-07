@@ -57,8 +57,14 @@ def main(*args):
     timerBtn.grid(row=0, column=0)
     alarmBtn = tkinter.Button(sidebar, text="Alarm", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=showAlarms)
     alarmBtn.grid(row=1, column=0)
+    alarmWindow.protocol("WM_DELETE_WINDOW", alarmWindow.quit)
     alarmWindow.mainloop()
+    alarmWindow.destroy()
+    return True
 def focusIn(): alarmWindow.state(newstate='normal'); 
 def focusOut(): alarmWindow.state(newstate='iconic'); 
+def endTask():
+    alarmWindow.destroy()
+    return True
 if __name__ == "__main__":
     main()

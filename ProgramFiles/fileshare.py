@@ -198,6 +198,12 @@ def main(*args):
                                         foreground=THEME_FOREGROUND,
                                         command=recieveFiles)
     recieve_files_btn.grid(row=0, column=2)
+    control_window.protocol("WM_DELETE_WINDOW", control_window.quit)
     control_window.mainloop()
+    control_window.destroy()
+    return True
 def focusIn(): control_window.state(newstate='normal'); 
 def focusOut(): control_window.state(newstate='iconic'); 
+def endTask():
+    control_window.destroy()
+    return True

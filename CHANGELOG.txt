@@ -126,3 +126,29 @@ Bug Fixes ->
 -Fixed bugs with Notepad not using special messagebox handler
 -error handler is now fixed, messageboxes work!
 -[CMD]To actually create a user when used the create user commands
+
+v2.3.8 ->
+Bug Fixes ->
+-Desktop app pinning now works with multi-spacing apps (like apps with names containing spaces yk)
+
+Features ->
+[Photo Viewer] New app icon and slideshow mode if folder mode is enabled. 
+
+v2.3.9 ->
+Features ->
+-File Associations: When launching a file from the file manager, previously it did an "os.system" call to the file, resulting in nothing or OS-handled.
+					Now it's handled by the DE. With known file types it launches it with the associated program (txt: notepad and stuff)
+					You can add app entries in the newly added page in the settings app. 
+					You also can right click on the file in the file manager and use the "Open With" menu, which it shows you list of apps and a browse to open in external app menu aswell. 
+-Task Manager! You can now view list of running apps and end them if you want!
+-New file/folder ask dialogs! previously the DE used the OS-dependant file request dialogues, such as the "Open a folder" and "Open a file" ones. Now this is handled by the DE aswell. 
+-NEW Installer! 
+
+Bug fixes ->
+-Fixed bugs with Notepad not closing properly. 
+-Fixed a bug with Update Manager, Software Store, and Web browser, that they wont open up when launched from the app menu. 
+-Fixed desktop and taskbar app pinning, and made it work again. 
+-Better error handling
+-The theme configurations was being pulled from a text document instead of USER_CONFIG, which meant that there were 2 separate configurations split across USER_CONFIG and text documents.
+  Now theme and more personalisation settings would be changed directly in the config files instead of text documents. 
+  

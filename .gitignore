@@ -1,20 +1,12 @@
 
 ProgramFiles/__pycache__/updateManager.cpython-311.pyc
 ProgramFiles/accConfiguration.conf
-ProgramFiles/Icons/BlackJack.png
-ProgramFiles/Icons/Files.png
-ProgramFiles/Icons/fileshare.png
-ProgramFiles/Icons/LoadExternalApps.png
-ProgramFiles/Icons/Notepad.png
-ProgramFiles/Icons/OnlineBanking.png
-ProgramFiles/Icons/UpdateManager.png
 ProgramFiles/pinnedApps.txt
 ProgramFiles/update_config/LAST_UPDATE.txt
 ProgramFiles/update_config/VERSION.txt
 Icons/TEST.txt
 Icons/TEST.txt
 Icons/TEST.txt
-ProgramFiles/Icons/FileManager.png
 Icons/TEST.txt
 Icons/TEST.txt
 Icons/TEST.txt
@@ -34,11 +26,6 @@ ProgramFiles/history.bak
 ProgramFiles/history.dat
 ProgramFiles/history.dir
 ProgramFiles/history.txt
-ProgramFiles/Icons/IPChat.png
-ProgramFiles/Icons/restart.png
-ProgramFiles/Icons/Settings.png
-ProgramFiles/Icons/shutdown.png
-ProgramFiles/Icons/WebBrowser.png
 ProgramFiles/IPChat/_serverConfig.bak
 ProgramFiles/IPChat/_serverConfig.dat
 ProgramFiles/IPChat/_serverConfig.dir
@@ -52,8 +39,6 @@ ProgramFiles/pinnedAppsDesktop.txt
 ProgramFiles/pinnedAppsTaskbar.txt
 Icons/TEST.txt
 Icons/TEST.txt
-ProgramFiles/Icons/softwareStore.png
-ProgramFiles/softwareStore.py
 ProgramFiles/Vijay/__pycache__/FileInspector.cpython-311.pyc
 ProgramFiles/Vijay/APPS_COMMAND_LST
 ProgramFiles/Vijay/APPS_LIST.txt
@@ -67,7 +52,6 @@ ProgramFiles/Viswas/pinnedAppsTaskbar.txt
 ProgramFiles/APPS_LIST.txt
 ProgramFiles/APPS_COMMAND_LST
 ProgramFiles/accConfiguration2.conf
-ProgramFiles/Icons/CommandPrompt.png
 ProgramFiles/fileinspectorSETUP.py
 ProgramFiles/accConfiguration1.conf
 ProgramFiles/APPS_COMMAND_LST
@@ -123,3 +107,24 @@ ProgramFiles/HeheBoi/USER_CONFIG.bak
 ProgramFiles/HeheBoi/USER_CONFIG.dat
 ProgramFiles/HeheBoi/USER_CONFIG.dir
 ProgramFiles/accConfiguration4.conf
+ProgramFiles/Vijay/USER_CONFIG.bak
+ProgramFiles/Vijay/USER_CONFIG.dat
+ProgramFiles/Vijay/USER_CONFIG.dir
+ProgramFiles/Vijay/USER_CONFIG.dir
+ProgramFiles/Vijay/USER_CONFIG.dat
+ProgramFiles/Vijay/USER_CONFIG.bak
+__pycache__/Windows 11.cpython-311.pyc
+ProgramFiles/Test.bak
+ProgramFiles/Test.dat
+ProgramFiles/Test.dir
+ProgramFiles/Test/USER_CONFIG.bak
+ProgramFiles/Test/USER_CONFIG.dat
+ProgramFiles/Test/USER_CONFIG.dir
+ProgramFiles/Vijay/USER_CONFIG.bak
+ProgramFiles/Vijay/USER_CONFIG.dat
+ProgramFiles/Vijay/USER_CONFIG.dir
+ProgramFiles/Viswas/theme_config.txt
+ProgramFiles/Vijay/USER_CONFIG.bak
+ProgramFiles/Vijay/USER_CONFIG.dir
+ProgramFiles/Vijay/USER_CONFIG.dat
+ProgramFiles/Viswas/theme_config.txt

@@ -26,14 +26,14 @@ try:
     version, branch = NEW_VERSION[0], NEW_VERSION[1]
     fileList = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/FILE_CHANGES.txt").content.decode(encoding='utf-8').splitlines()
 except requests.exceptions.ConnectTimeout:
-    msgbox.showerror("Erorr while connecting to server", "Error occured while trying to connect to"
-                    " our servers.\n(DEBUG: the program encountered requests.exception.ConnectTimeout error!)")
+    msgbox.showerror("Erorr while connecting to server", """Error occured while trying to connect to
+our servers.\n(DEBUG: the program encountered requests.exception.ConnectTimeout error!)""")
     changelogText = "ERROR: Cannot access the server for the required files and newest updates! Try again later!"
     version = 1.0
     fileList = ["NONE"]
-def main(username, notification):
+def main(username, notification, *args):
     global root
-    LAST_UPDATE = open("ProgramFiles/update_config/LAST_UPDATE.txt", "a+")
+    LAST_UPDATE = open("ProgramFiles/update_config/LAST_UPDATE.txt", "rw")
     CURRENT_VERSION = FTRConfigSettings("ProgramFiles/update_config/VERSION.txt", "0.1")[0]
     THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigSettings("theme_config.txt", "Black\nWhite")
     root = tkinter.Tk()
@@ -79,7 +79,7 @@ def main(username, notification):
         if version.split(".")[2]: subversion += version.split(".")[2]
         totalVersion = float(f"{mainVersion}.{subversion}")
         if float(totalVersion) > float(CURRENT_VERSION):
-            notification.showNotification("Update available!", f"Windows 11 v{version} is ready to be installed!\n{CURRENT_VERSION} => {version}", time.strftime("%H:%M:%S %p"), checkForUpdates)
+            notification.showNotification("Update available!", f"Windows 11 v{version} is ready to be installed!   {CURRENT_VERSION} => {version}", time.strftime("%H:%M:%S %p"), checkForUpdates)
             msgbox.showinfo("Update available", f"Windows 11 v{version} is ready to be installed!"
                             f"\n({CURRENT_VERSION} -> {version})")
             updateButton = tkinter.Button(root, text="Update to latest version!", command=updateToNew,
@@ -101,7 +101,10 @@ def main(username, notification):
             background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=2, column=0)
     root.mainloop()
     LAST_UPDATE.close()
+    return None
 def focusIn(): root.state(newstate='normal'); 
 def focusOut(): root.state(newstate='iconic'); 
+def endTask():
+    root.quit()
 if __name__ == "__main__":
     main(None)

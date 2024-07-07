@@ -63,5 +63,12 @@ def main(*args):
     showRefreshBtn.grid(row=0, column=0)
     loadCusttomBtn = tkinter.Button(externalApps, text="Load Custom App!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=loadCustomApp)
     loadCusttomBtn.grid(row=0, column=1)
+    externalApps.protocol("WM_DELETE_WINDOW", externalApps.quit)
     externalApps.mainloop()
+    externalApps.destroy()
     PROCESS_RUNNING = False
+    return True
+
+def endTask():
+    externalApps.destroy()
+    return True

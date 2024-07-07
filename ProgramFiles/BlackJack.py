@@ -6,4 +6,13 @@ def main(*args):
         from ProgramFiles.errorHandler import messagebox
         print(EXP)
         messagebox.showerror(None, None, None, True, "APP_NOT_FOUND_ERROR")
-        
+    return True
+def endTask():
+    try:
+        import ProgramFiles.Blackjack.blackjack
+        ProgramFiles.Blackjack.blackjack.endTask()
+    except Exception as EXP:
+        from ProgramFiles.errorHandler import messagebox
+        print(EXP)
+        messagebox.showerror(None, None, None, True, "APP_NOT_FOUND_ERROR")
+    return True

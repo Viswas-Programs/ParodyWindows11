@@ -33,7 +33,7 @@ def on_closing(event=None):
     except Exception as PROBLEM:
         messagebox.showerror("Program Can't Close!", f"<<DEBUG: {PROBLEM}>>\nThe chatter app cannot close the normal way (ie, saying 'leaving chat' automatically) due to error\nSo, program is force quitting... ", top, quitOnResponse=True)
     finally:
-        top.destroy()
+        top.quit()
 
 def configureServer(event=None):
     def configureS(e=None):
@@ -145,5 +145,10 @@ def main(*args):
     receive_thread = Thread(target=receive)
     receive_thread.start()
     top.mainloop()
+    top.destroy()
+    return True
 def focusIn(): top.state(newstate='normal'); 
 def focusOut(): top.state(newstate='iconic'); 
+def endTask():
+    top.destroy()
+    return True

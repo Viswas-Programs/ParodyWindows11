@@ -7,19 +7,18 @@ import tkinter
 import tkinter.ttk as ttk
 import time
 from tkinter import colorchooser
-SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
+SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG",  writeback=True)
 try:
     THEME_WINDOW_BG, THEME_FOREGROUND = SYS_CONFIG["THEME"]
 except Exception:
     THEME_WINDOW_BG = "Black"
     THEME_FOREGROUND = "White"
 print("Starting OS...")
-    
+RUNNING_APPS = []
 def FTRConfigSettings(path, data: str=None, prepCodeBool=False, prepCode=None) -> tuple:
     if prepCodeBool: exec(prepCode)
     if os.access(path, os.F_OK):
         with open(path) as read_config:
-            # print(bytes(read_config.read(), encoding='utf-8').decode(encoding='utf-8') == "")
             read_config_out = read_config.read()
             if bytes(read_config_out, encoding='utf-8').decode(encoding='utf-8') == "":
                 with open(path, "w") as writeData: writeData.write(data)
@@ -50,8 +49,8 @@ class Notifications(object):
         notificationsButton.configure(text=f"Notifications ({len(self.NotificationsList)})")
     def showNotification(self, title: str, msg: str, time: str, action: str) -> None:
         from ProgramFiles.errorHandler import messagebox
-        messagebox.showinfo(title, msg, notificationsWindow)
         self.createNotification(msg=msg, time=time, action=action)
+        messagebox.showinfo(title, msg, ROOT_WINDOW)
     def showNotificationsList(self, event=None):
         global notificationsWindow
         notificationsWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
@@ -74,6 +73,7 @@ class settings():
         self.SHOWN_PERSONALIZATION = False
         self.SHOWN_ADVANCED = False
         self.SHOWN_APPSLIST = False
+        self.SHOWN_APPOPENERCHANGER = False
         self.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
         self.settingsWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
         btnFrame = tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
@@ -82,10 +82,12 @@ class settings():
         homeBtn.grid(row=0, column=0)
         personalizeBtn = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Personalization", command=self.personalization)
         personalizeBtn.grid(row=1, column=0)
+        appOpenerChangeBtn = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="App Associations", command=self.changeFileOpeners)
+        appOpenerChangeBtn.grid(row=2, column=0)
         self.setting = tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
         self.setting.grid(row=0, column=1)
     def homePage(self):
-        if self.SHOWN_PERSONALIZATION or self.SHOWN_APPSLIST: self.setting.destroy()
+        if self.SHOWN_PERSONALIZATION or self.SHOWN_APPSLIST or self.SHOWN_APPOPENERCHANGER: self.setting.destroy()
         self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
         self.setting.grid(row=0, column=1)
         self.SHOWN_HOMEPAGE = True
@@ -93,6 +95,7 @@ class settings():
         f"""Foreground={THEME_FOREGROUND}\n\nFor more info, please visit the respective categories! Thank you :)"""
         a = tkinter.Label(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=infoText).grid(row=0, column=0)
     def personalization(self):
+        self.SHOWN_PERSONALIZATION = True
         def changeBg():
             global children
             global THEME_WINDOW_BG
@@ -100,8 +103,8 @@ class settings():
             THEME_WINDOW_BG = colorToUse[1]
             crBg.configure(text=f"Current Background = {THEME_WINDOW_BG}")
             if systemChangeTheme.get(): 
-                with open("theme_config.txt", "w") as writeNewTheme: writeNewTheme.write(f"{THEME_WINDOW_BG}\n{THEME_FOREGROUND}")
-            with open(f"ProgramFiles/{username}/theme_config.txt", "w") as writeNewTheme: writeNewTheme.write(f"{THEME_WINDOW_BG}\n{THEME_FOREGROUND}")
+                SYS_CONFIG["THEME"]= [THEME_WINDOW_BG, THEME_FOREGROUND]
+            USER_CONFIG["THEME"] = [THEME_WINDOW_BG, THEME_FOREGROUND]
             for child in children:
                 try:
                     child.configure(background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -117,15 +120,15 @@ class settings():
             THEME_FOREGROUND = colorToUse[1]
             crFg.configure(text=f"Current foreground = {THEME_FOREGROUND}")
             if systemChangeTheme.get(): 
-                with open("theme_config.txt", "w") as writeNewTheme: writeNewTheme.write(f"{THEME_WINDOW_BG}\n{THEME_FOREGROUND}")
-            with open(f"ProgramFiles/{username}/theme_config.txt", "w") as writeNewTheme: writeNewTheme.write(f"{THEME_WINDOW_BG}\n{THEME_FOREGROUND}")
+                SYS_CONFIG["THEME"]= [THEME_WINDOW_BG, THEME_FOREGROUND]
+            USER_CONFIG["THEME"] = [THEME_WINDOW_BG, THEME_FOREGROUND]
             for child in children:
                 try:
                     child.configure(background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
                     ROOT_WINDOW.configure(background=THEME_WINDOW_BG,)
                 except Exception: pass
             ROOT_WINDOW.update()
-        if self.SHOWN_HOMEPAGE or self.SHOWN_ADVANCED or self.SHOWN_PERSONALIZATION: self.setting.destroy()
+        if self.SHOWN_HOMEPAGE or self.SHOWN_ADVANCED or self.SHOWN_PERSONALIZATION or self.SHOWN_APPOPENERCHANGER: self.setting.destroy()
         self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
         self.setting.grid(row=0, column=1)
         crBg = tkinter.Label(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=f"Current Background = {THEME_WINDOW_BG}")
@@ -140,13 +143,63 @@ class settings():
         systemChangeTheme = tkinter.IntVar()
         applyToSystem = ttk.Checkbutton(self.setting, text="Also apply changes to system theme!", variable=systemChangeTheme)
         applyToSystem.grid(row=2, column=0)
-
+    def changeFileOpeners(self, reLaunch=False):
+        def __internals_AddNewEntry(*args):
+            def __internals_AddNewEntry_AddAppNames(*args):
+                app = comboBox.get()
+                try: 
+                    extension = textAssociationEntry.get()
+                    CurrentConfig: dict = USER_CONFIG["DEFAULTAPPASSOCIATION"]
+                    CurrentConfig.update({extension: app})
+                    USER_CONFIG["DEFAULTAPPASSOCIATION"] = CurrentConfig
+                    self.changeFileOpeners(True)
+                except Exception as I:
+                    messagebox.showerror('Error changing default app association', f'Error changing default app association.\nProb: {I}', addNewEntryWn )
+            addNewEntryWn = tkinter.Toplevel(self.settingsWindow)
+            nEntFrm = tkinter.Frame(addNewEntryWn, background=THEME_WINDOW_BG)
+            nEntFrm.grid(row=0, column=0)
+            textAssociationEntry = tkinter.Entry(nEntFrm, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            textAssociationEntry.grid(row=0, column=0)
+            comboBox = ttk.Combobox(nEntFrm)
+            comboBox['values'] = APPS_LIST
+            comboBox['state'] = "readonly"
+            comboBox.bind("<<ComboboxSelected>>", __internals_AddNewEntry_AddAppNames)
+            comboBox.grid(row=0, column=1)
+            addNewEntryWn.mainloop()
+        self.SHOWN_APPOPENERCHANGER = True
+        if self.SHOWN_HOMEPAGE or self.SHOWN_ADVANCED or self.SHOWN_PERSONALIZATION or reLaunch: self.setting.destroy()
+        self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
+        self.setting.grid(row=0, column=1)
+        addEntryBtn = tkinter.Button(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Add New Entry", command=__internals_AddNewEntry)
+        addEntryBtn.grid(row=0, column=0)
+        for X, i in enumerate(USER_CONFIG["DEFAULTAPPASSOCIATION"].keys()):
+            exec(f""" 
+innerFrame{X} = tkinter.Frame(frame, background=THEME_WINDOW_BG)
+innerFrame{X}.grid(row=X+1, column=0)
+label{X} = tkinter.Label(innerFrame{X}, text=i, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+label{X}.grid(row=0, column=0)
+def changeDefAppEvent{X}(e=None):
+    global comboBox{X}
+    app = comboBox{X}.get()
+    try: 
+        CurrentConfig: dict = USER_CONFIG["DEFAULTAPPASSOCIATION"]
+        CurrentConfig.update({"{i: app}"})
+        USER_CONFIG["DEFAULTAPPASSOCIATION"] = CurrentConfig
+    except Exception as I:
+        messagebox.showerror('Error changing default app association', 'Error changing default app association.', root_wn )
+global comboBox{X}
+comboBox{X} = ttk.Combobox(innerFrame{X})
+comboBox{X}['values'] = APPS_LIST
+comboBox{X}['state'] = "readonly"
+comboBox{X}.bind("<<ComboboxSelected>>", changeDefAppEvent{X})
+comboBox{X}.grid(row=0, column=1)
+""", {"root_wn": self.settingsWindow, "frame": self.setting, "USER_CONFIG": USER_CONFIG, "tkinter": tkinter, "THEME_WINDOW_BG": THEME_WINDOW_BG, "THEME_FOREGROUND": THEME_FOREGROUND, "messagebox": messagebox, "ttk": ttk, "i": i, "X": X, "APPS_LIST": APPS_LIST})
 
 ROW_COUNT_DESKTOP_ICONS = 0
 COLUMN_COUNT_DESKTOP_ICONS = 0
 MAX_ROW_DESKTOP = 10
 MAX_COLUMN_DESKTOP = 15
-class GUIButtonCommand(object):
+class GUIButtonCommand:
     global launcherCombobox
     global APPS_LIST
     global PINNED_APPS
@@ -154,11 +207,29 @@ class GUIButtonCommand(object):
     global COLUMN_COUNT_DESKTOP_ICONS
     global MAX_COLUMN_DESKTOP
     global MAX_ROW_DESKTOP
-    def __init__(self):
+    def __init__(self, PINNED_APPS):
         self.CurrentDesktopIconsList = []
         self.PINNED_APPS = PINNED_APPS
         self.TASKBAR_ICON_COUNT = 0
-    def launchItem(self, app: str, e=None):
+    def launchItem(self, application: str, params= None, e=None):
+        INDEX = len(RUNNING_APPS)
+        RUNNING_APPS.insert(INDEX, application)
+        appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
+        progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
+        exec(f"import {progAppImport}")
+        if (params == None ): exec(f"ProgramFiles.{appToLaunch}.main('{username}', notification, {params},  USER_CONFIG)")
+        else: exec(f"ProgramFiles.{appToLaunch}.main('{username}', notification, '{params}', USER_CONFIG)")
+        RUNNING_APPS.pop(INDEX)
+    def launchComboBoxEvent(self, e=None):
+        Item = launcherComboBox.get()
+        if Item == "Control Panel":
+            settings()
+        elif Item == "Task Manager":
+            TaskManager(ROOT_WINDOW)
+        else:
+            self.launchItem(Item)
+    @staticmethod
+    def AppImportNameCheck(app: str, dontLower=False):
         if "/" in app:
             appSplit = app.split("/")
             appToLaunch = app.replace("/", ".")
@@ -167,25 +238,17 @@ class GUIButtonCommand(object):
             appSplit.append(realAppName.lower().replace(" ", ""))
             appToLaunch += appSplit[1]
         else:    
-            appToLaunch = app.lower().replace(" ", "")
-        progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
-        print(progAppImport)
-        exec(f"import {progAppImport}")
-        exec(f"ProgramFiles.{appToLaunch}.main('{username}', notification)")
-        print("App closed?")
-    def launchComboBoxEvent(self, e=None):
-        Item = launcherComboBox.get()
-        if Item != "Control Panel":
-            self.launchItem(Item)
-        else:
-            settings()
-        
+            if (dontLower): appToLaunch = app.replace(" ", "")
+            else: appToLaunch = app.lower().replace(" ", "")
+        return appToLaunch
     def currentTime(self):
         global clock
         global ClockRepeatID
+        cr_time = None
         if USER_CONFIG["CLOCK-WIDGET"] == 0:
             def recurringClockFunction(e=None):
                 global ClockRepeatID
+                nonlocal cr_time
                 cr_time = time.strftime("%H:%M:%S %p")
                 clock = tkinter.Label(ROOT_WINDOW, text=cr_time, background=THEME_WINDOW_BG,
                                         foreground=THEME_FOREGROUND)
@@ -196,28 +259,25 @@ class GUIButtonCommand(object):
 
         else:
             try: 
-               cr_time="NULL"
-               print("Made time NULL")
+               cr_time = None
                clock.after_cancel(ClockRepeatID)
-               print("Cancelled the recurring tasks")
                clock.destroy()
-               print("Destroyed the clock widget")
                USER_CONFIG["CLOCK-WIDGET"] = 0
-               print("Made the boolean false!")
             except Exception as E:
                 messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}")
     def pinApps(self, appToPin, writeto=True):
         global appsFrame
+        appName: str = appToPin
+        appName = appName.replace(" ", "")
         self.TASKBAR_ICON_COUNT += 1
-        exec(f"global {appToPin}BTN")
-        # exec(f"global {appToPin}BTN")
-        appName = appToPin
+        exec(f"global {appName}BTN")
+        
         if writeto:
-            with open(f"ProgramFiles/{username}/pinnedAppsTaskbar.txt", "a") as pinnedApps:
-                pinnedApps.write(f"\n{appToPin}")
-        appName.replace(" ", "")
+            apList = USER_CONFIG["PINNED"][0]
+            apList.append(appName)
+            USER_CONFIG["PINNED"][0]  = apList
         exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png', master=ROOT_WINDOW).subsample(2, 2)")
-        exec(f"{appName}BTN = tkinter.Button(appsFrame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GUIButtonCommand.launchItem(GUIButtonCommand, f'{appToPin}'))")
+        exec(f"{appName}BTN = tkinter.Button(appsFrame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(f'{appToPin}'))")
         exec(f"{appName}BTN.IMGREF = {appName}ICON")
         exec(f"{appName}BTN.grid(row=0, column={self.TASKBAR_ICON_COUNT})")
 
@@ -226,7 +286,7 @@ class GUIButtonCommand(object):
         global GuiInterfaceCommands
         taskbarselfWindow = tkinter.Toplevel()
         taskbarselfWindow.configure(background=THEME_WINDOW_BG)
-        taskbarselfWindow.title("Taskbar self")
+        taskbarselfWindow.title("Taskbar app pinning")
         addWidgetsFrame = tkinter.LabelFrame(taskbarselfWindow, text="Add widgets", 
                                             background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         addWidgetsFrame.grid(row=0, column=0)
@@ -243,13 +303,13 @@ class GUIButtonCommand(object):
                 r += 1
                 if len(PINNED_APPS) == 1 or len(PINNED_APPS) == 2:
                     i = 0
-                exec(f"{app} = tkinter.Button(pinItems, text='{app}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.pinApps('{app}'),"
-                    f")\n{app}.grid(row=r, column=0)")
+                appN = app.replace(" ", "")
+                exec(f"{appN} = tkinter.Button(pinItems, text='{appN}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.pinApps('{app}'),"
+                    f")\n{appN}.grid(row=r, column=0)")
         taskbarselfWindow.mainloop()
 
     def popup(self, event=None, *args):
         """ the context menu popup"""
-        print("called popup() function")
         problem = None
         try:
             contextMenu.tk_popup(event.x_root, event.y_root, 0)
@@ -270,24 +330,26 @@ class GUIButtonCommand(object):
                 COLUMN_COUNT_DESKTOP_ICONS += 1
         if appName not in self.CurrentDesktopIconsList:
             if writeto:
-                with open(f"ProgramFiles/{username}/pinnedAppsDesktop.txt", "a") as updateDesktopIcons:
-                    updateDesktopIcons.write(f"\n{appName}")
+                apList = USER_CONFIG["PINNED"][1]
+                apList.append(appName)
+                USER_CONFIG["PINNED"][1]  = apList
             appName = appName.replace(" ", "")
             exec(f"{appName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
             exec(f"{appName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
             ROW_COUNT_DESKTOP_ICONS += 1
             exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png')")
-            exec(f"{appName}BTN = tkinter.Button({appName}Frame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GUIButtonCommand.launchItem(GUIButtonCommand, '{command}'))")
+            exec(f"{appName}BTN = tkinter.Button({appName}Frame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem('{command}'))")
             exec(f"{appName}BTN.IMGREF = {appName}ICON")
             exec(f"{appName}BTN.grid(row=0, column=0)")
             exec(f"{appName}LABEL = tkinter.Label({appName}Frame, text=f'{appName}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)")
             exec(f"{appName}LABEL.grid(row=1, column=0)")
-            self.CurrentDesktopIconsList.append(command.split(".")[1])
+            self.CurrentDesktopIconsList.append(command)
         else:
             messagebox.showerror(None, None, ROOT_WINDOW, True, "APP_NOT_FOUND_ERROR")
     def refreshDesktop(self):
         pass
     def addNewIcon(self, *args):
+        INDEX=0
         iconToAdd = None
         addNewIcon = tkinter.Toplevel(background=THEME_WINDOW_BG)
         desktopAppsList = ttk.Combobox(addNewIcon)
@@ -305,14 +367,15 @@ class GUIButtonCommand(object):
         desktopAppsList['values'] = CURRENT_LIST
         def updateVariable(event=None):
             nonlocal iconToAdd
+            nonlocal INDEX
             iconToAdd = str(desktopAppsList.get())
         desktopAppsList.bind("<<ComboboxSelected>>", updateVariable)
         desktopAppsList['state'] = "readonly"
-        desktopAppsList.grid(row=0, column=0, sticky="w")      
+        desktopAppsList.grid(row=0, column=0, sticky="w")
         addIconBtn = tkinter.Button(addNewIcon, text="Add Icon!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: self.createAppIcon(iconToAdd, f"{iconToAdd}"))
         addIconBtn.grid(row=0, column=1) 
         addNewIcon.mainloop()
-    def shutdownMenu(self, e=None):
+    def shutdownMenu(self, root, e=None):
         import shutil
         def shutdown():
             try:
@@ -339,17 +402,17 @@ class GUIButtonCommand(object):
                     os.system(""" python "Windows 11.py" """)
                     exit()
 
-        shutdownWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
+        shutdownWindow = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
         a = tkinter.Label(shutdownWindow, text="What you want to do now?", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         a.grid(row=0, column=0)
-        exec(f"ShutdownICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/shutdown.png').subsample(2, 2)")
-        exec(f"ShutdownBTN = tkinter.Button(shutdownWindow, image=ShutdownICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=shutdown)")
-        exec(f"ShutdownBTN.IMGREF = ShutdownICON")
-        exec(f"ShutdownBTN.grid(row=1, column=0)")
-        exec(f"RestartICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/restart.png').subsample(2, 2)")
-        exec(f"RestartBTN = tkinter.Button(shutdownWindow, image=RestartICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=restart)")
-        exec(f"RestartBTN.IMGREF = RestartICON")
-        exec(f"RestartBTN.grid(row=1, column=1)")
+        ShutdownICON = tkinter.PhotoImage(file = 'ProgramFiles/Icons/shutdown.png', master=root).subsample(2, 2)
+        ShutdownBTN = tkinter.Button(shutdownWindow, image=ShutdownICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=shutdown)
+        ShutdownBTN.IMGREF = ShutdownICON
+        ShutdownBTN.grid(row=1, column=0)
+        RestartICON = tkinter.PhotoImage(file='ProgramFiles/Icons/restart.png', master=root).subsample(2, 2)
+        RestartBTN = tkinter.Button(shutdownWindow, image=RestartICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=restart)
+        RestartBTN.IMGREF = RestartICON
+        RestartBTN.grid(row=1, column=1)
         safeModeRestartVar = tkinter.IntVar()
         ttk.Style().configure("TCheckbutton", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         safeModeRestartChk = ttk.Checkbutton(shutdownWindow, text="Restart in safe mode", variable=safeModeRestartVar, style="TCheckbutton")
@@ -358,11 +421,59 @@ class GUIButtonCommand(object):
         tkinter.Label(shutdownWindow, text="Restart", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=2, column=1)
         shutdownWindow.mainloop()
 
+def _AppLauncherForExternalApps(app: str, params = None, userConfig= None, notifications=None):
+    INDEX_TO_REMOVE_FROM = len(RUNNING_APPS)
+    RUNNING_APPS.insert(INDEX_TO_REMOVE_FROM, app)
+    ShelveRef = shelve.open(f"ProgramFiles/{userConfig}/USER_CONFIG")
+    PER_PROGRAM_COMMAND_APPS_LIST = ShelveRef["APPS"][1]
+    ShelveRef.close()
+    appToLaunch = GUIButtonCommand.AppImportNameCheck(app=app)
+    progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
+    exec(f"import {progAppImport}")
+    exec(f"ProgramFiles.{appToLaunch}.main('{userConfig}', notifications, '{params}')")
+    RUNNING_APPS.pop(INDEX_TO_REMOVE_FROM)
+
+class TaskManager:
+    def __init__(self, root):
+        self.ROOT = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
+        self.fileView = ttk.Treeview(self.ROOT, style="Treeview")
+        self.fileView.grid(row=0, column=0, sticky="w")
+        self.fileView['column'] = "Applications"
+        self.fileView.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
+        self.fileView.column("Applications", anchor=tkinter.W, width=600)
+        self.fileView.heading("Applications", text="Applications", anchor=tkinter.CENTER)
+        self.fileView.configure(style="Treeview")
+        self.endTaskButton = tkinter.Button(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="End Application", command=self.endTask)
+        self.endTaskButton.grid(row=1, column=0)
+        self.ROOT.after(500, self.updateEach1000Ms)
+        self.ROOT.mainloop()
+    def updateEach1000Ms(self):
+        self.ROOT.after(1000, self.updateEach1000Ms)
+        SELECTED_SMTH = self.fileView.focus()
+        for i in self.fileView.get_children():
+            self.fileView.delete(i)
+        for i, app in enumerate(RUNNING_APPS):
+            self.fileView.configure(style="Treeview")
+            self.fileView.insert(parent='', iid=i, text='', index='end', values=[app],)
+        self.fileView.focus(SELECTED_SMTH)
+        self.fileView.selection_set([SELECTED_SMTH])
+        
+    def endTask(self):
+        application = self.fileView.focus()
+        try:
+            command = COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f"ProgramFiles.{ GuiInterfaceCommands.AppImportNameCheck(app=RUNNING_APPS[int(application)])}")] 
+            exec(f"import {command}")
+            exec(f"{command}.endTask()")
+            RUNNING_APPS.pop(int(application))
+        except Exception as EXP: 
+            messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {EXP}")
+
+
+
 print("Loaded GUI Option Modules...")
 def main():
     print("Loaded operating system!")
     global THEME_WINDOW_BG, THEME_FOREGROUND
-    # THEME_WINDOW_BG, THEME_FOREGROUND = FTRConfigself(f"ProgramFiles/{username}/theme_config.txt", "Black\nWhite")
     global children
     def safeModePREPTask(e=None):
         for child in children:
@@ -381,8 +492,8 @@ def main():
     global appsFrame
     global desktopContextMenu
     global COMMAND_APPS_LIST
-    SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
-    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
+    SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG", writeback=True)
+    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG", writeback=True)
 
     APPS_LIST, COMMAND_APPS_LIST = USER_CONFIG["APPS"]
     THEME_WINDOW_BG, THEME_FOREGROUND = USER_CONFIG["THEME"]
@@ -390,7 +501,6 @@ def main():
     print("Loaded apps and user settings!")
     def popup(event=None, *args):
         """ the context menu popup"""
-        print("called popup() function")
         problem = None
         try:
             desktopContextMenu.tk_popup(event.x_root, event.y_root, 0)
@@ -400,7 +510,7 @@ def main():
             desktopContextMenu.grab_release()
             if problem:
                 notification.showNotification("Critical Error!", str(problem), datetime.now(), lambda: GuiInterfaceCommands.shutdownMenu())
-    GuiInterfaceCommands = GUIButtonCommand()
+    GuiInterfaceCommands = GUIButtonCommand(PINNED_APPS)
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
     launcherComboBox = ttk.Combobox(ROOT_WINDOW)
@@ -424,7 +534,7 @@ def main():
     contextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     contextMenu.add_command(label="Taskbar settings", command=GuiInterfaceCommands.taskbarselfGUI)
     shutDown = tkinter.Button(appsFrame, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
-                                command=GuiInterfaceCommands.shutdownMenu)
+                                command=lambda: GuiInterfaceCommands.shutdownMenu(ROOT_WINDOW))
     shutDown.grid(row=0, column=0, padx=5)
     appsFrame.bind("<Button-3>", GuiInterfaceCommands.popup)
     appsFrame.grid(row=0, column=1, sticky="n")
@@ -446,7 +556,7 @@ def main():
     for app in PINNED_APPS:
         try:
             GuiInterfaceCommands.pinApps(f"{app}", False)
-        except Exception: pass
+        except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"Error pinning {app} in the taskbar.\nPROB:{EXP}", root=ROOT_WINDOW)
     ROOT_WINDOW.mainloop()
     SYS_CONFIG.close()
     USER_CONFIG.close()
@@ -482,6 +592,7 @@ DARK_COLOURS = ["black", 'brown', 'blue', 'green', 'red', 'violet', 'purple', 'd
                 'dark red', 'dark brown', ]
 def login():
     print("Starting up OS...")
+    SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
     def safeModePREPTask(e=None):
         SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
         msg.destroy()
@@ -523,7 +634,7 @@ def login():
                                 command=loginVerification)
     loginBtn.grid(row=3, column=1)
     shutdownBtn = tkinter.Button(loginWindow, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
-                                command=lambda: GUIButtonCommand.shutdownMenu(GUIButtonCommand))
+                                command=lambda: GUIButtonCommand.shutdownMenu(GUIButtonCommand, loginWindow))
     shutdownBtn.grid(row=0, column=MAX_COLUMN_DESKTOP)
     loginWindow.attributes('-fullscreen', True)
     loginWindow.bind("<Escape>", safeModePREPTask)
@@ -701,7 +812,7 @@ def safeMode(forceNoARENV=False) -> None:
                 if yourCommand.get().split(" ")[0] in cmdInstance.COMMAND_LIST and cmdInstance.ACCEPT_COMMANDS:
                     exec(f"cmdInstance.{yourCommand.get().split(' ')[0]}()")
                 elif not cmdInstance.ACCEPT_COMMANDS: cmdInstance.clear()
-                else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
+                else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND)
             import ProgramFiles.commandprompt as cmd
             root= tkinter.Tk()
             root.configure(background=THEME_WINDOW_BG)
@@ -769,10 +880,12 @@ if __name__ == "__main__":
                 except Exception:
                     print("User already exists, skipping user creation tasks...")
                 finally:
-                    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
-                USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel"]
-                USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
+                    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG", writeback=True)
+                USER_CONFIG["APPS"] = [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskManager"]]
+                USER_CONFIG["PINNED"] = [["File Manager"], ["Notepad", "File Manager"]]
                 USER_CONFIG["THEME"] = [background, foreground]
+                USER_CONFIG["CLOCK-WIDGET"] = 0
+                USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
                 SYS_CONFIG["THEME"] = ["Black", "White"] 
                 SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
                 print("Initialized new entries!")
@@ -785,7 +898,7 @@ if __name__ == "__main__":
                 else:
                     infoSysSelectSTR = "USER_CONFIG"
                     username = input("Type in the username whose settings are going to be changed!: ")
-                    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
+                    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG", writeback=True)
                 print("The respective configuration module has been imported!\n"
                         f"Now, type in '{infoSysSelectSTR}[<CONFIG_NAME>] = <CONFIG>;' and then press enter to finish\n"
                         "New code lines and line endings MUST BE represented by the ; character!")
