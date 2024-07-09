@@ -7,17 +7,11 @@ RETURN_VALUE = None
 PROCESS_RUNNING = False
 def main(*args):
     global PROCESS_RUNNING
-    if args[0] == "file-mode":
-        actualFileTypes = []
-        for item in args[2]:
-            extension: str = item[1]
-            extension = extension.split(".")[-1]
-            actualFileTypes.append(extension)
-
     try:
         PROCESS_RUNNING = True
         global THEME_FOREGROUND
         global THEME_WINDOW_BG
+        global actualFileTypes
         filepath = None
         def newFolder(*event):
             toplevel = tkinter.Toplevel(background=THEME_WINDOW_BG)
@@ -35,6 +29,7 @@ def main(*args):
             toplevel.mainloop()
         def lookUpFiles(path):
             nonlocal filepath
+            global actualFileTypes
             addressBar.delete(0, tkinter.END)
             filepath = path
             addressBar.insert(tkinter.END, path)
@@ -48,8 +43,8 @@ def main(*args):
                         fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
                 else:
                     fileView.configure(style="Treeview")
-                    print(actualFileTypes, filesInFolder[file].split(".")[-1])
-                    if (os.path.isdir(os.path.join(filepath, filesInFolder[file]))) or  filesInFolder[file].split(".")[-1] in actualFileTypes:
+                    if (actualFileTypes == "*"): fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
+                    elif (os.path.isdir(os.path.join(filepath, filesInFolder[file]))) or  filesInFolder[file].split(".")[-1] == actualFileTypes:
                         fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
         def openFileOrFolder(*event):
             nonlocal filepath
@@ -65,7 +60,6 @@ def main(*args):
                 return RETURN_VALUE
         def selectFolder(*event):
             global RETURN_VALUE
-            print("function called", type(fileView.focus()))
             if len(fileView.focus()) == 0:
                 RETURN_VALUE = filepath
                 print(RETURN_VALUE)
@@ -81,17 +75,34 @@ def main(*args):
         def goBackFolder(path: str):  
             if "\\" in path:
                 path = path.replace("\\", "/")
-                print(path)
             folderSplit = path.split("/")
             if folderSplit[-1] == '':
                 folderSplit.pop(-1)
             folderSplit.pop(-1)
-            print(folderSplit)
             path = str().join(f"{folder}/" for folder in folderSplit)
-            print(path)
             addressBar.delete(0, tkinter.END)
             addressBar.insert(tkinter.END, path)
             lookUpFiles(path=path)
+        def fileModeRun():
+            global actualFileTypes
+            def _lookUpFile(*arg):
+                global actualFileTypes
+                actualFileTypes = launcherComboBox.get()
+                lookUpFiles(addressBar.get())
+            if args[0] == "file-mode":
+                types = []
+                for item in args[2]:
+                    extension: str = item[1]
+                    extension = extension.split(".")[-1]
+                    types.append(extension)
+                actualFileTypes = ""
+                launcherComboBox = ttk.Combobox(commandBar)
+                launcherComboBox['values'] = types
+                launcherComboBox['state'] = "readonly"
+                launcherComboBox.bind("<<ComboboxSelected>>", _lookUpFile)
+                launcherComboBox.grid(row=0, column=1)
+            return True
+                
         global fileManagerWindow
         fileManagerWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
         if (args[0] and args[0] == "folder-mode"):  fileManagerWindow.title(args[1])
@@ -150,6 +161,7 @@ def main(*args):
         fileView.bind("<Double-1>", openFileOrFolder)
         fileView.bind("<Button-3>", popup)
         fileView.configure(style="Treeview")
+        fileModeRun()
         fileManagerWindow.mainloop()
         fileManagerWindow.destroy()
         print("Return Val: " + RETURN_VALUE)

@@ -655,6 +655,7 @@ Restarting in a moment..."""
             exit()
         try:
             SYS_CONFIG["CBSRESTARTATTEMPT"] += 1
+            with open("ProgramFiles/CRASHLOGS", "a") as UPDATE_CRASH_LOGS: UPDATE_CRASH_LOGS.write(f"\n{supportCode} occured on {datetime.now()} on {obj}")
         except Exception as EXP: exp = EXP; 
         finally:
             bsodWind = tkinter.Tk()
@@ -666,7 +667,6 @@ Restarting in a moment..."""
             try: 
                 if exp: tkinter.Label(bsodWind, background="Blue", foreground="White", text=f"During above error, another error occured: {exp}", font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
             except Exception: pass
-            with open("ProgramFiles/CRASHLOGS", "a") as UPDATE_CRASH_LOGS: UPDATE_CRASH_LOGS.write(f"\n{supportCode} occured on {datetime.now()} on {obj}")
             bsodWind.after(10000, restart)
             bsodWind.mainloop()
     except Exception as EXP: print(text, EXP)

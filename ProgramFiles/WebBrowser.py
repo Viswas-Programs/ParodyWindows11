@@ -15,7 +15,7 @@ SHOWN_HISTORY = False
 SHOWN_ABOUT = False
 SHOWN_PERSONALIZATION = False
 DARK_THEME = False 
-THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
+THEME_WINDOW_BG, THEME_FOREGROUND = ["Black", "White"]
 def browse():
     global frame
     searches.append(text.get())
@@ -107,6 +107,8 @@ def main(*args):
     global mainFrame
     global frame
     global text
+    global THEME_FOREGROUND, THEME_WINDOW_BG
+    THEME_WINDOW_BG, THEME_FOREGROUND = args[-1]["THEME"]
     root = tkinter.Toplevel(background=THEME_WINDOW_BG)
     mainFrame = tkinter.Frame(root, background=THEME_WINDOW_BG)
     mainFrame.grid(row=1, column=0)
