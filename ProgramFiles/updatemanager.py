@@ -102,9 +102,10 @@ def main(username, notification, *args):
     root.mainloop()
     LAST_UPDATE.close()
     return None
-def focusIn(): root.state(newstate='normal'); 
-def focusOut(): root.state(newstate='iconic'); 
+def focusIn(): root.state(newstate='normal'); return True
+def focusOut(): root.state(newstate='iconic'); return True
 def endTask():
     root.quit()
+    return True
 if __name__ == "__main__":
     main(None)

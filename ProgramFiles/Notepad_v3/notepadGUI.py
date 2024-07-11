@@ -57,7 +57,7 @@ class NotepadRun(object):
     """ notepad run, so that people can use objects without GUI"""
 
     def __init__(self, text_box: tkinter.Text, gui: tkinter.Tk, saveTo:
-    tkinter.Text, file_to_open: str=None) -> bool:
+    tkinter.Text, file_to_open: str=None, THEME_FOREGROUND="White", THEME_BACKGROUND="Black") -> bool:
         print(f"Program started at {datetime.datetime.now()}")
         self.CURRENT_VERSION, self.UPDATE_BRANCH = versionFind()
         self.fileopen = file_to_open
@@ -75,9 +75,9 @@ class NotepadRun(object):
         self.buttonFrame = tkinter.Frame(self.root, background="Black", pady=10)
         self.buttonFrame.grid(row=2, column=0)
         self.saveTo = saveTo
-        self.THEME_FOREGROUND = "white"
-        self.THEME_TYPING_WIDGETS_BG = "black"
-        self.THEME_WINDOW_BG = "black"
+        self.THEME_FOREGROUND = THEME_FOREGROUND
+        self.THEME_TYPING_WIDGETS_BG = THEME_BACKGROUND
+        self.THEME_WINDOW_BG = THEME_BACKGROUND
         self.ZOOM_SIZE = 5
         self.saveTo.insert(1.0, f"{initialPath}/Documents/")
         print(f"Set initial path to {initialPath}/Documents/")

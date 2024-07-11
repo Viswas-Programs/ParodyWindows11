@@ -4,7 +4,7 @@ PROCESS_RUNNING = False
 def main(username, notifications, filename, *args):
     global PROCESS_RUNNING
     try:
-        
+        user_config = args[0]["THEME"]
         global root
         import ProgramFiles.Notepad_v3.notepadGUI as notepad
         PROCESS_RUNNING = True
@@ -18,7 +18,7 @@ def main(username, notifications, filename, *args):
                             font=("Arial Rounded MT Bold",
                                     12))
         saveTo.grid(row=1, column=0)
-        notepad.NotepadRun(text_box=text, gui=root, saveTo=saveTo, file_to_open=filename)
+        notepad.NotepadRun(text_box=text, gui=root, saveTo=saveTo, file_to_open=filename, THEME_BACKGROUND=user_config[0], THEME_FOREGROUND=user_config[1])
         print("notepadrun quit ig")
         PROCESS_RUNNING = False
     except Exception as exp:

@@ -10,7 +10,7 @@ def openWithSettings(root: tkinter.Tk | tkinter.Toplevel, fileName: str, USER_CO
     def comboBoxHandler(e=None):
         app = launcherComboBox.get()
         OpenWithMenuWindow.destroy()
-        W11._AppLauncherForExternalApps(app, fileName, userName, notifications )
+        W11._AppLauncherForExternalApps(app, USER_CONFIG,  fileName, userName, notifications )
     def askAppName():
         appToOpenWith = askopenfilename("Select a program to open with. ", (("Py Files", "*.py"), ("PyC Files", "*.pyc")))
         OpenWithMenuWindow.destroy()
@@ -42,7 +42,7 @@ def handleFiles(fileName: str, userConfig: str, notifications: any, USER_CONFIG:
         try:
             app: str= defaultProgramFileAssociations["DEFAULTAPPASSOCIATION"].get(fileExtension)
             print(app, fileExtension, defaultProgramFileAssociations["DEFAULTAPPASSOCIATION"])
-            W11._AppLauncherForExternalApps(app, fileName, userConfig, notifications)
+            W11._AppLauncherForExternalApps(app,USER_CONFIG,  fileName, userConfig, notifications)
         except Exception as I: 
             openWithSettings(None, fileName, USER_CONFIG, userConfig, notifications=notifications)
     else: os.system(fileName)

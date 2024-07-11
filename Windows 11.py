@@ -105,6 +105,7 @@ class settings():
             if systemChangeTheme.get(): 
                 SYS_CONFIG["THEME"]= [THEME_WINDOW_BG, THEME_FOREGROUND]
             USER_CONFIG["THEME"] = [THEME_WINDOW_BG, THEME_FOREGROUND]
+            USER_CONFIG.sync()
             for child in children:
                 try:
                     child.configure(background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -122,6 +123,7 @@ class settings():
             if systemChangeTheme.get(): 
                 SYS_CONFIG["THEME"]= [THEME_WINDOW_BG, THEME_FOREGROUND]
             USER_CONFIG["THEME"] = [THEME_WINDOW_BG, THEME_FOREGROUND]
+            USER_CONFIG.sync()
             for child in children:
                 try:
                     child.configure(background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -152,6 +154,7 @@ class settings():
                     CurrentConfig: dict = USER_CONFIG["DEFAULTAPPASSOCIATION"]
                     CurrentConfig.update({extension: app})
                     USER_CONFIG["DEFAULTAPPASSOCIATION"] = CurrentConfig
+                    USER_CONFIG.sync()
                     self.changeFileOpeners(True)
                 except Exception as I:
                     messagebox.showerror('Error changing default app association', f'Error changing default app association.\nProb: {I}', addNewEntryWn )
@@ -185,6 +188,7 @@ def changeDefAppEvent{X}(e=None):
         CurrentConfig: dict = USER_CONFIG["DEFAULTAPPASSOCIATION"]
         CurrentConfig.update({"{i: app}"})
         USER_CONFIG["DEFAULTAPPASSOCIATION"] = CurrentConfig
+        USER_CONFIG.sync()
     except Exception as I:
         messagebox.showerror('Error changing default app association', 'Error changing default app association.', root_wn )
 global comboBox{X}
@@ -255,6 +259,7 @@ class GUIButtonCommand:
                 ClockRepeatID = clock.after(1000, recurringClockFunction)
                 clock.grid(row=0, column=2, sticky="ne")
             USER_CONFIG["CLOCK-WIDGET"] = 1
+            USER_CONFIG.sync()
             recurringClockFunction()
 
         else:
@@ -263,6 +268,7 @@ class GUIButtonCommand:
                clock.after_cancel(ClockRepeatID)
                clock.destroy()
                USER_CONFIG["CLOCK-WIDGET"] = 0
+               USER_CONFIG.sync()
             except Exception as E:
                 messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}")
     def pinApps(self, appToPin, writeto=True):
@@ -276,6 +282,7 @@ class GUIButtonCommand:
             apList = USER_CONFIG["PINNED"][0]
             apList.append(appName)
             USER_CONFIG["PINNED"][0]  = apList
+            USER_CONFIG.sync()
         exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png', master=ROOT_WINDOW).subsample(2, 2)")
         exec(f"{appName}BTN = tkinter.Button(appsFrame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(f'{appToPin}'))")
         exec(f"{appName}BTN.IMGREF = {appName}ICON")
@@ -333,6 +340,7 @@ class GUIButtonCommand:
                 apList = USER_CONFIG["PINNED"][1]
                 apList.append(appName)
                 USER_CONFIG["PINNED"][1]  = apList
+                USER_CONFIG.sync()
             appName = appName.replace(" ", "")
             exec(f"{appName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
             exec(f"{appName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
@@ -421,16 +429,15 @@ class GUIButtonCommand:
         tkinter.Label(shutdownWindow, text="Restart", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=2, column=1)
         shutdownWindow.mainloop()
 
-def _AppLauncherForExternalApps(app: str, params = None, userConfig= None, notifications=None):
+def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig= None, notifications=None):
     INDEX_TO_REMOVE_FROM = len(RUNNING_APPS)
     RUNNING_APPS.insert(INDEX_TO_REMOVE_FROM, app)
-    ShelveRef = shelve.open(f"ProgramFiles/{userConfig}/USER_CONFIG")
+    ShelveRef = USER_CONFIG
     PER_PROGRAM_COMMAND_APPS_LIST = ShelveRef["APPS"][1]
-    ShelveRef.close()
     appToLaunch = GUIButtonCommand.AppImportNameCheck(app=app)
     progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
     exec(f"import {progAppImport}")
-    exec(f"ProgramFiles.{appToLaunch}.main('{userConfig}', notifications, '{params}')")
+    exec(f"ProgramFiles.{appToLaunch}.main('{userConfig}', notifications, '{params}', USER_CONFIG)")
     RUNNING_APPS.pop(INDEX_TO_REMOVE_FROM)
 
 class TaskManager:
@@ -886,6 +893,7 @@ if __name__ == "__main__":
                 USER_CONFIG["THEME"] = [background, foreground]
                 USER_CONFIG["CLOCK-WIDGET"] = 0
                 USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
+                USER_CONFIG.sync()
                 SYS_CONFIG["THEME"] = ["Black", "White"] 
                 SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
                 print("Initialized new entries!")
