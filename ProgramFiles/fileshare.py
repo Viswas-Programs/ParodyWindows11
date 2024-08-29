@@ -4,6 +4,8 @@ from tkinter import filedialog, messagebox
 import os
 from cryptography.fernet import Fernet
 
+from ProgramFiles import callHost
+
 if os.access("theme_config.txt", os.F_OK):
     with open("theme_config.txt") as read_config:
         config = read_config.read().splitlines()
@@ -198,12 +200,21 @@ def main(*args):
                                         foreground=THEME_FOREGROUND,
                                         command=recieveFiles)
     recieve_files_btn.grid(row=0, column=2)
-    control_window.protocol("WM_DELETE_WINDOW", control_window.quit)
+    def destroy():
+        callHost.acknowledgeEndTask(args[-2], args[-1])
+        control_window.destroy()
+        return True
+    control_window.protocol("WM_DELETE_WINDOW", destroy)
     control_window.mainloop()
     control_window.destroy()
-    return True
-def focusIn(): control_window.state(newstate='normal'); 
-def focusOut(): control_window.state(newstate='iconic'); 
+    return args[-1]
+def focusIn(): control_window.state(newstate='normal'); return True
+def focusOut(): control_window.state(newstate='iconic'); return True
 def endTask():
     control_window.destroy()
     return True
+def returnInformation():
+    return {
+        "title": control_window.title(),
+        # Would add more stuff here in the future, such as memory usage and shi. 
+    }

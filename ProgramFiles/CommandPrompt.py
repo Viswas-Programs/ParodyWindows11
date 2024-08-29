@@ -2,8 +2,13 @@ import tkinter
 import os
 import shelve
 
+from ProgramFiles import callHost
+INSTANCES = {}
+
 class cmdCommands(object):
     def __init__(self, stdout: tkinter.Text, stdin: tkinter.Entry, root: tkinter.Tk,) -> None:
+        with shelve.open("ProgramFiles/SYS_CONFIG") as SYS_CONFIG:
+            self.VERSION = SYS_CONFIG["VERSION"]
         self.ROOT = root
         self.ADMINISTRATOR = False
         self.UP_ARROW_COUNT = 0
@@ -14,7 +19,7 @@ class cmdCommands(object):
         self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator", "startFile", "mk", "rm", "cmd", "sendToRootTerminal"]
         self.INPUTTED_COMMANDS_LIST = []
         self.COMMAND_NOT_FOUND = "\nThe following command doesn't exist!"
-        self.showMsg(f"Welcome to ParodyWindows11 Command Interpreter (OS Version 2.2)\nCurrent Working Directory: {os.getcwd()}\n>")
+        self.showMsg(f"Welcome to ParodyWindows11 Command Interpreter (OS Version {self.VERSION})\nCurrent Working Directory: {os.getcwd()}\n>")
         try: self.ROOT.bind("<Up>", self.upArrowBind); self.ROOT.bind("<Down>", self.downArrowBind)
         except Exception as exp: print(f' {exp}')
         return None
@@ -33,15 +38,15 @@ class cmdCommands(object):
             self.ROOT = tkinter.Tk()
             self.ROOT.configure(background=THEME_WINDOW_BG)
             self.ROOT.title("Command Interpreter")
-            text = tkinter.Text(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=120)
+            text = tkinter.Text(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=120)
             text.grid(row=0, column=0)
             text.insert(tkinter.END, f"Welcome to ParodyWindows 11 Command Interpreter (OS Version 2.2)\nCurrent Working Directory: {os.getcwd()}")
-            yourCommand = tkinter.Entry(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            yourCommand = tkinter.Entry(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
             yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
             yourCommand.grid(row=1, column=0)
             yourCommand.focus()
             yourCommand.bind("<Return>", sendCommand)
-            ROOT.mainloop()
+            self.ROOT.mainloop()
         else:
             self.clear()
             self.clearStdIn()
@@ -244,7 +249,6 @@ class cmdCommands(object):
             self.showMsg("\nYou don't have permissions to run this command! Enable Administrator Mode and try again.")
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
 def main(*args): 
-    global ROOT
     def sendCommand(e=None):
         cmdInstance.showMsg(f"\n>{yourCommand.get()}")
         if " " not in yourCommand.get():
@@ -253,27 +257,40 @@ def main(*args):
             exec(f"cmdInstance.{yourCommand.get().split(' ')[0]}()")
         elif not cmdInstance.ACCEPT_COMMANDS: cmdInstance.clear()
         else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
-    ROOT = tkinter.Tk()
-    ROOT.configure(background=THEME_WINDOW_BG)
-    ROOT.title("Command Interpreter")
-    ROOT.protocol("WM_DELETE_WINDOW", ROOT.quit)
-    text = tkinter.Text(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
+    INSTANCES[args[-2]] = tkinter.Tk()
+    INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
+    INSTANCES[args[-2]].title("Command Interpreter")
+    def destroy():
+        if args[0] != "AUTORECOVERYENV": callHost.acknowledgeEndTask(args[-2], args[-1])
+        INSTANCES[args[-2]].destroy()
+        return True
+    INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", destroy)
+    text = tkinter.Text(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
     text.grid(row=0, column=0)
-    yourCommand = tkinter.Entry(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    yourCommand = tkinter.Entry(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
     yourCommand.grid(row=1, column=0)
-    cmdInstance = cmdCommands(text, yourCommand, root=ROOT)
+    cmdInstance = cmdCommands(text, yourCommand, root=INSTANCES[args[-2]])
     yourCommand.focus()
     yourCommand.bind("<Return>", sendCommand)
-    ROOT.mainloop()
-    ROOT.destroy()
-    return True
+    if args[0] == "AUTORECOVERYENV":
+        cmdInstance.ADMINISTRATOR = True
+        cmdInstance.showMsg("\nDetected launch from recovery environment\nSuccesfully turned on administrator mode!")
+        cmdInstance.ROOT.title("Administrator - Command Interpreter")
+    INSTANCES[args[-2]].mainloop()
+    INSTANCES[args[-2]].destroy()
+    return args[-1]
 
 
-def focusIn(): ROOT.state(newstate='normal'); 
-def focusOut(): ROOT.state(newstate='iconic'); 
-def endTask():
-    ROOT.destroy()
+def focusIn(PID): INSTANCES[PID].state(newstate='normal'); return True
+def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); return True
+def endTask(PID):
+    INSTANCES[PID].destroy()
     return True
+def returnInformation(PID):
+    return {
+        "title": INSTANCES[PID].title(),
+        # Would add more stuff here in the future, such as memory usage and shi. 
+    }
 if __name__ == "__main__":
     main()

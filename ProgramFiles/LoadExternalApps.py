@@ -2,11 +2,13 @@ import tkinter
 import os
 import subprocess
 import tkinter.ttk as ttk
-import psutil
 from pathlib import Path
 from tkinter import filedialog
-THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
+
+from ProgramFiles import callHost
+THEME_WINDOW_BG, THEME_FOREGROUND = ["",""]
 PROCESS_RUNNING = True
+INSTANCES = {}
 def refresh():
     global externalAppsList
     for i in externalAppsList.get_children():
@@ -19,7 +21,7 @@ def refresh():
         for i in externalAppsList.get_children():
             externalAppsList.delete(i)
         externalAppsList.insert(parent='', iid=file, text='', index=file, values=[externalAppsName[file]],)
-def load(file: str = None, e=None):
+def load(file = None, e=None):
     if file == None:
         indexSelect = externalAppsList.focus()
         fileToStart = externalAppsList.item(indexSelect, 'values')[0]
@@ -32,13 +34,13 @@ def load(file: str = None, e=None):
     # Note: If you want to access this code from function calls (ie not editing source code directly), 
     # Then, use the "use_legacy" parameter of the LoadExternalApps function to use the legacy code. 
     process = subprocess.Popen(["python3", f"{fileToStart}"])
-def show(e=None):
+def show(PID, e=None):
     global externalAppsList
     global buttonText
     global showRefreshBtn
     buttonText = "Refresh"
     showRefreshBtn.configure(text=buttonText, command=refresh)
-    externalAppsList = ttk.Treeview(externalApps, style="Treeview")
+    externalAppsList = ttk.Treeview(INSTANCES[PID], style="Treeview")
     externalAppsList.grid(row=1, column=0, sticky="w")
     externalAppsList['column'] = "Apps"
     externalAppsList.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
@@ -54,21 +56,38 @@ def loadCustomApp():
 def main(*args):
     global externalAppsName
     global buttonText
-    global externalApps
+    global THEME_FOREGROUND, THEME_WINDOW_BG
     global showRefreshBtn
-    externalApps = tkinter.Toplevel(background=THEME_WINDOW_BG)
+    THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
+    INSTANCES[args[-2]] = tkinter.Toplevel(background=THEME_WINDOW_BG)
     externalAppsName = []
     buttonText = "Look for external apps!"
-    showRefreshBtn = tkinter.Button(externalApps, text=buttonText, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=show)
+    showRefreshBtn = tkinter.Button(INSTANCES[args[-2]], text=buttonText, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: show(args[-2]))
     showRefreshBtn.grid(row=0, column=0)
-    loadCusttomBtn = tkinter.Button(externalApps, text="Load Custom App!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=loadCustomApp)
+    loadCusttomBtn = tkinter.Button(INSTANCES[args[-2]], text="Load Custom App!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=loadCustomApp)
     loadCusttomBtn.grid(row=0, column=1)
-    externalApps.protocol("WM_DELETE_WINDOW", externalApps.quit)
-    externalApps.mainloop()
-    externalApps.destroy()
+    def destroy():
+        callHost.acknowledgeEndTask(args[-2], args[-1])
+        INSTANCES[args[-2]].destroy()
+        return True
+    INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", destroy)
+    INSTANCES[args[-2]].mainloop()
+    INSTANCES[args[-2]].destroy()
     PROCESS_RUNNING = False
-    return True
+    return args[-1]
 
-def endTask():
-    externalApps.destroy()
+def endTask(PID):
+    INSTANCES[PID].destroy()
     return True
+def focusIn(PID):
+    INSTANCES[PID].focus()
+    INSTANCES[PID].state(newstate='normal')
+    return True
+def focusOut(PID):
+    INSTANCES[PID].state(newstate='iconic')
+    return True
+def returnInformation(PID):
+    return {
+        "title": INSTANCES[PID].title(),
+        # Would add more stuff here in the future, such as memory usage and shi. 
+    }

@@ -1,18 +1,13 @@
+import ProgramFiles.Blackjack.blackjack as blackJack
 def main(*args):
-    try:
-        import ProgramFiles.Blackjack.blackjack
-        ProgramFiles.Blackjack.blackjack.main()
-    except Exception as EXP:
-        from ProgramFiles.errorHandler import messagebox
-        print(EXP)
-        messagebox.showerror(None, None, None, True, "APP_NOT_FOUND_ERROR")
-    return True
+    blackJack.main()
+    return args[-1]
 def endTask():
-    try:
-        import ProgramFiles.Blackjack.blackjack
-        ProgramFiles.Blackjack.blackjack.endTask()
-    except Exception as EXP:
-        from ProgramFiles.errorHandler import messagebox
-        print(EXP)
-        messagebox.showerror(None, None, None, True, "APP_NOT_FOUND_ERROR")
+    blackJack.endTask()
     return True
+def returnInformation():
+    return blackJack.returnInformation()
+def focusIn():
+    return blackJack.focusIn()
+def focusOut():
+    return blackJack.focusOut()

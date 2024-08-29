@@ -1,4 +1,6 @@
 import tkinter
+
+from ProgramFiles import callHost
 try:
     from tkinterweb import HtmlFrame
 except ModuleNotFoundError:
@@ -8,6 +10,7 @@ except ModuleNotFoundError:
 import shelve
 from datetime import datetime
 PROCESS_RUNNING = True
+INSTANCES = {}
 searchHistory = shelve.open("ProgramFiles/history")
 searches = []
 searchNo = -1
@@ -16,12 +19,12 @@ SHOWN_ABOUT = False
 SHOWN_PERSONALIZATION = False
 DARK_THEME = False 
 THEME_WINDOW_BG, THEME_FOREGROUND = ["Black", "White"]
-def browse():
+def browse(PID, e=None):
     global frame
     searches.append(text.get())
     def a(title):
         searchHistory[str(datetime.now())] = title
-        root.title(title)
+        INSTANCES[PID].title(title)
     def addToList(url):
         global searches
         global searchNo
@@ -38,7 +41,7 @@ def browse():
     if DARK_THEME: frame.enable_dark_theme(True, True)
     frame.on_title_change(a)
     frame.grid(row=1, column=0)
-def optionsWindow(e=None):
+def optionsWindow(PID, e=None):
     global DARK_THEME
     def showHistory():
         global SHOWN_HISTORY
@@ -78,7 +81,7 @@ def optionsWindow(e=None):
         change.grid(row=0, column=0)
         revchange = tkinter.Button(perFrame, text="Experimental dark theme! (off)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=revChanges)
         revchange.grid(row=1, column=0)
-    optionsWn = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
+    optionsWn = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
     btnFrame = tkinter.Frame(optionsWn, background=THEME_WINDOW_BG)
     btnFrame.grid(row=0, column=0)
     historyBtn = tkinter.Button(btnFrame, text="History", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=showHistory)
@@ -103,14 +106,15 @@ def reloadWebsite(e=None):
         if DARK_THEME: frame.enable_dark_theme(True, True)
 
 def main(*args):
-    global root
     global mainFrame
     global frame
     global text
     global THEME_FOREGROUND, THEME_WINDOW_BG
-    THEME_WINDOW_BG, THEME_FOREGROUND = args[-1]["THEME"]
-    root = tkinter.Toplevel(background=THEME_WINDOW_BG)
-    mainFrame = tkinter.Frame(root, background=THEME_WINDOW_BG)
+    THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
+    INSTANCES[args[-2]] = tkinter.Tk()
+    INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
+    INSTANCES[args[-2]].title("Web Browser")
+    mainFrame = tkinter.Frame(INSTANCES[args[-2]], background=THEME_WINDOW_BG)
     mainFrame.grid(row=1, column=0)
     btnFrame = tkinter.Frame(mainFrame, background=THEME_WINDOW_BG)
     btnFrame.grid(row=0, column=0)
@@ -121,18 +125,25 @@ def main(*args):
     text = tkinter.Entry(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=90)
     text.grid(row=0, column=2)
     text.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
-    btn = tkinter.Button(btnFrame, text="Go!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=browse)
+    btn = tkinter.Button(btnFrame, text="Go!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: browse(args[-2]))
     btn.grid(row=0, column=3)
-    exec(f"optionsICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/Settings.png').subsample(2, 2)")
-    exec(f"optionsBTN = tkinter.Button(btnFrame, image=optionsICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=optionsWindow)")
-    exec(f"optionsBTN.IMGREF = optionsICON")
-    exec(f"optionsBTN.grid(row=0, column=4)")
-    root.protocol("WM_DELETE_WINDOW", root.quit)
-    root.mainloop()
+    optionsICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/settings.png', master=INSTANCES[args[-2]]).subsample(2, 2)
+    optionsBTN = tkinter.Button(btnFrame, image=optionsICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: optionsWindow(args[-2]))
+    optionsBTN.IMGREF = optionsICON
+    optionsBTN.grid(row=0, column=4)
+    def destroy():
+        callHost.acknowledgeEndTask(args[-2], args[-1])
+        INSTANCES[args[-2]].destroy()
+        return True
+    INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", destroy)
+    INSTANCES[args[-2]].mainloop()
     searchHistory.close()
-    
-    PROCESS_RUNNING = False
-    root.quit()
-    return True
-def focusIn(): root.state(newstate='normal'); 
-def focusOut(): root.state(newstate='iconic'); 
+    INSTANCES[args[-2]].destroy()
+    return args[-1]
+def focusIn(PID): INSTANCES[PID].state(newstate='normal'); return True
+def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); return True
+def returnInformation(PID):
+    return {
+        "title": INSTANCES[PID].title(),
+        # Would add more stuff here in the future, such as memory usage and shi. 
+    }

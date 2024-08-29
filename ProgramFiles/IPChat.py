@@ -1,9 +1,11 @@
 import tkinter
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
+from ProgramFiles import callHost
 from ProgramFiles.errorHandler import messagebox
 import shelve
-THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
+THEME_WINDOW_BG, THEME_FOREGROUND = ["", ""]
+INSTANCES = {}
 def receive():
     """Handles receiving of messages."""
     while True:
@@ -14,26 +16,27 @@ def receive():
             break
 
 
-def send(event=None):  # event is passed by binders.
+def send(PID, event=None):  # event is passed by binders.
     """Handles sending of messages."""
     msg = my_msg.get() 
     client_socket.send(bytes(msg, "utf8"))
     my_msg.set("") # Clears input field.
     if msg == "{quit}":
         client_socket.close()
-        top.destroy()
+        INSTANCES[PID].destroy()
 
 
-def on_closing(event=None):
+def on_closing(PID, RunningAppsList,event=None):
     """This function is to be called when the window is closed."""
     try:
         my_msg.set("{quit}")
         send()
         client_socket.close()
     except Exception as PROBLEM:
-        messagebox.showerror("Program Can't Close!", f"<<DEBUG: {PROBLEM}>>\nThe chatter app cannot close the normal way (ie, saying 'leaving chat' automatically) due to error\nSo, program is force quitting... ", top, quitOnResponse=True)
+        messagebox.showerror("Program Can't Close!", f"<<DEBUG: {PROBLEM}>>\nThe chatter app cannot close the normal way (ie, saying 'leaving chat' automatically) due to error\nSo, program is force quitting... ", INSTANCES[PID], quitOnResponse=True)
     finally:
-        top.quit()
+        callHost.acknowledgeEndTask(PID, RunningAppsList)
+        INSTANCES[PID].destroy()
 
 def configureServer(event=None):
     def configureS(e=None):
@@ -99,16 +102,18 @@ def main(*args):
     global my_msg
     global msg_list
     global BUFSIZ
-    global top
-    top = tkinter.Toplevel(background=THEME_WINDOW_BG)
-    top.title("Chatter")
-    altMenu = tkinter.Menu(top, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    top.configure(menu=altMenu)
+    global THEME_WINDOW_BG, THEME_FOREGROUND
+    THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
+    INSTANCES[args[-2]] = tkinter.Tk()
+    INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
+    INSTANCES[args[-2]].title("IP Chat")
+    altMenu = tkinter.Menu(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    INSTANCES[args[-2]].configure(menu=altMenu)
     fileMenu = tkinter.Menu(altMenu, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     fileMenu.add_command(label="Configure Server", command=configureServer)
     fileMenu.add_command(label="Previously connected servers", command=getServerList)
     altMenu.add_cascade(label="File", menu=fileMenu)
-    messages_frame = tkinter.Frame(top, background=THEME_WINDOW_BG)
+    messages_frame = tkinter.Frame(INSTANCES[args[-2]], background=THEME_WINDOW_BG)
     my_msg = tkinter.StringVar()  # For the messages to be sent.
     my_msg.set("Type your messages here.")
     scrollbar = tkinter.Scrollbar(messages_frame)  # To navigate through past messages.
@@ -119,14 +124,14 @@ def main(*args):
     msg_list.pack()
     messages_frame.pack()
 
-    entry_field = tkinter.Entry(top, textvariable=my_msg, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=90)
+    entry_field = tkinter.Entry(INSTANCES[args[-2]], textvariable=my_msg, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=90)
     entry_field.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
-    entry_field.bind("<Return>", send)
+    entry_field.bind("<Return>", lambda: send(args[-2]))
     entry_field.pack()
-    send_button = tkinter.Button(top, text="Send", command=send, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    send_button = tkinter.Button(INSTANCES[args[-2]], text="Send", command=send, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     send_button.pack()
 
-    top.protocol("WM_DELETE_WINDOW", on_closing)
+    INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", lambda:  on_closing(args[-2], args[-1]))
 
     #----Now comes the sockets part----
     with shelve.open("ProgramFiles/IPChat/_serverConfig") as _serverConfig:
@@ -144,11 +149,16 @@ def main(*args):
 
     receive_thread = Thread(target=receive)
     receive_thread.start()
-    top.mainloop()
-    top.destroy()
+    INSTANCES[args[-2]].mainloop()
+    INSTANCES[args[-2]].destroy()
+    return args[-1]
+def focusIn(PID): INSTANCES[PID].state(newstate='normal'); return True
+def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); return True
+def endTask(PID):
+    INSTANCES[PID].destroy()
     return True
-def focusIn(): top.state(newstate='normal'); 
-def focusOut(): top.state(newstate='iconic'); 
-def endTask():
-    top.destroy()
-    return True
+def returnInformation(PID):
+    return {
+        "title": INSTANCES[PID].title(),
+        # Would add more stuff here in the future, such as memory usage and shi. 
+    }

@@ -4,6 +4,7 @@ returner_ASKYESNOCANCEL = "Job pend"
 returner_SHOWERROR = "Job pend"
 
 class messagebox:
+    @staticmethod
     def showerror(header=None, msg=None, root=None, use_preset=False, type_preset=None, quitOnResponse=False):
         RETURNVAL = 0
         def returnOk(): 
@@ -32,6 +33,7 @@ class messagebox:
         Btn.pack(side='right', anchor='s')
         MsgBox.mainloop()
         return RETURNVAL
+    @staticmethod
     def showinfo(header, msg, root, use_preset=False, type_preset=None, quitOnResponse=False):
         RETURNVAL = 0
         def returnOk(): 
@@ -61,6 +63,7 @@ class messagebox:
         Btn.pack(side='right', anchor='s')
         MsgBox.mainloop()
         return RETURNVAL
+    @staticmethod
     def showwarning(header, msg, root, use_preset=False, type_preset=None, quitOnResponse=False):
         RETURNVAL = 0
         def returnOk(): 
@@ -90,6 +93,7 @@ class messagebox:
         Btn.pack(side='right', anchor='s')
         MsgBox.mainloop()
         return RETURNVAL
+    @staticmethod
     def askyesorno(header, msg, root,):
         RETURNVAL = 0
         def returnOk(): 
@@ -116,6 +120,7 @@ class messagebox:
         Btn.pack(side='right', anchor='s')
         MsgBox.mainloop()
         return RETURNVAL
+    @staticmethod
     def askyesnocancel(header, msg, root=None, quitOnResponse=False):
         RETURNVAL = 0
         def returnFalse():

@@ -3,12 +3,15 @@ from tkinter import ttk
 import os
 from ProgramFiles.errorHandler import messagebox
 import ProgramFiles.fileRouters as fileRouters 
-THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
+import ProgramFiles.callHost as callHost
+THEME_WINDOW_BG, THEME_FOREGROUND = ["",""]
 def main(*args):
     try:
+        print(args[-1])
         PROCESS_RUNNING = True
         global THEME_FOREGROUND
         global THEME_WINDOW_BG
+        THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
         filepath = None
         def newFolder(*event):
             toplevel = tkinter.Toplevel(background=THEME_WINDOW_BG)
@@ -43,7 +46,7 @@ def main(*args):
                 filepath = os.path.join(filepath, selectedFile)
                 lookUpFiles(filepath)
             else:
-                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], args[-1])
+                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], args[-2])
 
         def goBackFolder(path: str):  
             if "\\" in path:
@@ -108,21 +111,30 @@ def main(*args):
         fileView.configure(style="Treeview")
         files = tkinter.Menu(mainFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         files.add_command(label="Open", command=openFileOrFolder)
-        files.add_command(label="Open With", command=lambda: fileRouters.openWithSettings(fileManagerWindow, str(os.path.join(filepath, fileView.item(fileView.focus(), 'values')[0])).replace("\\", "/"), args[-1], args[0], args[1] ))
+        files.add_command(label="Open With", command=lambda: fileRouters.openWithSettings(fileManagerWindow, str(os.path.join(filepath, fileView.item(fileView.focus(), 'values')[0])).replace("\\", "/"), args[-2], args[0], args[1] ))
         files.add_command(label="Delete", command=delete)
-        fileManagerWindow.protocol("WM_DELETE_WINDOW", fileManagerWindow.quit)
+        def destroy():
+            callHost.acknowledgeEndTask(args[-2], args[-1])
+            fileManagerWindow.destroy()
+            return True
+        fileManagerWindow.protocol("WM_DELETE_WINDOW", destroy)
         lookUpFiles(addressBar.get())
         fileManagerWindow.mainloop()
-        fileManagerWindow.destroy()
-        PROCESS_RUNNING = False
+        return args[-1]
     except Exception as exp:
         messagebox.showerror("Can't load app!", f"App can't run! please re-install the app!\nPROB:{exp}")
     finally: 
-        return True
-def focusIn(): fileManagerWindow.state(newstate='normal'); 
-def focusOut(): fileManagerWindow.state(newstate='iconic'); 
-def endTask():
+        print("FILE MANAGER CLOSE LA", args[-1])
+        return args[-1]
+def focusIn(PID): fileManagerWindow.focus(); fileManagerWindow.state(newstate='normal'); return True
+def focusOut(PID): fileManagerWindow.state(newstate='iconic'); return True
+def endTask(PID):
     fileManagerWindow.destroy()
     return True
+def returnInformation(PID):
+    return {
+        "title": fileManagerWindow.title(),
+        # Would add more stuff here in the future, such as memory usage and shi. 
+    }
 if __name__ == "__main__":
     main()

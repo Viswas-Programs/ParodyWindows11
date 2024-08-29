@@ -2,7 +2,7 @@ import tkinter
 from tkinter import ttk
 import os
 from ProgramFiles.errorHandler import messagebox
-THEME_WINDOW_BG, THEME_FOREGROUND = open("theme_config.txt").read().split("\n")
+THEME_WINDOW_BG, THEME_FOREGROUND = ["Black", "white"]
 RETURN_VALUE = None
 PROCESS_RUNNING = False
 def main(*args):
@@ -14,7 +14,8 @@ def main(*args):
         global actualFileTypes
         filepath = None
         def newFolder(*event):
-            toplevel = tkinter.Toplevel(background=THEME_WINDOW_BG)
+            toplevel = tkinter.Tk()
+            toplevel.configure(background=THEME_WINDOW_BG)
             def createNewFolder(*event):
                 try:
                     os.mkdir(newFolderEntry.get())

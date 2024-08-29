@@ -3,8 +3,10 @@ Black jack game made possible with tkinter code
 """
 import tkinter
 from tkinter import ttk
+from ProgramFiles import callHost
 import ProgramFiles.Blackjack.functions_for_blackjack as functions_for_blackjack
 
+INSTANCES =  {}
 # Creating styles for background colours.
 
 
@@ -277,7 +279,7 @@ def exitter():
 
 
 # The GUI
-def main():
+def main(PID, RunAppsList):
     global player1Hand
     global player1HandT2
     global player2Hand
@@ -425,7 +427,11 @@ def main():
     player1Hand = []
     player1HandT2 = []
     player2Hand = []
-    display.protocol("WM_DELETE_WINDOW", display.quit)
+    def destroy():
+        callHost.acknowledgeEndTask(PID, RunAppsList)
+        display.destroy()
+        return True
+    display.protocol("WM_DELETE_WINDOW", destroy)
     initialDeal()
     display.mainloop()
     display.destroy()
@@ -434,5 +440,17 @@ def main():
 def endTask():
     display.destroy()
     return True
+def focusIn():
+    display.focus()
+    display.state(newstate='normal')
+    return True
+def focusOut():
+    display.state(newstate='iconic')
+    return True
+def returnInformation():
+    return {
+        "title": display.title(),
+        # Would add more stuff here in the future, such as memory usage and shi. 
+    }
 if __name__ == "__main__":
     main()
