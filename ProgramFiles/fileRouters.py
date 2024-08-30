@@ -6,11 +6,11 @@ from tkinter import ttk
 from ProgramFiles.errorHandler import messagebox
 from ProgramFiles.fileaskhandlers import askopenfilename
 W11 = importlib.__import__("Windows 11")
-def openWithSettings(root: tkinter.Tk | tkinter.Toplevel, fileName: str, USER_CONFIG: shelve, userName: str, notifications):
+def openWithSettings(root: tkinter.Tk | tkinter.Toplevel | None, fileName: str, USER_CONFIG: shelve, userName: str, notifications, runAppsFrame, runAppsDict):
     def comboBoxHandler(e=None):
         app = launcherComboBox.get()
         OpenWithMenuWindow.destroy()
-        W11._AppLauncherForExternalApps(app, USER_CONFIG,  fileName, userName, notifications )
+        W11._AppLauncherForExternalApps(app, USER_CONFIG,  fileName, userName, notifications, runAppsFrame, runAppsDict )
     def askAppName():
         appToOpenWith = askopenfilename("Select a program to open with. ", (("Py Files", "*.py"), ("PyC Files", "*.pyc")))
         OpenWithMenuWindow.destroy()
@@ -33,7 +33,7 @@ def openWithSettings(root: tkinter.Tk | tkinter.Toplevel, fileName: str, USER_CO
     OpenWithCustomAppBtn.grid(row=2, column=1)
     OpenWithMenuWindow.mainloop()
 
-def handleFiles(fileName: str, userConfig: str, notifications: any, USER_CONFIG: shelve):
+def handleFiles(fileName: str, userConfig: str, notifications: any, USER_CONFIG: shelve, runAppsFrame: tkinter.Frame, runAppsDict: dict):
     defaultProgramFileAssociations = USER_CONFIG
     fileExtension = fileName.split(".")[-1]
     fileName = fileName.replace("\\", "/")
@@ -42,7 +42,8 @@ def handleFiles(fileName: str, userConfig: str, notifications: any, USER_CONFIG:
         try:
             app: str= defaultProgramFileAssociations["DEFAULTAPPASSOCIATION"].get(fileExtension)
             print(app, fileExtension, defaultProgramFileAssociations["DEFAULTAPPASSOCIATION"])
-            W11._AppLauncherForExternalApps(app,USER_CONFIG,  fileName, userConfig, notifications)
+            W11._AppLauncherForExternalApps(app,USER_CONFIG,  fileName, userConfig, notifications, runAppsFrame, runAppsDict)
         except Exception as I: 
-            openWithSettings(None, fileName, USER_CONFIG, userConfig, notifications=notifications)
+            print(I)
+            openWithSettings(None, fileName, USER_CONFIG, userConfig, notifications, runAppsFrame, runAppsDict)
     else: os.system(fileName)

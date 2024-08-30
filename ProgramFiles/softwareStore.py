@@ -32,6 +32,7 @@ def showDescription(e=None):
     global externalAppsList
     wn = tkinter.Toplevel(background=THEME_WINDOW_BG)
     item = str(externalAppsList.item(externalAppsList.focus(), 'values')[0])
+    wn.title(appsList[item][0])
     tkinter.Label(wn, text=appsList[item][0], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).pack()
     if item not in USER_CONFIG["APPS"][1]:
         tkinter.Button(wn, text="Install", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=installProgram).pack()

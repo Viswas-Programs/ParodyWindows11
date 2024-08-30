@@ -46,7 +46,7 @@ def main(*args):
                 filepath = os.path.join(filepath, selectedFile)
                 lookUpFiles(filepath)
             else:
-                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], args[-2])
+                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], args[3], args[-1][0], args[-1][1])
 
         def goBackFolder(path: str):  
             if "\\" in path:

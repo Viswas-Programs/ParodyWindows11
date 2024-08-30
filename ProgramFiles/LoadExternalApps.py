@@ -59,7 +59,9 @@ def main(*args):
     global THEME_FOREGROUND, THEME_WINDOW_BG
     global showRefreshBtn
     THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
-    INSTANCES[args[-2]] = tkinter.Toplevel(background=THEME_WINDOW_BG)
+    INSTANCES[args[-2]] = tkinter.Tk()
+    INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
+    INSTANCES[args[-2]].title("Load External Apps")
     externalAppsName = []
     buttonText = "Look for external apps!"
     showRefreshBtn = tkinter.Button(INSTANCES[args[-2]], text=buttonText, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: show(args[-2]))
