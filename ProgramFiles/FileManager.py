@@ -4,8 +4,10 @@ import os
 from ProgramFiles.errorHandler import messagebox
 import ProgramFiles.fileRouters as fileRouters 
 import ProgramFiles.callHost as callHost
+from ParWFS import ParWFS
+NEED_FILE_SYSTEM_ACCESS = True
 THEME_WINDOW_BG, THEME_FOREGROUND = ["",""]
-def main(*args):
+def main(FILESYSTEM: ParWFS, *args):
     try:
         print(args[-1])
         PROCESS_RUNNING = True
@@ -17,8 +19,8 @@ def main(*args):
             toplevel = tkinter.Toplevel(background=THEME_WINDOW_BG)
             def createNewFolder(*event):
                 try:
-                    os.mkdir(newFolderEntry.get())
-                    lookUpFiles(os.path.join(os.getcwd(), newFolderEntry.get()))
+                    os.mkdir(os.path.join(filepath, newFolderEntry.get()))
+                    lookUpFiles(os.path.join(filepath, newFolderEntry.get()))
                 except Exception as EXCEPTION: messagebox.showerror("ERROR!", EXCEPTION)
             tkinter.Label(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Folder Name!").grid(row=0, column=0)
             newFolderEntry = tkinter.Entry(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -86,9 +88,8 @@ def main(*args):
         def delete(*args):
             import shutil
             selectedFileIndex = fileView.focus()
-            selectedFile = fileView.item(selectedFileIndex, 'values')[0]
-            if os.path.isdir(selectedFile): shutil.rmtree(selectedFile)
-            else: os.remove(selectedFile)
+            selectedFile = os.path.join(filepath, fileView.item(selectedFileIndex, 'values')[0])
+            FILESYSTEM.deleteFiles([[selectedFile, filepath]])
             fileView.delete(selectedFileIndex)
         def popup(event=None, *args):
             """ the context menu popup"""
@@ -99,6 +100,20 @@ def main(*args):
                 messagebox.showerror("Error in right click menu", f"Error in right click menu. \nPROB:{PROBLEM}")
             finally:
                 files.grab_release()
+        def copyFiles(ev=None):
+            selectedFileIndex = fileView.focus()
+            selectedFile = fileView.item(selectedFileIndex, 'values')[0]
+            absFilePath = os.path.join(filepath, selectedFile)
+            FILESYSTEM.copyFiles([[absFilePath, filepath]])
+        def cutFiles(ev=None):
+            selectedFileIndex = fileView.focus()
+            selectedFile = fileView.item(selectedFileIndex, 'values')[0]
+            absFilePath = os.path.join(filepath, selectedFile)
+            FILESYSTEM.cutFiles([[absFilePath, filepath]])
+        def pasteFiles(ev=None):
+            FILESYSTEM.pasteFiles(filepath)
+            lookUpFiles(filepath)
+
         commandBar.grid(row=1, column=0)
         fileView = ttk.Treeview(mainFrame, style="Treeview")
         fileView.grid(row=2, column=0, sticky="w")
@@ -113,6 +128,9 @@ def main(*args):
         files.add_command(label="Open", command=openFileOrFolder)
         files.add_command(label="Open With", command=lambda: fileRouters.openWithSettings(fileManagerWindow, str(os.path.join(filepath, fileView.item(fileView.focus(), 'values')[0])).replace("\\", "/"), args[-2], args[0], args[1] ))
         files.add_command(label="Delete", command=delete)
+        files.add_command(label="Copy", command=copyFiles)
+        files.add_command(label="Cut", command=cutFiles)
+        files.add_command(label="Paste", command=pasteFiles)
         def destroy():
             callHost.acknowledgeEndTask(args[-2], args[-1])
             fileManagerWindow.destroy()

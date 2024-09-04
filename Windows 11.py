@@ -12,7 +12,13 @@ import ProgramFiles.tooltips as tooltips
 from PIL import Image, ImageTk
 import psutil
 from ProgramFiles.fileaskhandlers import askopenfilename
+from ParWFS import ParWFS
 SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG",  writeback=True)
+try:
+    global FILE_SYSTEM 
+    FILE_SYSTEM = ParWFS()
+except Exception as EXP: 
+    print(f"CANNOT INITIALISE FILE SYSTEM... \n{EXP}")
 try:
     THEME_WINDOW_BG, THEME_FOREGROUND = SYS_CONFIG["THEME"]
 except Exception:
@@ -253,6 +259,7 @@ class GUIButtonCommand:
             exec(f"{appToLaunch}PID = random.randint(1000, 9999)")
             exec(f"RUNNING_APPS[{appToLaunch}PID] = application")
             exec(f"GUIButtonCommand.createRunningAppTaskbarIcon(application, {appToLaunch}PID)")
+            if application == "File Manager": exec(f"ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, {params},  USER_CONFIG, {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])")
             if (params == None ): exec(f"ProgramFiles.{appToLaunch}.main(username, notification, {params},  USER_CONFIG, {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])")
             else:   exec(f"ProgramFiles.{appToLaunch}.main(username, notification, '{params}',  USER_CONFIG, {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])")
     def launchComboBoxEvent(self, e=None):
