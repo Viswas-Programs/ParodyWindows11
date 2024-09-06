@@ -1,10 +1,17 @@
 import tkinter
 import os
 import shelve
-
+import sys
+import subprocess
+import threading
 from ProgramFiles import callHost
 INSTANCES = {}
-
+class RedirectOutput:
+    def __init__(self, cmdInstance):
+        self.cmdInstance = cmdInstance
+    def write(self, text: str):
+        self.cmdInstance.showMsg(text)
+        
 class cmdCommands(object):
     def __init__(self, stdout: tkinter.Text, stdin: tkinter.Entry, root: tkinter.Tk,) -> None:
         with shelve.open("ProgramFiles/SYS_CONFIG") as SYS_CONFIG:
@@ -241,10 +248,18 @@ class cmdCommands(object):
     def getParams(self, paramToGet: int, includeParamSeparator: str) -> str:
         return self.stdin.get().split(' ')[paramToGet].lstrip(includeParamSeparator)
     def sendToRootTerminal(self):
+        def run():
+            pipe = subprocess.Popen(self.stdin.get().replace("sendToRootTerminal -", "").split(), stdout=subprocess.PIPE, bufsize=1, text=True)
+            while pipe.poll() is None:
+                msg = pipe.stdout.readline().strip() # read a line from the process output
+                if msg:
+                    print(msg, file=RedirectOutput(self))
         if self.ADMINISTRATOR: 
-            self.showMsg("\nRUNNING COMMAND...")
-            os.system(self.stdin.get().replace("sendToRootTerminal -", ""))
-            self.showMsg("\nCOMMAND SUCCESFULLY RAN!")
+            OLD_STD = sys.stdout
+            sys.stdout = RedirectOutput(self)
+            print("\n")
+            threading.Thread(target=run).start()
+            sys.stdout = OLD_STD
         else: 
             self.showMsg("\nYou don't have permissions to run this command! Enable Administrator Mode and try again.")
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]

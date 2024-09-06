@@ -26,6 +26,15 @@ except Exception:
     THEME_FOREGROUND = "White"
 print("Starting OS...")
 RUNNING_APPS = {}
+ICONS = {
+}
+def loadAllIcons(appsList: list, root):
+    global ICONS
+    for app in appsList:
+        realApp = GUIButtonCommand.AppImportNameCheck(app)
+        try:
+            ICONS[realApp] = tkinter.PhotoImage(file=f"ProgramFiles/Icons/{realApp}.png", master=root)
+        except: pass
 ROW_COUNT_NOTIFICATION_WINDOW = 0
 class Notifications(object):
     global ROW_COUNT_NOTIFICATION_WINDOW
@@ -285,12 +294,12 @@ def focusOut():
     ProgramFiles.{realApp}.focusOut({PID})
     taskBar{realApp}RnAppBtn.windowInfo = 'focusOut'
     taskBar{realApp}RnAppBtn.configure(command=focusIn)
-{realApp}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{realApp}.png', master=ROOT_WINDOW).subsample(2, 2)
+{realApp}ICON = ICONS["{realApp}"].subsample(2, 2)
 taskBar{realApp}RnAppBtn = tkinter.Button(runningAppsFrame, text='{app}', background='{THEME_WINDOW_BG}', foreground='{THEME_FOREGROUND}', command=focusIn, image={realApp}ICON, compound='left')
 taskBar{realApp}RnAppBtn.grid(row=0, column={len(RUNNING_APPS)})
 taskBar{realApp}RnAppBtn.processInfo = (PID, '{app}')
 taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
-""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW})
+""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW, "ICONS": ICONS})
     @staticmethod
     def AppImportNameCheck(app: str, dontLower=False):
         if "/" in app:
@@ -349,7 +358,7 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
             USER_CONFIG["PINNED"][0]  = apList
             USER_CONFIG.sync()
         exec(f"global {appName}ICON")
-        exec(f"{appName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{appName}.png', master=ROOT_WINDOW).subsample(2, 2)")
+        exec(f"{appName}ICON = ICONS['{appName}'].subsample(2, 2)")
         exec(f"{appName}BTN = tkinter.Button(appsFrame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(f'{appToPin}'))")
         exec(f"{appName}BTN.IMGREF = {appName}ICON")
         exec(f"{appName}BTN.grid(row=0, column={self.TASKBAR_ICON_COUNT})")
@@ -411,7 +420,7 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
             exec(f"{realAppName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
             exec(f"{realAppName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
             ROW_COUNT_DESKTOP_ICONS += 1
-            exec(f"{realAppName}ICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/{realAppName}.png')")
+            exec(f"{realAppName}ICON = ICONS['{realAppName}']")
             exec(f"{realAppName}BTN = tkinter.Button({realAppName}Frame, image={realAppName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem('{command}'))")
             exec(f"{realAppName}BTN.IMGREF = {realAppName}ICON")
             exec(f"{realAppName}BTN.grid(row=0, column=0)")
@@ -495,11 +504,11 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
         shutdownWindow.title("Shutdown/Restart the shell")
         a = tkinter.Label(shutdownWindow, text="What you want to do now?", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         a.grid(row=0, column=0)
-        ShutdownICON = tkinter.PhotoImage(file = 'ProgramFiles/Icons/shutdown.png', master=root).subsample(2, 2)
+        ShutdownICON = ICONS["shutdown"].subsample(2, 2)
         ShutdownBTN = tkinter.Button(shutdownWindow, image=ShutdownICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=shutdown)
         ShutdownBTN.IMGREF = ShutdownICON
         ShutdownBTN.grid(row=1, column=0)
-        RestartICON = tkinter.PhotoImage(file='ProgramFiles/Icons/restart.png', master=root).subsample(2, 2)
+        RestartICON = ICONS["restart"].subsample(2, 2)
         RestartBTN = tkinter.Button(shutdownWindow, image=RestartICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=restart)
         RestartBTN.IMGREF = RestartICON
         RestartBTN.grid(row=1, column=1)
@@ -606,6 +615,8 @@ def main():
     GuiInterfaceCommands = GUIButtonCommand(PINNED_APPS)
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
+    loadAllIcons(APPS_LIST, ROOT_WINDOW)
+    loadAllIcons(["shutdown", "restart"], ROOT_WINDOW)
     taskbarFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG)
     taskbarFrame.identifier = "taskbar"
     ROOT_WINDOW.identifier = "root_window"
@@ -737,6 +748,7 @@ def login():
     loginWindow = tkinter.Tk()
     loginWindow.title("Login to Windows 11")
     loginWindow.configure(background=THEME_WINDOW_BG)
+    loadAllIcons(["shutdown", "restart"], loginWindow)
     msg = tkinter.Label(loginWindow, text="Enter your Username: ", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     msg.grid(row=0, column=0)
     userNameText = tkinter.Entry(loginWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -826,20 +838,21 @@ def autoRecoveryEnv() -> None:
         cmdInstance.sfcRepair()
         ROOT.mainloop()
     try:
-        exec(f"continueICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/continue.png')")
-        exec(f"continueBTN = tkinter.Button(recoveryWin, image=continueICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=login, text='Continue to main', compound=tkinter.LEFT)")
-        exec(f"continueBTN.IMGREF = continueICON")
-        exec(f"continueBTN.grid(row=0, column=0)")
+        loadAllIcons(["continue", "repair", "commandprompt"], recoveryWin)
+        continueICON = ICONS["continue"]
+        continueBTN = tkinter.Button(recoveryWin, image=continueICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=login, text='Continue to main', compound=tkinter.LEFT)
+        continueBTN.IMGREF = continueICON
+        continueBTN.grid(row=0, column=0)
 
-        exec(f"repairICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/repair.png')")
-        exec(f"repairBTN = tkinter.Button(recoveryWin, image=repairICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=reprSysCMDL, text='Repair system', compound=tkinter.LEFT)")
-        exec(f"repairBTN.IMGREF = repairICON")
-        exec(f"repairBTN.grid(row=1, column=0)")
+        repairICON = ICONS["repair"]
+        repairBTN = tkinter.Button(recoveryWin, image=repairICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=reprSysCMDL, text='Repair system', compound=tkinter.LEFT)
+        repairBTN.IMGREF = repairICON
+        repairBTN.grid(row=1, column=0)
 
-        exec(f"cmdICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/commandprompt.png')")
-        exec(f"cmdBTN = tkinter.Button(recoveryWin, image=cmdICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=launchCmd, text='Launch Command Prompt', compound=tkinter.LEFT)")
-        exec(f"cmdBTN.IMGREF = cmdICON")
-        exec(f"cmdBTN.grid(row=0, column=1)")
+        cmdICON = ICONS["commandprompt"]
+        cmdBTN = tkinter.Button(recoveryWin, image=cmdICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=launchCmd, text='Launch Command Prompt', compound=tkinter.LEFT)
+        cmdBTN.IMGREF = cmdICON
+        cmdBTN.grid(row=0, column=1)
         recoveryWin.mainloop()
     except Exception: print("ERROR OCCURED WHILE LOADING AUTORECOVERYENV..."); recoveryWin.destroy(); safeMode(forceNoARENV=True)
 def safeMode(forceNoARENV=False) -> None:
