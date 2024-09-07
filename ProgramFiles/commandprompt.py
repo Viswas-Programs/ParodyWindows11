@@ -212,10 +212,11 @@ class cmdCommands(object):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()
     def dir(self):
-        for (filepath, dirname, filename) in os.walk(os.getcwd()):
-            print(filepath, dirname)
-            for file in dirname:
-                self.showMsg(f"\n{dirname}/{file}")
+        for file in os.listdir(os.getcwd()):
+            if os.path.isdir(os.path.join(os.getcwd(), file)):
+                self.showMsg(f"\n{file} [DIRECTORY]")
+            else:
+                self.showMsg("\n"+file)
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()
     def mkd(self):
@@ -251,11 +252,14 @@ class cmdCommands(object):
         return self.stdin.get().split(' ')[paramToGet].lstrip(includeParamSeparator)
     def sendToRootTerminal(self):
         def run():
-            pipe = subprocess.Popen(self.stdin.get().replace("sendToRootTerminal -", "").split(), stdout=subprocess.PIPE, bufsize=1, text=True)
+            pipe = subprocess.Popen(self.stdin.get().replace("sendToRootTerminal -", "").split(), stdout=subprocess.PIPE, bufsize=1, text=True, stderr=subprocess.PIPE)
+            Unbinder= self.ROOT.bind("<Control-c>", pipe.kill)
             while pipe.poll() is None:
                 msg = pipe.stdout.readline().strip() # read a line from the process output
                 if msg:
                     print(msg, file=RedirectOutput(self))
+            self.ROOT.unbind("<Control-c>", Unbinder)
+            self.showMsg("\nCommand Ended!")
         if self.ADMINISTRATOR: 
             OLD_STD = sys.stdout
             sys.stdout = RedirectOutput(self)
