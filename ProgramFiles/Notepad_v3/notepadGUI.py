@@ -999,12 +999,14 @@ Never gonna run around and desert you""")
             value = ct.c_int(value)
             set_window_attribute(hwnd, rendering_policy, ct.byref(value),
                                  ct.sizeof(value))
+            return True
         else:
             if not MSG_SHOWN:
-                messagebox.showinfo(f"Function not supported for "
+                e = messagebox.showinfo(f"Function not supported for "
                                      f"{platform.system()}!", "The Title-Bar changer function is not "
                                      f"supported for {platform.system()}, the program will continue", self.root)
                 MSG_SHOWN = True
+            return False
 
     def _sendFiles(self, sender_ip, port, file_path):
         global encryption

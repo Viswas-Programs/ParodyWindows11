@@ -25,6 +25,7 @@ class cmdCommands(object):
         self.LINE_COUNT = 0.0
         self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator", "startFile", "mk", "rm", "cmd", "sendToRootTerminal"]
         self.INPUTTED_COMMANDS_LIST = []
+        self.CWD = os.getcwd()
         self.COMMAND_NOT_FOUND = "\nThe following command doesn't exist!"
         self.showMsg(f"Welcome to ParodyWindows11 Command Interpreter (OS Version {self.VERSION})\nCurrent Working Directory: {os.getcwd()}\n>")
         try: self.ROOT.bind("<Up>", self.upArrowBind); self.ROOT.bind("<Down>", self.downArrowBind)
@@ -64,10 +65,10 @@ class cmdCommands(object):
             import base64
             if self.getParams(1, " ").lstrip('-') != "list":
                 try:
-                    os.mkdir(os.path.join("ProgramFiles", self.stdin.get().split(' ')[2].lstrip('-')))
+                    os.mkdir(os.path.join(os.path.join(self.CWD, "ProgramFiles"), self.stdin.get().split(' ')[2].lstrip('-')))
                 except Exception: pass
                 finally:
-                    with open(f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf", "w") as writeConfig:
+                    with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "w") as writeConfig:
                         writeConfig.write(f"{self.getParams(2, ' ').lstrip('-')}\n{self.getParams(3, ' ').lstrip('-')}")
                     USER_CONFIG = shelve.open(f"ProgramFiles/{self.getParams(2, ' ').lstrip('-')}")
                     USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel"]
@@ -88,7 +89,7 @@ class cmdCommands(object):
             self.showMsg("\nPlease enable administrator before editing or creating a new user!")
     def administrator(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get()) 
-        with open(f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf", "r") as checkUser:
+        with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "r") as checkUser:
             usrname, pswd = checkUser.readlines()
             usrname = usrname.rstrip("\n")
             pswd = pswd.rstrip("\n")
@@ -277,6 +278,7 @@ def main(*args):
     INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
     INSTANCES[args[-2]].title("Command Interpreter")
     def destroy():
+        os.chdir(cmdInstance.CWD)
         if args[0] != "AUTORECOVERYENV": callHost.acknowledgeEndTask(args[-2], args[-1])
         INSTANCES[args[-2]].destroy()
         return True
