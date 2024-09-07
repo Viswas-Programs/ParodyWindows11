@@ -108,6 +108,7 @@ class cmdCommands(object):
         self.stdout.configure(state="normal")
         self.LINE_COUNT += 1.0
         self.stdout.insert(f"{self.LINE_COUNT+1}", msg)
+        self.stdout.see(f"{self.LINE_COUNT+1}")
         if "\n" in msg: self.LINE_COUNT += 1.0
         self.stdout.configure(state="disabled")
     def launchCmd(self, e=None):
