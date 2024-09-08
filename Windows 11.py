@@ -1008,10 +1008,10 @@ if __name__ == "__main__":
                 safeMode()
             elif "-config" in arguements:
                 username = input("Enter the username to create first run settings: ")
-                password = input("Enter your user's password")
+                password = input("Enter your user's password: ")
                 foreground = input("Enter your user's preffered foreground colour: ")
                 background = input("Enter your user's preffered background colour: ")
-                userNumber = input("Enter your user's wanted user number (can be any number)")
+                userNumber = input("Enter your user's wanted user number (can be any number): ")
                 import shelve
                 SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
                 try:
@@ -1040,7 +1040,7 @@ if __name__ == "__main__":
                 configchoice = input("System or User config change?")
                 if "system" in configchoice.lower():
                     infoSysSelectSTR = "SYS_CONFIG"
-                    SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
+                    SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG", writeback=True)
                 else:
                     infoSysSelectSTR = "USER_CONFIG"
                     username = input("Type in the username whose settings are going to be changed!: ")

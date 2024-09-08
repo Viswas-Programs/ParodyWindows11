@@ -60,33 +60,33 @@ class cmdCommands(object):
             self.clearStdIn()
             self.showMsg(f"\nWelcome to ParodyWindows11 Command Interpreter (OS Version 2.2)\nCurrent Working Directory: {os.getcwd()}")
     def user(self):
-        if self.ADMINISTRATOR:
             from pathlib import Path
             import base64
             if self.getParams(1, " ").lstrip('-') != "list":
-                try:
-                    os.mkdir(os.path.join(os.path.join(self.CWD, "ProgramFiles"), self.stdin.get().split(' ')[2].lstrip('-')))
-                except Exception: pass
-                finally:
-                    with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "w") as writeConfig:
-                        writeConfig.write(f"{self.getParams(2, ' ').lstrip('-')}\n{self.getParams(3, ' ').lstrip('-')}")
-                    USER_CONFIG = shelve.open(f"ProgramFiles/{self.getParams(2, ' ').lstrip('-')}")
-                    USER_CONFIG["APPS"] = ["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel"]
-                    USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
-                    USER_CONFIG["THEME"] = ["Black", "White"]
-                    USER_CONFIG["CLOCK-WIDGET"] = 0
-                    USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
-                    USER_CONFIG.close()
-                    self.clearStdIn()
-                    self.showMsg("\nUser created successfully!")
+                if self.ADMINISTRATOR:
+                    try:
+                        os.mkdir(os.path.join(os.path.join(self.CWD, "ProgramFiles"), self.stdin.get().split(' ')[2].lstrip('-')))
+                    except Exception: pass
+                    finally:
+                        with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "w") as writeConfig:
+                            writeConfig.write(f"{self.getParams(2, ' ').lstrip('-')}\n{self.getParams(3, ' ').lstrip('-')}")
+                        USER_CONFIG = shelve.open(f"ProgramFiles/{self.getParams(2, ' ').lstrip('-')}")
+                        USER_CONFIG["APPS"] = [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel"]]
+                        USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
+                        USER_CONFIG["THEME"] = ["Black", "White"]
+                        USER_CONFIG["CLOCK-WIDGET"] = 0
+                        USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
+                        USER_CONFIG["WALLPAPER"] = None
+                        USER_CONFIG.close()
+                        self.clearStdIn()
+                        self.showMsg("\nUser created successfully!")
+                else:
+                    self.showMsg("\nPlease enable administrator before editing or creating a new user!")
             else:
                 self.showMsg("\nCurrent User List: ")
-                for dirpath, dirnames, filenames in os.walk("ProgramFiles"):
-                    for file in Path(dirpath).glob("accConfiguration*.conf"):
-                        with open(file,) as showUsers:
-                            self.showMsg(f"\n-> {showUsers.readlines()[0]} ")
-        else:
-            self.showMsg("\nPlease enable administrator before editing or creating a new user!")
+                for file in Path(os.path.join(self.CWD, "ProgramFiles")).glob("accConfiguration*.conf"):
+                    with open(file, "r") as showUsers:
+                        self.showMsg(f"\n-> {showUsers.readlines()[0]} ")
     def administrator(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get()) 
         with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "r") as checkUser:
@@ -252,8 +252,11 @@ class cmdCommands(object):
         return self.stdin.get().split(' ')[paramToGet].lstrip(includeParamSeparator)
     def sendToRootTerminal(self):
         def run():
+            def killer(*args):
+                pipe.kill()
+                self.showMsg("\nCommand killed with Ctrl-C!")
             pipe = subprocess.Popen(self.stdin.get().replace("sendToRootTerminal -", "").split(), stdout=subprocess.PIPE, bufsize=1, text=True, stderr=subprocess.PIPE)
-            Unbinder= self.ROOT.bind("<Control-c>", pipe.kill)
+            Unbinder= self.ROOT.bind("<Control-c>", killer)
             while pipe.poll() is None:
                 msg = pipe.stdout.readline().strip() # read a line from the process output
                 if msg:
@@ -276,6 +279,7 @@ def main(*args):
             yourCommand.insert(tkinter.END, "  ")
         if yourCommand.get().split(" ")[0] in cmdInstance.COMMAND_LIST and cmdInstance.ACCEPT_COMMANDS:
             exec(f"cmdInstance.{yourCommand.get().split(' ')[0]}()")
+            cmdInstance.showMsg("\n\n>")
         elif not cmdInstance.ACCEPT_COMMANDS: cmdInstance.clear()
         else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
     INSTANCES[args[-2]] = tkinter.Tk()
