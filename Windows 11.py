@@ -696,33 +696,39 @@ def main():
     ROOT_WINDOW.mainloop()
     SYS_CONFIG.close()
     USER_CONFIG.close()
+import base64
 def loginVerification(e=None):
     print("Checking credentials")
     global userNameText
     global passwordText
     global userNum
     global username
-    if int(userNum.get()) != 0:
-        with open(f"ProgramFiles/accConfiguration{userNum.get()}.conf", "r") as verify:
-            username, password = verify.readlines()
-            username = username.rstrip('\n')
-            password = password.rstrip('\n')
-            if userNameText.get() == username and passwordText.get() == password:
-                loginWindow.destroy()
-                try:
-                    main()
-                except Exception as EXP: bsod(main, f"DESKTOP_LAUNCH_ERROR('{EXP}')")
-            else:
-                messagebox.showerror(None, None, loginWindow, True, "LOGIN_INCORRECT")
-    else:
-        loginWindow.destroy()
-        username = "GUEST"
-        try:
-            os.mkdir("ProgramFiles/GUEST")
-        except FileExistsError:
-            # The user data somehow exists? let's use that then!
-            pass # pass for now!
-        main()
+    try:
+        if int(userNum.get()) != 0:
+            with open(f"ProgramFiles/accConfiguration{userNum.get()}.conf", "r") as verify:
+                username, password = verify.readlines()
+                username = base64.urlsafe_b64decode(username.rstrip('\n')).decode('utf-8')
+                password = base64.urlsafe_b64decode(password.rstrip('\n')).decode('utf-8')
+                if userNameText.get() == username and passwordText.get() == password:
+                    loginWindow.destroy()
+                    try:
+                        main()
+                    except Exception as EXP: bsod(main, f"DESKTOP_LAUNCH_ERROR('{EXP}')")
+                else:
+                    messagebox.showerror(None, None, loginWindow, True, "LOGIN_INCORRECT")
+        else:
+            loginWindow.destroy()
+            username = "GUEST"
+            try:
+                os.mkdir("ProgramFiles/GUEST")
+            except FileExistsError:
+                # The user data somehow exists? let's use that then!
+                pass # pass for now!
+            try:
+                main()
+            except Exception as EXP: bsod(main, f"DESKTOP_LAUNCH_ERROR('{EXP}')")
+    except Exception as EXP:
+        messagebox.showerror("loginVerification Error!", EXP)
 
 DARK_COLOURS = ["black", 'brown', 'blue', 'green', 'red', 'violet', 'purple', 'dark blue', 'dark green',
                 'dark red', 'dark brown', ]
@@ -757,7 +763,7 @@ def login():
     userNameText.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
     msg2 = tkinter.Label(loginWindow, text="Enter your Password", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     msg2.grid(row=1, column=0)
-    passwordText = tkinter.Entry(loginWindow, foreground=THEME_FOREGROUND, background=THEME_WINDOW_BG)
+    passwordText = tkinter.Entry(loginWindow, foreground=THEME_FOREGROUND, background=THEME_WINDOW_BG, show="*")
     passwordText.grid(row=1, column=1)
     passwordText.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
     def passwordTextFocus(*e): passwordText.focus()
@@ -1015,8 +1021,10 @@ if __name__ == "__main__":
                 import shelve
                 SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
                 try:
-                    with open(f"ProgramFiles/accConfiguration{userNumber}.conf", "w") as WRITE:
-                        WRITE.write(f"{username}\n{password}")
+                    with open(f"ProgramFiles/accConfiguration{userNumber}.conf", "wb") as WRITE:
+                        Rusername = base64.urlsafe_b64encode(username.encode("utf-8"))
+                        Rpassword = base64.urlsafe_b64encode(password.encode("utf-8"))
+                        WRITE.writelines([Rusername, "\n".encode("utf-8"),  Rpassword])
                     os.mkdir(f"ProgramFiles/{username}")
                     
 

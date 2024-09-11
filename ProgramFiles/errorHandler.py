@@ -32,8 +32,9 @@ class messagebox:
         Btn = tkinter.Button(MsgBox, text="Ok", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=returnOk)
         Btn.pack(side='right', anchor='s')
         MsgBox.mainloop()
-        MsgBox.destroy()
-        return RETURNVAL
+        try: MsgBox.destroy()
+        except: pass
+        finally: return RETURNVAL
     @staticmethod
     def showinfo(header, msg, root, use_preset=False, type_preset=None, quitOnResponse=False):
         RETURNVAL = 0
@@ -63,8 +64,9 @@ class messagebox:
         Btn = tkinter.Button(MsgBox, text="Ok", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=returnOk)
         Btn.pack(side='right', anchor='s')
         MsgBox.mainloop()
-        MsgBox.destroy()
-        return RETURNVAL
+        try: MsgBox.destroy()
+        except: pass
+        finally: return RETURNVAL
     @staticmethod
     def showwarning(header, msg, root, use_preset=False, type_preset=None, quitOnResponse=False):
         RETURNVAL = 0
@@ -94,8 +96,9 @@ class messagebox:
         Btn = tkinter.Button(MsgBox, text="Ok", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=returnOk)
         Btn.pack(side='right', anchor='s')
         MsgBox.mainloop()
-        MsgBox.destroy()
-        return RETURNVAL
+        try: MsgBox.destroy()
+        except: pass
+        finally: return RETURNVAL
     @staticmethod
     def askyesorno(header, msg, root,):
         RETURNVAL = 0
@@ -122,8 +125,9 @@ class messagebox:
         Btn = tkinter.Button(MsgBox, text="No", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=returnFalse)
         Btn.pack(side='right', anchor='s')
         MsgBox.mainloop()
-        MsgBox.destroy()
-        return RETURNVAL
+        try: MsgBox.destroy()
+        except: pass
+        finally: return RETURNVAL
     @staticmethod
     def askyesnocancel(header, msg, root=None, quitOnResponse=False):
         RETURNVAL = 0
@@ -165,5 +169,6 @@ class messagebox:
         CANCELBtn = tkinter.Button(MsgBox, text="Cancel", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=returnNothing)
         CANCELBtn.pack(side='right', anchor='s')
         MsgBox.mainloop()
-        MsgBox.destroy()
-        return RETURNVAL
+        try: MsgBox.destroy()
+        except: pass
+        finally: return RETURNVAL

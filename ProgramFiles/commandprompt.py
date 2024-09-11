@@ -4,6 +4,7 @@ import shelve
 import sys
 import subprocess
 import threading
+import base64
 from ProgramFiles import callHost
 INSTANCES = {}
 class RedirectOutput:
@@ -68,9 +69,9 @@ class cmdCommands(object):
                         os.mkdir(os.path.join(os.path.join(self.CWD, "ProgramFiles"), self.stdin.get().split(' ')[2].lstrip('-')))
                     except Exception: pass
                     finally:
-                        with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "w") as writeConfig:
-                            writeConfig.write(f"{self.getParams(2, ' ').lstrip('-')}\n{self.getParams(3, ' ').lstrip('-')}")
-                        USER_CONFIG = shelve.open(f"ProgramFiles/{self.getParams(2, ' ').lstrip('-')}")
+                        with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "wb") as writeConfig:
+                            writeConfig.writelines([base64.urlsafe_b64encode((self.getParams(2, ' ').lstrip('-')).encode("utf-8")), "\n".encode("utf-8") , base64.urlsafe_b64encode((self.getParams(3, ' ').lstrip('-')).encode("utf-8"))])
+                        USER_CONFIG = shelve.open(f"ProgramFiles/{self.getParams(2, ' ').lstrip('-')}/USER_CONFIG")
                         USER_CONFIG["APPS"] = [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel"]]
                         USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
                         USER_CONFIG["THEME"] = ["Black", "White"]
@@ -91,8 +92,8 @@ class cmdCommands(object):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get()) 
         with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "r") as checkUser:
             usrname, pswd = checkUser.readlines()
-            usrname = usrname.rstrip("\n")
-            pswd = pswd.rstrip("\n")
+            usrname = base64.urlsafe_b64decode(usrname.rstrip("\n")).decode("utf-8")
+            pswd = base64.urlsafe_b64decode(pswd.rstrip("\n")).decode("utf-8")
             if self.getParams(2, " ").lstrip('-').rstrip("\n") == usrname and self.getParams(3, " ").lstrip('-').rstrip("\n") == pswd:
                 self.ADMINISTRATOR = True
                 self.showMsg("\nSuccesfully turned on administrator mode!")
