@@ -13,12 +13,9 @@ from PIL import Image, ImageTk
 import psutil
 from ProgramFiles.fileaskhandlers import askopenfilename
 from ParWFS import ParWFS
-SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG",  writeback=True)
-try:
-    global FILE_SYSTEM 
-    FILE_SYSTEM = ParWFS()
-except Exception as EXP: 
-    print(f"CANNOT INITIALISE FILE SYSTEM... \n{EXP}")
+FILE_SYSTEM = ParWFS()
+FILE_SYSTEM.loadConfig("ProgramFiles/SYS_CONFIG", "SYS_CONFIG")
+SYS_CONFIG = FILE_SYSTEM.getConfig("SYS_CONFIG")
 try:
     THEME_WINDOW_BG, THEME_FOREGROUND = SYS_CONFIG["THEME"]
 except Exception:
@@ -28,6 +25,10 @@ print("Starting OS...")
 RUNNING_APPS = {}
 ICONS = {
 }
+def updateConfig(dictToUpdate: str, newDict: dict):
+    exec(f"""global {dictToUpdate}
+{dictToUpdate} = newDict
+""")
 def loadAllIcons(appsList: list, root):
     global ICONS
     for app in appsList:
@@ -102,14 +103,13 @@ class settings():
         def changeBg():
             global children
             global THEME_WINDOW_BG
+            global  USER_CONFIG, SYS_CONFIG
             colorToUse = colorchooser.askcolor(title="Select background!")
             THEME_WINDOW_BG = colorToUse[1]
             crBg.configure(text=f"Current Background = {THEME_WINDOW_BG}")
             if systemChangeTheme.get(): 
-                SYS_CONFIG["THEME"]= [THEME_WINDOW_BG, THEME_FOREGROUND]
-                SYS_CONFIG.sync()
-            USER_CONFIG["THEME"] = [THEME_WINDOW_BG, THEME_FOREGROUND]
-            USER_CONFIG.sync()
+                SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
+            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
             for child in children:
                 try:
                     child.configure(background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -121,14 +121,13 @@ class settings():
         def changeFg():
             global children
             global THEME_FOREGROUND
+            global  USER_CONFIG, SYS_CONFIG
             colorToUse = colorchooser.askcolor(title="Select foreground!")
             THEME_FOREGROUND = colorToUse[1]
             crFg.configure(text=f"Current foreground = {THEME_FOREGROUND}")
             if systemChangeTheme.get(): 
-                SYS_CONFIG["THEME"]= [THEME_WINDOW_BG, THEME_FOREGROUND]
-                SYS_CONFIG.sync()
-            USER_CONFIG["THEME"] = [THEME_WINDOW_BG, THEME_FOREGROUND]
-            USER_CONFIG.sync()
+                SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
+            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
             for child in children:
                 try:
                     child.configure(background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -138,6 +137,7 @@ class settings():
         def changeWallpaper():
             global wallpaper
             nonlocal wallpaperText
+            global USER_CONFIG
             wallpaperChoose = askopenfilename("Open a wallpaper file (png)", (("PNG Files", "*.png"), ("All Files", "*.*")))
             img = GUIButtonCommand.getWallpaperImageResized(wallpaperChoose)
             ROOT_WINDOW.image = img
@@ -150,12 +150,11 @@ class settings():
             desktopFrame.lift()
             wallpaperText = "Current Wallpaper: " + wallpaperChoose
             wallpaperPath.configure(text=wallpaperText)
-            USER_CONFIG["WALLPAPER"] = wallpaperChoose
-            USER_CONFIG.sync()
+            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", wallpaperChoose)
         def removeWallpaper():
             nonlocal wallpaperText
-            USER_CONFIG["WALLPAPER"] = None
-            USER_CONFIG.sync()
+            global USER_CONFIG
+            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", None)
             try: 
                 wallpaper.destroy()
             except: pass
@@ -188,13 +187,13 @@ class settings():
     def changeFileOpeners(self, reLaunch=False):
         def __internals_AddNewEntry(*args):
             def __internals_AddNewEntry_AddAppNames(*args):
+                global USER_CONFIG
                 app = comboBox.get()
                 try: 
                     extension = textAssociationEntry.get()
                     CurrentConfig: dict = USER_CONFIG["DEFAULTAPPASSOCIATION"]
                     CurrentConfig.update({extension: app})
-                    USER_CONFIG["DEFAULTAPPASSOCIATION"] = CurrentConfig
-                    USER_CONFIG.sync()
+                    USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
                     self.changeFileOpeners(True)
                 except Exception as I:
                     messagebox.showerror('Error changing default app association', f'Error changing default app association.\nProb: {I}', addNewEntryWn )
@@ -215,7 +214,7 @@ class settings():
         self.setting.grid(row=0, column=1)
         addEntryBtn = tkinter.Button(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Add New Entry", command=__internals_AddNewEntry)
         addEntryBtn.grid(row=0, column=0)
-        for X, i in enumerate(USER_CONFIG["DEFAULTAPPASSOCIATION"].keys()):
+        for X, i in enumerate(dict(USER_CONFIG["DEFAULTAPPASSOCIATION"]).keys()):
             exec(f""" 
 innerFrame{X} = tkinter.Frame(frame, background=THEME_WINDOW_BG)
 innerFrame{X}.grid(row=X+1, column=0)
@@ -227,8 +226,7 @@ def changeDefAppEvent{X}(e=None):
     try: 
         CurrentConfig: dict = USER_CONFIG["DEFAULTAPPASSOCIATION"]
         CurrentConfig.update({"{i: app}"})
-        USER_CONFIG["DEFAULTAPPASSOCIATION"] = CurrentConfig
-        USER_CONFIG.sync()
+        USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
     except Exception as I:
         messagebox.showerror('Error changing default app association', 'Error changing default app association.', root_wn )
 global comboBox{X}
@@ -244,7 +242,7 @@ COLUMN_COUNT_DESKTOP_ICONS = 0
 MAX_ROW_DESKTOP = 10
 MAX_COLUMN_DESKTOP = 15
 class GUIButtonCommand:
-    global launcherCombobox
+    global launcherComboBox
     global APPS_LIST
     global PINNED_APPS
     global ROW_COUNT_DESKTOP_ICONS
@@ -262,15 +260,12 @@ class GUIButtonCommand:
         appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
         progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
         exec(f"import {progAppImport}")
-        if application in RUNNING_APPS.items():
-            exec(f"ProgramFiles.{appToLaunch}.focusIn()")
-        else:
-            exec(f"{appToLaunch}PID = random.randint(1000, 9999)")
-            exec(f"RUNNING_APPS[{appToLaunch}PID] = application")
-            exec(f"GUIButtonCommand.createRunningAppTaskbarIcon(application, {appToLaunch}PID)")
-            if application == "File Manager": exec(f"ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, {params},  USER_CONFIG, {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])")
-            if (params == None ): exec(f"ProgramFiles.{appToLaunch}.main(username, notification, {params},  USER_CONFIG, {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])")
-            else:   exec(f"ProgramFiles.{appToLaunch}.main(username, notification, '{params}',  USER_CONFIG, {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])")
+        exec(f"{appToLaunch}PID = random.randint(1000, 9999)")
+        exec(f"RUNNING_APPS[{appToLaunch}PID] = application")
+        exec(f"GUIButtonCommand.createRunningAppTaskbarIcon(application, {appToLaunch}PID)")
+        if application == "File Manager": exec(f"""ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, {params},  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])""")
+        if (params == None ): exec(f"""ProgramFiles.{appToLaunch}.main(username, notification, {params},  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])""")
+        else:   exec(f"""ProgramFiles.{appToLaunch}.main(username, notification, '{params}',  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])""")
     def launchComboBoxEvent(self, e=None):
         Item = launcherComboBox.get()
         if Item == "Control Panel":
@@ -332,8 +327,7 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
                                         foreground=THEME_FOREGROUND)
                 ClockRepeatID = clock.after(1000, recurringClockFunction)
                 clock.grid(row=0, column=2, sticky="ne")
-            USER_CONFIG["CLOCK-WIDGET"] = 1
-            USER_CONFIG.sync()
+            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 1)
             recurringClockFunction()
 
         else:
@@ -341,22 +335,21 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
                cr_time = None
                clock.after_cancel(ClockRepeatID)
                clock.destroy()
-               USER_CONFIG["CLOCK-WIDGET"] = 0
-               USER_CONFIG.sync()
+               USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
             except Exception as E:
                 messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}")
     def pinApps(self, appToPin, writeto=True):
         global appsFrame
+        global USER_CONFIG
         appName: str = appToPin
         appName = GUIButtonCommand.AppImportNameCheck(appToPin)
         self.TASKBAR_ICON_COUNT += 1
         exec(f"global {appName}BTN")
         
         if writeto:
-            apList = USER_CONFIG["PINNED"][0]
-            apList.append(appName)
-            USER_CONFIG["PINNED"][0]  = apList
-            USER_CONFIG.sync()
+            apList = USER_CONFIG["PINNED"]
+            apList[0].append(appName)
+            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
         exec(f"global {appName}ICON")
         exec(f"{appName}ICON = ICONS['{appName}'].subsample(2, 2)")
         exec(f"{appName}BTN = tkinter.Button(appsFrame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(f'{appToPin}'))")
@@ -405,6 +398,7 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
         """ creates desktop icons!"""
         global desktopFrame
         global COLUMN_COUNT_DESKTOP_ICONS, ROW_COUNT_DESKTOP_ICONS
+        global USER_CONFIG
         if ROW_COUNT_DESKTOP_ICONS > MAX_ROW_DESKTOP:
             if COLUMN_COUNT_DESKTOP_ICONS > MAX_COLUMN_DESKTOP:
                 messagebox.showerror("Desktop pin", "Can't place the item! no more space left!", ROOT_WINDOW)
@@ -412,10 +406,9 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
                 COLUMN_COUNT_DESKTOP_ICONS += 1
         if appName not in self.CurrentDesktopIconsList:
             if writeto:
-                apList = USER_CONFIG["PINNED"][1]
-                apList.append(appName)
-                USER_CONFIG["PINNED"][1]  = apList
-                USER_CONFIG.sync()
+                apList = USER_CONFIG["PINNED"]
+                apList[1].append(appName)
+                USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
             realAppName = GUIButtonCommand.AppImportNameCheck(app=appName)
             exec(f"{realAppName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
             exec(f"{realAppName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
@@ -593,7 +586,8 @@ def main():
     global RUNNING_APPS
     global runningAppsFrame
     global wallpaper
-    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG", writeback=True)
+    FILE_SYSTEM.loadConfig(f"ProgramFiles/{username}/USER_CONFIG", "USER_CONFIG")
+    USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
     APPS_LIST, COMMAND_APPS_LIST = USER_CONFIG["APPS"]
     THEME_WINDOW_BG, THEME_FOREGROUND = USER_CONFIG["THEME"]
     PINNED_APPS, PINNED_APPS_DESKTOP = USER_CONFIG["PINNED"]
@@ -694,8 +688,6 @@ def main():
             GuiInterfaceCommands.pinApps(f"{app}", False)
         except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"Error pinning {app} in the taskbar.\nPROB:{EXP}", root=ROOT_WINDOW)
     ROOT_WINDOW.mainloop()
-    SYS_CONFIG.close()
-    USER_CONFIG.close()
 import base64
 def loginVerification(e=None):
     print("Checking credentials")
@@ -734,11 +726,11 @@ DARK_COLOURS = ["black", 'brown', 'blue', 'green', 'red', 'violet', 'purple', 'd
                 'dark red', 'dark brown', ]
 def login():
     print("Starting up OS...")
-    SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
-    SYS_CONFIG.sync()
+    global SYS_CONFIG
+    SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
     def safeModePREPTask(e=None):
-        SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
-        SYS_CONFIG.sync()
+        global SYS_CONFIG
+        SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
         msg.destroy()
         msg2.destroy()
         userNameText.destroy()
@@ -799,8 +791,7 @@ Restarting in a moment..."""
             os.system(""" python "Windows 11.py" """)
             exit()
         try:
-            SYS_CONFIG["CBSRESTARTATTEMPT"] += 1
-            SYS_CONFIG.sync()
+            SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", SYS_CONFIG["CBSRESTARTATTEMPT"] + 1)
             with open("ProgramFiles/CRASHLOGS", "a") as UPDATE_CRASH_LOGS: UPDATE_CRASH_LOGS.write(f"\n{supportCode} occured on {datetime.now()} on {obj}")
         except Exception as EXP: exp = EXP; 
         finally:
@@ -949,8 +940,8 @@ def safeMode(forceNoARENV=False) -> None:
     try:
         if forceNoARENV: raise NotImplementedError("The program is forcing to use safe mode CLI... skipping Auto Recovery Environment...")
         autoRecoveryEnv()
-        SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
-        SYS_CONFIG.sync()
+        global SYS_CONFIG
+        SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
     except Exception as PRB:
         try:
             def sendCommand(e=None):
@@ -1001,8 +992,7 @@ Or else, type in the command 'restart' and your system will reboot""")
                         if userInput1 in range(1, 8):
                             exec(f"a{userInput1}()")
     finally: 
-        SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
-        SYS_CONFIG.sync()
+        SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
 
 if __name__ == "__main__":
     arguements = sys.argv[1:]
@@ -1019,7 +1009,8 @@ if __name__ == "__main__":
                 background = input("Enter your user's preffered background colour: ")
                 userNumber = input("Enter your user's wanted user number (can be any number): ")
                 import shelve
-                SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG")
+                FILE_SYSTEM.loadConfig("ProgramFiles/SYS_CONFIG", "SYS_CONFIG")
+                SYS_CONFIG = FILE_SYSTEM.getConfig("SYS_CONFIG")
                 try:
                     with open(f"ProgramFiles/accConfiguration{userNumber}.conf", "wb") as WRITE:
                         Rusername = base64.urlsafe_b64encode(username.encode("utf-8"))
@@ -1031,17 +1022,16 @@ if __name__ == "__main__":
                 except Exception:
                     print("User already exists, skipping user creation tasks...")
                 finally:
-                    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG", writeback=True)
-                USER_CONFIG["APPS"] = [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskManager"]]
-                USER_CONFIG["PINNED"] = [["File Manager"], ["Notepad", "File Manager"]]
-                USER_CONFIG["THEME"] = [background, foreground]
-                USER_CONFIG["CLOCK-WIDGET"] = 0
-                USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
-                USER_CONFIG["WALLPAPER"] = None
-                USER_CONFIG.sync()
-                SYS_CONFIG["THEME"] = ["Black", "White"] 
-                SYS_CONFIG["CBSRESTARTATTEMPT"] = 0
-                SYS_CONFIG.sync()
+                    FILE_SYSTEM.loadConfig(f"ProgramFiles/{username}/USER_CONFIG", "USER_CONFIG")
+                    USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
+                FILE_SYSTEM.editConfig("USER_CONFIG", "APPS", [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskManager"]])
+                FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", [["File Manager"], ["Notepad", "File Manager"]])
+                FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [background, foreground])
+                FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
+                FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"})
+                FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", None)
+                FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", ["Black", "White"]) 
+                FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
                 print("Initialized new entries!")
             elif "-configchange" in arguements:
                 print("You have entered the configuration manager! Press CTRL+C anytime to exit!\n")

@@ -1,4 +1,5 @@
 import os
+import shelve
 class ParWFS: 
     """ A wrapper class around the existing file system installed, managing copy-pasting files and stuff. This is mainly made for my shell ParodyWindows11.
     CREATED ON: 03/09/2024 (3rd Sep)
@@ -9,6 +10,18 @@ class ParWFS:
     def __init__(self):
         self.currentCopiedFiles = [] # Absolute paths of files/folders in their original destination scheduled for copying. 
         self.currentCutFiles = []
+        self.currentLoadedConfigFiles = {}
+    def loadConfig(self, configFileName: str, configName: str):
+        with shelve.open(configFileName) as cuh:
+            self.currentLoadedConfigFiles[configName] = [configFileName, dict(cuh)]
+    def editConfig(self, configName: str, keyToChange: str, valueToAdd):
+        with shelve.open(self.currentLoadedConfigFiles[configName][0], writeback=True) as writeBack:
+            writeBack[keyToChange] = valueToAdd
+            writeBack.sync()
+            self.currentLoadedConfigFiles[configName][1] = dict(writeBack)
+        return self.currentLoadedConfigFiles[configName][1]
+    def getConfig(self, configName: str):
+        return self.currentLoadedConfigFiles[configName][1]
     def cutFiles(self, filesToCopy: list): self.currentCutFiles.extend(filesToCopy)
     def copyFiles(self, filesToCopy: list): self.currentCopiedFiles.extend(filesToCopy)
     def _pasteFiles(self, targetPath: str, fileToCopy = None):

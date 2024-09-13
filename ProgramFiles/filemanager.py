@@ -48,7 +48,7 @@ def main(FILESYSTEM: ParWFS, *args):
                 filepath = os.path.join(filepath, selectedFile)
                 lookUpFiles(filepath)
             else:
-                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], args[3], args[-1][0], args[-1][1])
+                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], FILESYSTEM.getConfig("USER_CONFIG"), args[-1][0], args[-1][1])
 
         def goBackFolder(path: str):  
             if "\\" in path:
