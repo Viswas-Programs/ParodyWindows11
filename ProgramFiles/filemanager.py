@@ -7,6 +7,7 @@ import ProgramFiles.callHost as callHost
 from ParWFS import ParWFS
 NEED_FILE_SYSTEM_ACCESS = True
 THEME_WINDOW_BG, THEME_FOREGROUND = ["",""]
+INSTANCES = {}
 def main(FILESYSTEM: ParWFS, *args):
     try:
         print(args[-1])
@@ -61,11 +62,10 @@ def main(FILESYSTEM: ParWFS, *args):
             addressBar.delete(0, tkinter.END)
             addressBar.insert(tkinter.END, path)
             lookUpFiles(path=path)
-        global fileManagerWindow
-        fileManagerWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
-        fileManagerWindow.title("File Manager")
-        ttk.Style(fileManagerWindow).configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-        mainFrame = tkinter.Frame(fileManagerWindow, background=THEME_WINDOW_BG)
+        INSTANCES[args[-2]] = tkinter.Tk()
+        INSTANCES[args[-2]].title("File Manager")
+        ttk.Style(INSTANCES[args[-2]]).configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+        mainFrame = tkinter.Frame(INSTANCES[args[-2]], background=THEME_WINDOW_BG)
         mainFrame.grid(row=0, column=0)
         addressBar = tkinter.Entry(mainFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
         addressBar.insert(tkinter.END, os.getcwd())
@@ -126,32 +126,32 @@ def main(FILESYSTEM: ParWFS, *args):
         fileView.configure(style="Treeview")
         files = tkinter.Menu(mainFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         files.add_command(label="Open", command=openFileOrFolder)
-        files.add_command(label="Open With", command=lambda: fileRouters.openWithSettings(fileManagerWindow, str(os.path.join(filepath, fileView.item(fileView.focus(), 'values')[0])).replace("\\", "/"), args[-2], args[0], args[1] ))
+        files.add_command(label="Open With", command=lambda: fileRouters.openWithSettings(INSTANCES[args[-2]], str(os.path.join(filepath, fileView.item(fileView.focus(), 'values')[0])).replace("\\", "/"), args[-2], args[0], args[1] ))
         files.add_command(label="Delete", command=delete)
         files.add_command(label="Copy", command=copyFiles)
         files.add_command(label="Cut", command=cutFiles)
         files.add_command(label="Paste", command=pasteFiles)
         def destroy():
             callHost.acknowledgeEndTask(args[-2], args[-1])
-            fileManagerWindow.destroy()
+            INSTANCES[args[-2]].destroy()
             return True
-        fileManagerWindow.protocol("WM_DELETE_WINDOW", destroy)
+        INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", destroy)
         lookUpFiles(addressBar.get())
-        fileManagerWindow.mainloop()
+        INSTANCES[args[-2]].mainloop()
         return args[-1]
     except Exception as exp:
         messagebox.showerror("Can't load app!", f"App can't run! please re-install the app!\nPROB:{exp}")
     finally: 
         print("FILE MANAGER CLOSE LA", args[-1])
         return args[-1]
-def focusIn(PID): fileManagerWindow.focus(); fileManagerWindow.state(newstate='normal'); return True
-def focusOut(PID): fileManagerWindow.state(newstate='iconic'); return True
+def focusIn(PID): INSTANCES[PID].focus(); INSTANCES[PID].state(newstate='normal'); return True
+def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); return True
 def endTask(PID):
-    fileManagerWindow.destroy()
+    INSTANCES[PID].destroy()
     return True
 def returnInformation(PID):
     return {
-        "title": fileManagerWindow.title(),
+        "title": INSTANCES[PID].title(),
         # Would add more stuff here in the future, such as memory usage and shi. 
     }
 if __name__ == "__main__":
