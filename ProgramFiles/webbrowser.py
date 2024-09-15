@@ -145,5 +145,6 @@ def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); return True
 def returnInformation(PID):
     return {
         "title": INSTANCES[PID].title(),
+        "state": INSTANCES[PID].state()
         # Would add more stuff here in the future, such as memory usage and shi. 
     }

@@ -279,18 +279,12 @@ class GUIButtonCommand:
         realApp = GUIButtonCommand.AppImportNameCheck(app=app)
         print(RUNNING_APPS, len(RUNNING_APPS))
         exec(f"""
-def focusIn():
+def focus():
     import ProgramFiles.{realApp}
-    ProgramFiles.{realApp}.focusIn({PID})
-    taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
-    taskBar{realApp}RnAppBtn.configure(command=focusOut)
-def focusOut():
-    import ProgramFiles.{realApp}
-    ProgramFiles.{realApp}.focusOut({PID})
-    taskBar{realApp}RnAppBtn.windowInfo = 'focusOut'
-    taskBar{realApp}RnAppBtn.configure(command=focusIn)
+    if ProgramFiles.{realApp}.returnInformation({PID})["state"] == "normal": ProgramFiles.{realApp}.focusOut({PID})
+    else: ProgramFiles.{realApp}.focusIn({PID})
 {realApp}ICON = ICONS["{realApp}"].subsample(2, 2)
-taskBar{realApp}RnAppBtn = tkinter.Button(runningAppsFrame, text='{app}', background='{THEME_WINDOW_BG}', foreground='{THEME_FOREGROUND}', command=focusIn, image={realApp}ICON, compound='left')
+taskBar{realApp}RnAppBtn = tkinter.Button(runningAppsFrame, text='{app}', background='{THEME_WINDOW_BG}', foreground='{THEME_FOREGROUND}', command=focus, image={realApp}ICON, compound='left')
 taskBar{realApp}RnAppBtn.grid(row=0, column={len(RUNNING_APPS)})
 taskBar{realApp}RnAppBtn.processInfo = (PID, '{app}')
 taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
@@ -359,7 +353,7 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
     def taskbarselfGUI(self, e=None):
         global PINNED_APPS
         global GuiInterfaceCommands
-        taskbarselfWindow = tkinter.Toplevel()
+        taskbarselfWindow = tkinter.Tk()
         taskbarselfWindow.configure(background=THEME_WINDOW_BG)
         taskbarselfWindow.title("Taskbar app pinning")
         addWidgetsFrame = tkinter.LabelFrame(taskbarselfWindow, text="Add widgets", 
@@ -390,6 +384,7 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
             contextMenu.tk_popup(event.x_root, event.y_root, 0)
         except Exception as PROBLEM:
             problem = PROBLEM
+            print(PROBLEM)
         finally:
             contextMenu.grab_release()
             if problem:
@@ -596,7 +591,7 @@ def main():
         """ the context menu popup"""
         problem = None
         if (ROOT_WINDOW.winfo_containing(event.x_root, event.y_root)).identifier == "taskbar": 
-            contextMenu.post(event.x_root, event.y_root)
+            GuiInterfaceCommands.popup(event=event)
         else:
             try:
                 desktopContextMenu.tk_popup(event.x_root, event.y_root, 0)

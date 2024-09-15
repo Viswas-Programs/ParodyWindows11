@@ -77,7 +77,8 @@ def endTask(PID):
     return True
 def returnInformation(PID):
     return{
-        "title": INSTANCES[PID].title()
+        "title": INSTANCES[PID].title(),
+        "state": INSTANCES[PID].state()
     }
 if __name__ == "__main__":
     main()

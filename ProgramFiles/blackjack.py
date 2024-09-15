@@ -1,13 +1,13 @@
 import ProgramFiles.Blackjack.blackjack as blackJack
 def main(*args):
-    blackJack.main()
+    blackJack.main(args[-2], args[-1])
     return args[-1]
-def endTask():
-    blackJack.endTask()
+def endTask(PID):
+    blackJack.endTask(PID)
     return True
-def returnInformation():
-    return blackJack.returnInformation()
-def focusIn():
-    return blackJack.focusIn()
-def focusOut():
-    return blackJack.focusOut()
+def returnInformation(PID):
+    return blackJack.returnInformation(PID)
+def focusIn(PID):
+    return blackJack.focusIn(PID)
+def focusOut(PID):
+    return blackJack.focusOut(PID)
