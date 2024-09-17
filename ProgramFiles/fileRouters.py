@@ -6,7 +6,7 @@ from tkinter import ttk
 from ProgramFiles.errorHandler import messagebox
 from ProgramFiles.fileaskhandlers import askopenfilename
 W11 = importlib.__import__("Windows 11")
-def openWithSettings(root: tkinter.Tk | tkinter.Toplevel | None, fileName: str, USER_CONFIG: shelve, userName: str, notifications, runAppsFrame, runAppsDict):
+def openWithSettings(root, fileName: str, USER_CONFIG: shelve, userName: str, notifications, runAppsFrame, runAppsDict):
     def comboBoxHandler(e=None):
         app = launcherComboBox.get()
         OpenWithMenuWindow.destroy()

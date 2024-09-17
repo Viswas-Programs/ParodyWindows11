@@ -311,6 +311,7 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
     def currentTime(self):
         global clock
         global ClockRepeatID
+        global USER_CONFIG
         cr_time = None
         if USER_CONFIG["CLOCK-WIDGET"] == 0:
             def recurringClockFunction(e=None):
@@ -353,7 +354,7 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
     def taskbarselfGUI(self, e=None):
         global PINNED_APPS
         global GuiInterfaceCommands
-        taskbarselfWindow = tkinter.Tk()
+        taskbarselfWindow = tkinter.Toplevel(ROOT_WINDOW)
         taskbarselfWindow.configure(background=THEME_WINDOW_BG)
         taskbarselfWindow.title("Taskbar app pinning")
         addWidgetsFrame = tkinter.LabelFrame(taskbarselfWindow, text="Add widgets", 
@@ -379,16 +380,13 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
 
     def popup(self, event=None, *args):
         """ the context menu popup"""
-        problem = None
         try:
             contextMenu.tk_popup(event.x_root, event.y_root, 0)
-        except Exception as PROBLEM:
-            problem = PROBLEM
-            print(PROBLEM)
-        finally:
+            print(contextMenu.grab_status())
+            contextMenu.grab_set()
             contextMenu.grab_release()
-            if problem:
-                notification.showNotification("Critical Error!", str(problem), datetime.now(), lambda: print("Hi"))
+        except Exception as PROBLEM:
+            print(PROBLEM)
     def createAppIcon(self, appName: str, command: str, writeto=True, event=None):
         """ creates desktop icons!"""
         global desktopFrame
@@ -589,18 +587,15 @@ def main():
     print("Loaded apps and user settings!")
     def popup(event=None, *args):
         """ the context menu popup"""
-        problem = None
         if (ROOT_WINDOW.winfo_containing(event.x_root, event.y_root)).identifier == "taskbar": 
-            GuiInterfaceCommands.popup(event=event)
+            #GuiInterfaceCommands.popup(event=event)
+            contextMenu.focus()
         else:
             try:
                 desktopContextMenu.tk_popup(event.x_root, event.y_root, 0)
-            except Exception as PROBLEM:
-                problem = PROBLEM
+                print(PROBLEM)
             finally:
                 desktopContextMenu.grab_release()
-                if problem:
-                    notification.showNotification("Critical Error!", str(problem), datetime.now(), lambda: GuiInterfaceCommands.shutdownMenu())
     GuiInterfaceCommands = GUIButtonCommand(PINNED_APPS)
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
@@ -662,8 +657,8 @@ def main():
     
     appsFrame.grid(row=0, column=1, sticky="n")
     runningAppsFrame = tkinter.Frame(taskbarFrame, background=THEME_WINDOW_BG, padx=10, border=5)
-    runningAppsFrame.grid(row=0, column=3, sticky="n")
-    notificationsButton = tkinter.Button(appsFrame, text="Notifications (0)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command= lambda: notification.showNotificationsList(notification))
+    runningAppsFrame.grid(row=0, column=4, sticky="n")
+    notificationsButton = tkinter.Button(taskbarFrame, text="Notifications (0)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command= lambda: notification.showNotificationsList(notification))
     notificationsButton.grid(row=0, column=3, sticky="ne", padx=5)
     desktopContextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     desktopContextMenu.add_command(label="Refresh", command=lambda: GuiInterfaceCommands.refreshDesktop(PINNED_APPS_DESKTOP))
@@ -682,6 +677,7 @@ def main():
         try:
             GuiInterfaceCommands.pinApps(f"{app}", False)
         except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"Error pinning {app} in the taskbar.\nPROB:{EXP}", root=ROOT_WINDOW)
+    GuiInterfaceCommands.taskbarselfGUI()
     ROOT_WINDOW.mainloop()
 import base64
 def loginVerification(e=None):

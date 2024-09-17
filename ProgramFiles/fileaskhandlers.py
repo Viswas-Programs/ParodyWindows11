@@ -139,8 +139,6 @@ def main(*args):
             else: os.remove(selectedFile)
             fileView.delete(selectedFileIndex)
         def popup(event=None, *args):
-            """ the context menu popup"""
-            print("called popup() function")
             problem = None
             try:
                 files.tk_popup(event.x_root, event.y_root, 0)
@@ -165,7 +163,6 @@ def main(*args):
         fileModeRun()
         fileManagerWindow.mainloop()
         fileManagerWindow.destroy()
-        print("Return Val: " + RETURN_VALUE)
         PROCESS_RUNNING = False
         return RETURN_VALUE
     except Exception as exp:
