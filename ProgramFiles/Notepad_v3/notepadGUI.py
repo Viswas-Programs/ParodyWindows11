@@ -59,10 +59,9 @@ class NotepadRun(object):
     """ notepad run, so that people can use objects without GUI"""
 
     def __init__(self, text_box: tkinter.Text, gui: tkinter.Tk, saveTo:
-    tkinter.Text, file_to_open: str=None, THEME_FOREGROUND="White", THEME_BACKGROUND="Black", PID = 0, RunAppList = []) -> bool:
+    tkinter.Text, file_to_open: str=None, THEME_FOREGROUND="White", THEME_BACKGROUND="Black", PID=0) -> bool:
         print(f"Program started at {datetime.datetime.now()}")
         self.PID =  PID
-        self.RunAppList = RunAppList
         self.CURRENT_VERSION, self.UPDATE_BRANCH = versionFind()
         self.fileopen = file_to_open
         self.PROGRAM_MODE_CONFIG = False
@@ -969,15 +968,15 @@ Never gonna run around and desert you""")
                 "close this?")
             if alert == 1:
                 self.save()
-                callHost.acknowledgeEndTask(self.PID, self.RunAppList)
+                callHost.acknowledgeEndTask(self.PID)
                 self.root.destroy()
             elif alert == 0:
-                callHost.acknowledgeEndTask(self.PID, self.RunAppList)
+                callHost.acknowledgeEndTask(self.PID)
                 self.root.destroy()
             else:
                 pass
         elif self.saved:
-            callHost.acknowledgeEndTask(self.PID, self.RunAppList)
+            callHost.acknowledgeEndTask(self.PID)
             self.root.destroy()
         return True
 

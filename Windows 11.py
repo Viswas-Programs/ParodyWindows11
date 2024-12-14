@@ -1,18 +1,54 @@
-from __future__ import print_function
-from datetime import datetime
-import sys
-import os
-import shelve
 import tkinter
-import tkinter.ttk as ttk
-import time
-from tkinter import colorchooser
-import random
-import ProgramFiles.tooltips as tooltips
-from PIL import Image, ImageTk
-import psutil
-from ProgramFiles.fileaskhandlers import askopenfilename
-from ParWFS import ParWFS
+def bsod(obj, supportCode) -> None:
+    text = f"""A problem has occured on ParodyWin11 and has been shutdown to prevent further damage\n
+If this is the first time you're seeing this stop screen, please make sure you have proper configuration files 
+in the right place.\n\nIf the problem still exists, please contact your administrator or have a 
+look at this informative page on stop codes! (support link)\n\nSupport: \nhttps://github.com/Viswas-Programs/ParodyWindows11/wiki/STOP_CODES\n\n
+Technical information: {obj} Failed to load properly (Improperly loaded!)\nSupport Code: {supportCode}\n
+Restarting in a moment..."""
+    try:
+        def restart():
+            bsodWind.destroy()
+            time.sleep(5)
+            os.system(""" python "Windows 11.py" """)
+            exit()
+        try:
+            SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", SYS_CONFIG["CBSRESTARTATTEMPT"] + 1)
+            with open("ProgramFiles/CRASHLOGS", "a") as UPDATE_CRASH_LOGS: UPDATE_CRASH_LOGS.write(f"\n{supportCode} occured on {datetime.now()} on {obj}")
+        except Exception as EXP: exp = EXP; 
+        finally:
+            bsodWind = tkinter.Tk()
+            bsodWind.geometry("600x480")
+            bsodWind.configure(background="blue")
+            bsodWind.attributes("-fullscreen", True)
+            tkinter.Label(bsodWind, background="Blue", foreground="White", text=text, font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
+            
+            try: 
+                if exp: tkinter.Label(bsodWind, background="Blue", foreground="White", text=f"During above error, another error occured: {exp}", font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
+            except Exception: pass
+            bsodWind.after(10000, restart)
+            bsodWind.mainloop()
+    except Exception as EXP: print(text, EXP)
+try:
+    from ProgramFiles import dwm
+    from ParWFS import ParWFS
+    from datetime import datetime
+    import sys
+    import os
+    import shelve
+    import tkinter
+    import tkinter.ttk as ttk
+    import time
+    from tkinter import colorchooser
+    import random
+    import ProgramFiles.tooltips as tooltips
+    from PIL import Image, ImageTk
+    import psutil
+    from ProgramFiles.fileaskhandlers import askopenfilename
+    from ProgramFiles.buttons import IconButton
+except Exception as E: 
+    bsod(__name__, str(E) + "\nMODULE_NOT_FOUND_ERROR")
+CWD = os.getcwd()
 FILE_SYSTEM = ParWFS()
 FILE_SYSTEM.loadConfig("ProgramFiles/SYS_CONFIG", "SYS_CONFIG")
 SYS_CONFIG = FILE_SYSTEM.getConfig("SYS_CONFIG")
@@ -22,13 +58,21 @@ except Exception:
     THEME_WINDOW_BG = "Black"
     THEME_FOREGROUND = "White"
 print("Starting OS...")
-RUNNING_APPS = {}
-ICONS = {
-}
-def updateConfig(dictToUpdate: str, newDict: dict):
-    exec(f"""global {dictToUpdate}
-{dictToUpdate} = newDict
-""")
+RUNNING_APPS = FILE_SYSTEM.RUNNING_APPS
+ICONS = {}
+PROCESS_IDS = (1000, 9999)
+MESSAGEBOX_IDS = (0, 200)
+PROGRESSBAR_IDS = (200, 400)
+FILEASK_WINDOWS = (400, 600)
+def returnRunningApps():
+    return FILE_SYSTEM.RUNNING_APPS
+def giveIcon(appName: str, root):
+    global ICONS
+    try:
+        return ICONS[appName]
+    except Exception as exp:
+        print(exp, ICONS.keys())
+        return tkinter.PhotoImage(file=f"ProgramFiles/Icons/{appName}.png", master=root)
 def loadAllIcons(appsList: list, root):
     global ICONS
     for app in appsList:
@@ -257,15 +301,32 @@ class GUIButtonCommand:
     @staticmethod
     def launchItem(application: str, params= None, e=None): 
         global RUNNING_APPS, runningAppsFrame
-        appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
-        progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
-        exec(f"import {progAppImport}")
-        exec(f"{appToLaunch}PID = random.randint(1000, 9999)")
-        exec(f"RUNNING_APPS[{appToLaunch}PID] = application")
-        exec(f"GUIButtonCommand.createRunningAppTaskbarIcon(application, {appToLaunch}PID)")
-        if application == "File Manager": exec(f"""ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, {params},  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])""")
-        if (params == None ): exec(f"""ProgramFiles.{appToLaunch}.main(username, notification, {params},  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])""")
-        else:   exec(f"""ProgramFiles.{appToLaunch}.main(username, notification, '{params}',  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID, [runningAppsFrame, RUNNING_APPS])""")
+        if application == "Command Prompt":
+            import ProgramFiles.commandprompt as CMD
+            appToLaunchPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
+            while appToLaunchPID in RUNNING_APPS.keys():
+                appToLaunchPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
+            RUNNING_APPS[appToLaunchPID] = application
+            GUIButtonCommand.createRunningAppTaskbarIcon(application, appToLaunchPID)
+            try: CMD.main(FILE_SYSTEM, username, notification, None, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID, [runningAppsFrame, RUNNING_APPS] )
+            except: CMD.main(FILE_SYSTEM, username, notification, None, dict({"THEME": ["Black", "White"]}), appToLaunchPID, [runningAppsFrame, RUNNING_APPS] )        
+        else: 
+            appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
+            progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
+            exec(f"import {progAppImport}")
+            exec(f"{appToLaunch}PID = random.randint(1000, 9999)")
+            exec(f"""
+while {appToLaunch}PID in RUNNING_APPS.keys():
+    {appToLaunch}PID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
+RUNNING_APPS[{appToLaunch}PID] = application""")
+            exec(f"GUIButtonCommand.createRunningAppTaskbarIcon(application, {appToLaunch}PID)")
+            exec(f"""if {progAppImport}.NEEDS_FILESYSTEM_ACCESS:
+    if (params == None ): ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, {params},  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
+    else:   ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, '{params}',  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
+else:
+    if (params == None ): ProgramFiles.{appToLaunch}.main(username, notification, {params},  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
+    else:   ProgramFiles.{appToLaunch}.main(username, notification, '{params}',  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
+        """)
     def launchComboBoxEvent(self, e=None):
         Item = launcherComboBox.get()
         if Item == "Control Panel":
@@ -280,15 +341,19 @@ class GUIButtonCommand:
         print(RUNNING_APPS, len(RUNNING_APPS))
         exec(f"""
 def focus():
-    import ProgramFiles.{realApp}
-    if ProgramFiles.{realApp}.returnInformation({PID})["state"] == "normal": ProgramFiles.{realApp}.focusOut({PID})
-    else: ProgramFiles.{realApp}.focusIn({PID})
+    try:
+        dwm.focus({PID})
+    except:
+        print("DWM NOT EXISTING IN APP")
+        import ProgramFiles.{realApp}
+        if ProgramFiles.{realApp}.returnInformation({PID})["state"] == "normal": ProgramFiles.{realApp}.focusOut({PID})
+        else: ProgramFiles.{realApp}.focusIn({PID})
 {realApp}ICON = ICONS["{realApp}"].subsample(2, 2)
 taskBar{realApp}RnAppBtn = tkinter.Button(runningAppsFrame, text='{app}', background='{THEME_WINDOW_BG}', foreground='{THEME_FOREGROUND}', command=focus, image={realApp}ICON, compound='left')
 taskBar{realApp}RnAppBtn.grid(row=0, column={len(RUNNING_APPS)})
 taskBar{realApp}RnAppBtn.processInfo = (PID, '{app}')
 taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
-""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW, "ICONS": ICONS})
+""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW, "ICONS": ICONS, "dwm": dwm})
     @staticmethod
     def AppImportNameCheck(app: str, dontLower=False):
         if "/" in app:
@@ -407,7 +472,7 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
             exec(f"{realAppName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
             ROW_COUNT_DESKTOP_ICONS += 1
             exec(f"{realAppName}ICON = ICONS['{realAppName}']")
-            exec(f"{realAppName}BTN = tkinter.Button({realAppName}Frame, image={realAppName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem('{command}'))")
+            exec(f"{realAppName}BTN = IconButton({realAppName}Frame, image={realAppName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem('{command}'))")
             exec(f"{realAppName}BTN.IMGREF = {realAppName}ICON")
             exec(f"{realAppName}BTN.grid(row=0, column=0)")
             exec(f"{realAppName}LABEL = tkinter.Label({realAppName}Frame, text=f'{appName}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)")
@@ -459,15 +524,21 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
         addIconBtn = tkinter.Button(addNewIcon, text="Add Icon!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: self.createAppIcon(iconToAdd, f"{iconToAdd}"))
         addIconBtn.grid(row=0, column=1) 
         addNewIcon.mainloop()
-    def shutdownMenu(self, root, e=None):
+    def shutdownMenu(self, root: tkinter.Tk, e=None):
         import shutil
+        def waitUntillTaskFinishes(func):
+            if FILE_SYSTEM.TASK_IN_PROGRESS != [0, 0]:
+                messagebox.showinfo("IO Operations pending!", "Please wait untill the file IO operations are completed. The system will automatically shutdown after.", root=root)
+            def e():
+                if FILE_SYSTEM.TASK_IN_PROGRESS == [0, 0]: func()
+                root.after(100, e)
+            root.after(100, e)
         def shutdown():
             try:
                 if username == "GUEST":
-                    shutil.rmtree("ProgramFiles/GUEST")
-                    os.rmdir("ProgramFiles/GUEST")
+                    FILE_SYSTEM.deleteFiles([[f"{CWD}/ProgramFiles/GUEST"]])
             finally:
-                os._exit(0)
+                waitUntillTaskFinishes(lambda: os._exit(0))
         def restart():
             if safeModeRestartVar.get() == 1:
                 try:
@@ -475,8 +546,10 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
                     for child in children:
                         child.destroy()
                 finally:
-                    os.system("""python "Windows 11.py" -safemode """)
-                    exit()
+                    def sigma():
+                        os.system("""python "Windows 11.py" -safemode """)
+                        exit()
+                    waitUntillTaskFinishes(sigma)
             else:
                 try:
                     children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
@@ -493,6 +566,7 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
         ShutdownICON = ICONS["shutdown"].subsample(2, 2)
         ShutdownBTN = tkinter.Button(shutdownWindow, image=ShutdownICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=shutdown)
         ShutdownBTN.IMGREF = ShutdownICON
+        tooltips.createToolTipAtGivenPos(ShutdownBTN, 2, root, "Shuts down the shell")
         ShutdownBTN.grid(row=1, column=0)
         RestartICON = ICONS["restart"].subsample(2, 2)
         RestartBTN = tkinter.Button(shutdownWindow, image=RestartICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=restart)
@@ -540,21 +614,43 @@ class TaskManager:
         for i in self.fileView.get_children():
             self.fileView.delete(i)
         for i, PID in enumerate(RUNNING_APPS):
+            appToIns = RUNNING_APPS.get(PID)
+            appToIns += f" <<<PID: {PID}>>> "
             self.fileView.configure(style="Treeview")
-            self.fileView.insert(parent='', iid=PID, text='', index='end', values=[RUNNING_APPS.get(PID)],)
+            self.fileView.insert(parent='', iid=PID, text='', index='end', values=[appToIns],)
         self.fileView.focus(SELECTED_SMTH)
         self.fileView.selection_set([SELECTED_SMTH])
         
     def endTask(self):
         application = self.fileView.focus()
         try:
-            command = COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f"ProgramFiles.{ GuiInterfaceCommands.AppImportNameCheck(app=RUNNING_APPS[int(application)])}")] 
+            appToEnd = str(RUNNING_APPS[int(application)])
+            appToEnd.replace(f"<<<PID: {application}>>>", "")
+            command = COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f"ProgramFiles.{ GuiInterfaceCommands.AppImportNameCheck(app=appToEnd)}")] 
             exec(f"import {command}")
             exec(f"{command}.endTask(int({application}))")
             del RUNNING_APPS[int(application)]
-        except Exception as EXP: 
-            messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {EXP}")
+        except Exception as EXP:
+            print(EXP) 
+            try:
+                dwm.close(PID=int(application))
+            except Exception as E:
+                print(E)
+                try: 
+                    dwm.MANAGED_DWM_INSTANCES[int(application)][2].destroy()
+                    del RUNNING_APPS[int(application)]
+                except Exception as U:
+                    messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {U}\nFrom\n{E}\nFrom\n{EXP}", self.ROOT)
 print("Loaded GUI Option Modules...")
+idx = -1
+afterCancelId = None
+def startUpTasks(CONFIG, ROOT: tkinter.Tk):
+    global idx, afterCancelId
+    afterCancelId = ROOT.after(100, lambda i=None: startUpTasks(CONFIG, ROOT))
+    length = len(CONFIG["STARTUP_APPS"])
+    if idx >= length-1: ROOT.after_cancel(afterCancelId)
+    idx += 1
+    GUIButtonCommand.launchItem(CONFIG["STARTUP_APPS"][idx])
 def main():
     print("Loaded operating system!")
     global THEME_WINDOW_BG, THEME_FOREGROUND
@@ -629,6 +725,7 @@ def main():
                 appNameReal = GUIButtonCommand.AppImportNameCheck(widget.processInfo[1])
                 exec(f"import ProgramFiles.{appNameReal}\nwidget.configure(text=ProgramFiles.{appNameReal}.returnInformation({widget.processInfo[0]})['title'])")
             except Exception as EXP: 
+                print(EXP)
                 widget.destroy()
     ROOT_WINDOW.after(300, runningTaskbarAppsLOOP)
     def recurringClockFunc():
@@ -648,15 +745,9 @@ def main():
     shutDown = tkinter.Button(appsFrame, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
                                 command=lambda: GuiInterfaceCommands.shutdownMenu(ROOT_WINDOW))
     shutDown.grid(row=0, column=0, padx=5)
-    def __shutdownToolTipCreator(event):
-        tooltips.createToolTipAtGivenPos(event=event, id=1, message="Shutdown or restart the shell!", root=ROOT_WINDOW, command=lambda:GuiInterfaceCommands.shutdownMenu(ROOT_WINDOW) )
-    def __shutdownToolTipDestroy(event):
-        tooltips.deleteToolTip(1, ROOT_WINDOW)
-    shutDown.bind("<Enter>", __shutdownToolTipCreator)
-    shutDown.bind("<Leave>", __shutdownToolTipDestroy)
-    
+    tooltips.createToolTipAtGivenPos(shutDown, 1, ROOT_WINDOW, "Shutdown or restart the shell!", )
     appsFrame.grid(row=0, column=1, sticky="n")
-    runningAppsFrame = tkinter.Frame(taskbarFrame, background=THEME_WINDOW_BG, padx=10, border=5)
+    FILE_SYSTEM.RunAppsFrame = runningAppsFrame = tkinter.Frame(taskbarFrame, background=THEME_WINDOW_BG, padx=10, border=5)
     runningAppsFrame.grid(row=0, column=4, sticky="n")
     notificationsButton = tkinter.Button(taskbarFrame, text="Notifications (0)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command= lambda: notification.showNotificationsList(notification))
     notificationsButton.grid(row=0, column=3, sticky="ne", padx=5)
@@ -674,10 +765,9 @@ def main():
     children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
     GuiInterfaceCommands.refreshDesktop(PINNED_APPS_DESKTOP)
     for app in PINNED_APPS:
-        try:
-            GuiInterfaceCommands.pinApps(f"{app}", False)
+        try: GuiInterfaceCommands.pinApps(f"{app}", False)
         except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"Error pinning {app} in the taskbar.\nPROB:{EXP}", root=ROOT_WINDOW)
-    GuiInterfaceCommands.taskbarselfGUI()
+    startUpTasks(USER_CONFIG, ROOT_WINDOW)
     ROOT_WINDOW.mainloop()
 import base64
 def loginVerification(e=None):
@@ -767,37 +857,6 @@ def login():
     loginWindow.attributes('-fullscreen', True)
     loginWindow.bind("<Escape>", safeModePREPTask)
     loginWindow.mainloop()
-
-def bsod(obj, supportCode) -> None:
-    text = f"""A problem has occured on ParodyWin11 and has been shutdown to prevent further damage\n
-If this is the first time you're seeing this stop screen, please make sure you have proper configuration files 
-in the right place.\n\nIf the problem still exists, please contact your administrator or have a 
-look at this informative page on stop codes! (support link)\n\nSupport: \nhttps://github.com/Viswas-Programs/ParodyWindows11/wiki/STOP_CODES\n\n
-Technical information: {obj} Failed to load properly (Improperly loaded!)\nSupport Code: {supportCode}\n
-Restarting in a moment..."""
-    try:
-        def restart():
-            bsodWind.destroy()
-            time.sleep(5)
-            os.system(""" python "Windows 11.py" """)
-            exit()
-        try:
-            SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", SYS_CONFIG["CBSRESTARTATTEMPT"] + 1)
-            with open("ProgramFiles/CRASHLOGS", "a") as UPDATE_CRASH_LOGS: UPDATE_CRASH_LOGS.write(f"\n{supportCode} occured on {datetime.now()} on {obj}")
-        except Exception as EXP: exp = EXP; 
-        finally:
-            bsodWind = tkinter.Tk()
-            bsodWind.geometry("600x480")
-            bsodWind.configure(background="blue")
-            bsodWind.attributes("-fullscreen", True)
-            tkinter.Label(bsodWind, background="Blue", foreground="White", text=text, font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
-            
-            try: 
-                if exp: tkinter.Label(bsodWind, background="Blue", foreground="White", text=f"During above error, another error occured: {exp}", font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
-            except Exception: pass
-            bsodWind.after(10000, restart)
-            bsodWind.mainloop()
-    except Exception as EXP: print(text, EXP)
 cmdImg = None
 img = None
 reprImg = None
@@ -1021,6 +1080,7 @@ if __name__ == "__main__":
                 FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
                 FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"})
                 FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", None)
+                FILE_SYSTEM.editConfig("USER_CONFIG", "STARTUP_APPS", [])
                 FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", ["Black", "White"]) 
                 FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
                 print("Initialized new entries!")

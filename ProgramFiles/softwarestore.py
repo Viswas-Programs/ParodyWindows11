@@ -1,19 +1,20 @@
 import requests
 import tkinter
-import tkinter.messagebox as messagebox
+from ProgramFiles.errorHandler import messagebox
 import os
 import json
 import tkinter.ttk as ttk
 import shelve
-
+from ProgramFiles.dwm import createTopFrame
 from ProgramFiles import callHost
 
 global usrname
 global USER_CONFIG
 USER_CONFIG: shelve
 INSTANCES = {}
+NEEDS_FILESYSTEM_ACCESS = False
 THEME_WINDOW_BG, THEME_FOREGROUND = ["", ""]
-def showDescription(e=None):
+def showDescription(PID, e=None):
     def uninstallProgram(e=None):
         try:
             AppToRemove = list(USER_CONFIG["APPS"][1]).index(item)
@@ -22,15 +23,15 @@ def showDescription(e=None):
             uninstaller = requests.get(appsList[item][2]).content.decode(encoding='utf-8')
             exec(uninstaller)
         except Exception as PRB:
-            messagebox.showerror("Error", f"Error occured while uninstalling '{item}': {PRB}")
+            messagebox.showerror("Error", f"Error occured while uninstalling '{item}': {PRB}", INSTANCES[PID])
     def installProgram(e=None):
         try:
             installProgram = requests.get(appsList[item][1], timeout=10)
             exec(installProgram.content.decode(encoding='utf-8'))
         except Exception as PRB:
-            messagebox.showerror("ERROR! While installing app....", f"Can't install app '{item}'! Retry Again.\n DEBUG:<< {PRB} >> ")
+            messagebox.showerror("ERROR! While installing app....", f"Can't install app '{item}'! Retry Again.\n DEBUG:<< {PRB} >> ", INSTANCES[PID])
     global externalAppsList
-    wn = tkinter.Toplevel(background=THEME_WINDOW_BG)
+    wn = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
     item = str(externalAppsList.item(externalAppsList.focus(), 'values')[0])
     wn.title(appsList[item][0])
     tkinter.Label(wn, text=appsList[item][0], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).pack()
@@ -47,37 +48,33 @@ def main(username, notification, *args):
     global appsList
     USER_CONFIG = args[1]
     THEME_WINDOW_BG, THEME_FOREGROUND = USER_CONFIG["THEME"]
-    INSTANCES[args[-2]] = tkinter.Tk()
+    INSTANCES[args[-1]] = tkinter.Tk()
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "softwarestore", "Software Store", args[-1])
     try:
         appsList = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/softwareStoreApps.json", timeout=10)
         appsList = appsList.json()
     except Exception as PROB:
-        messagebox.showerror("ERROR!", f"Can't load apps list from internet! using locals\nERR: {PROB}")
+        messagebox.showerror("ERROR!", f"Can't load apps list from internet! using locals\nERR: {PROB}", INSTANCES[args[-1]])
         try:
             print(os.getcwd())
             with open("ProgramFiles/localAppsList.json", "r") as applistLocal:
                 appsList = json.load(applistLocal)
         except Exception as PRB:
-            messagebox.showerror("Can't load local apps list!", f"Error: {PRB}")
-        INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
-    INSTANCES[args[-2]].title("Software Store")
-    externalAppsList = ttk.Treeview(INSTANCES[args[-2]], style="Treeview")
+            messagebox.showerror("Can't load local apps list!", f"Error: {PRB}", INSTANCES[args[-1]])
+        INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
+    INSTANCES[args[-1]].title("Software Store")
+    externalAppsList = ttk.Treeview(INSTANCES[args[-1]], style="Treeview")
     externalAppsList.grid(row=1, column=0, sticky="w")
     externalAppsList['column'] = "Apps"
     externalAppsList.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
     externalAppsList.column("Apps", anchor=tkinter.W, width=600)
     externalAppsList.heading("Apps", text="Apps", anchor=tkinter.CENTER)
-    externalAppsList.bind("<<TreeviewSelect>>", showDescription)
+    externalAppsList.bind("<<TreeviewSelect>>", lambda e: showDescription(args[-1]))
     externalAppsList.configure(style="Treeview")
     for i, app in enumerate(appsList):
         externalAppsList.insert(parent='', iid=i, text='', index=i, values=[app],)
-    def destroy():
-        callHost.acknowledgeEndTask(args[-2], args[-1])
-        INSTANCES[args[-2]].destroy()
-        return True
-    INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", destroy)
-    INSTANCES[args[-2]].mainloop()
-    INSTANCES[args[-2]].destroy()
+    INSTANCES[args[-1]].mainloop()
+    INSTANCES[args[-1]].destroy()
     return args[-1]
 def focusIn(PID): INSTANCES[PID].state(newstate='normal'); INSTANCES[PID].focus(); return True
 def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); return True

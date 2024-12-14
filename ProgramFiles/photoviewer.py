@@ -4,20 +4,25 @@ try:
     from ProgramFiles import callHost
     from ProgramFiles.fileaskhandlers import askopenfilename, askdirectory
     import ProgramFiles.errorHandler as ERH
+    from ProgramFiles.dwm import createTopFrame
+    from ProgramFiles.fileMenu import Menu
 except: 
     try: # We know this function is getting called by main from this actual file instead of host shell because this exception should NEVER occur untill this condition. 
         import callHost
         from fileaskhandlers import askdirectory, askopenfilename
         import errorHandler as ERH
+        from dwm import createTopFrame
     except:  pass
     
 
 INSTANCES = {}
 THEME_WINDOW_BG, THEME_FOREGROUND = ["", ""]
 FOLDER_MODE = False
+NEEDS_FILESYSTEM_ACCESS = False
 SET_MS = 5000
 SLIDESHOW_MODE = False
-
+#def focusIn(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='normal'); INSTANCES[PID].overrideredirect(True); return True
+#def focusOut(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='withdrawn'); INSTANCES[PID].overrideredirect(True); return True
 def openFile(prevOrNext, PID):
     global FOLDER_MODE, CURRENT_INDEX
     global photo
@@ -66,8 +71,8 @@ def openFolder(PID):
         imageName.configure(text="There are no supported images in the specified folder!")
         FOLDER_MODE = False
         return -1
-    openFile(3)
-    nextBtn.configure(state="normal", command=lambda: openFile(1)); backBtn.configure(state="normal",  command=lambda: openFile(2))
+    openFile(3, PID)
+    nextBtn.configure(state="normal", command=lambda: openFile(1, PID)); backBtn.configure(state="normal",  command=lambda: openFile(2, PID))
 def aboutThis(PID):
     aboutWindow = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
     theContent = tkinter.Label(aboutWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, 
@@ -113,57 +118,58 @@ def changeMsSlideShow(PID):
     setMs.grid(row=1, column=1)
     editWindow.mainloop()
 def main(username, notification, fileopenHandle, *args):
+    def destroy(PID):
+        callHost.acknowledgeEndTask(PID)
+        INSTANCES[PID].destroy()
+        return True
     global THEME_WINDOW_BG, THEME_FOREGROUND
     global SLIDESHOW_MODE
     global imageViewer, imageName, nextBtn, backBtn
     THEME_WINDOW_BG, THEME_FOREGROUND = args[0]["THEME"]
-    INSTANCES[args[-2]] = tkinter.Tk()
-    INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
-    _MENU = tkinter.Menu(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_WINDOW_BG)
-    INSTANCES[args[-2]].configure(menu=_MENU)
+    INSTANCES[args[-1]] = tkinter.Tk()
+    INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
+    _INDEVMENU = Menu(createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "photoviewer", "Photo Viewer", args[-1]))
+    _MENU = tkinter.Menu(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_WINDOW_BG)
+    # INSTANCES[args[-1]].configure(menu=_MENU)
+    _INDEVMENU.addMenuOption("File")
+    _INDEVMENU.addSubMenuOption("Open a file", lambda: openFile(0, args[-1]), "File")
+    _INDEVMENU.addSubMenuOption("Open a folder", lambda: openFolder(args[-1]), "File")
+    _INDEVMENU.addSubMenuOption("Slidw show settings", lambda: changeMsSlideShow(args[-1]), "File")
+    _INDEVMENU.addMenuOption("About")
+    _INDEVMENU.addSubMenuOption("About this", lambda: aboutThis(args[-1]), "About")
     fileMenu = tkinter.Menu(_MENU, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    fileMenu.add_command(label="Open a file", command=lambda: openFile(0, args[-2]))
-    fileMenu.add_command(label="Open a folder", command=lambda: openFolder(args[-2]))
-    fileMenu.add_command(label="Slide show settings", command=lambda: changeMsSlideShow(args[-2]))
+    fileMenu.add_command(label="Open a file", command=lambda: openFile(0, args[-1]))
+    fileMenu.add_command(label="Open a folder", command=lambda: openFolder(args[-1]))
+    fileMenu.add_command(label="Slide show settings", command=lambda: changeMsSlideShow(args[-1]))
     aboutMenu = tkinter.Menu(_MENU, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    aboutMenu.add_command(label="About This", command=lambda: aboutThis(args[-2]))
+    aboutMenu.add_command(label="About This", command=lambda: aboutThis(args[-1]))
     _MENU.add_cascade(label="File", menu=fileMenu)
     _MENU.add_cascade(label="About", menu=aboutMenu)
-    backBtn = tkinter.Button(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="<<Previous Image<<")
+    backBtn = tkinter.Button(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="<<Previous Image<<")
     backBtn.configure(state="disabled")
-    backBtn.grid(row=0, column=0)
-    imageName = tkinter.Label(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    imageName.grid(row=0, column=1)
-    nextBtn = tkinter.Button(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=">>Next Image>>")
+    backBtn.grid(row=1, column=0)
+    imageName = tkinter.Label(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    imageName.grid(row=1, column=1)
+    nextBtn = tkinter.Button(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=">>Next Image>>")
     nextBtn.configure(state="disabled")
-    nextBtn.grid(row=0, column=2)
-    imageViewer = tkinter.Label(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    imageViewer.grid(row=1, column=1)
+    nextBtn.grid(row=1, column=2)
+    imageViewer = tkinter.Label(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    imageViewer.grid(row=2, column=1)
     def loopUp(): 
-        INSTANCES[args[-2]].after(SET_MS, loopUp)
-        if SLIDESHOW_MODE and FOLDER_MODE: openFile(1, args[-2])
-    INSTANCES[args[-2]].after(SET_MS, loopUp)
-    INSTANCES[args[-2]].state("zoomed")
-    INSTANCES[args[-2]].title("Photo Viewer")
-    if (fileopenHandle): forceOpenFile(fileopenHandle, args[-2])
-    def destroy():
-        callHost.acknowledgeEndTask(args[-2], args[-1])
-        INSTANCES[args[-2]].destroy()
-        return True
-    INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", destroy)
-    INSTANCES[args[-2]].mainloop()
-    INSTANCES[args[-2]].destroy()
+        INSTANCES[args[-1]].after(SET_MS, loopUp)
+        if SLIDESHOW_MODE and FOLDER_MODE: openFile(1, args[-1])
+    INSTANCES[args[-1]].after(SET_MS, loopUp)
+    INSTANCES[args[-1]].title("Photo Viewer", args[-1])
+    if (fileopenHandle): forceOpenFile(fileopenHandle, args[-1])
+    INSTANCES[args[-1]].protocol("WM_DELETE_WINDOW", destroy)
+    INSTANCES[args[-1]].OLD_GEO = INSTANCES[args[-1]].MAX_RETURN =  INSTANCES[args[-1]].geometry()
+    INSTANCES[args[-1]].STATE = "normal"
+    INSTANCES[args[-1]].mainloop()
+    INSTANCES[args[-1]].destroy()
     return args[-1]
 
 def endTask(PID):
     INSTANCES[PID].destroy()
-    return True
-def focusIn(PID):
-    INSTANCES[PID].focus()
-    INSTANCES[PID].state(newstate='normal')
-    return True
-def focusOut(PID):
-    INSTANCES[PID].state(newstate='iconic')
     return True
 def returnInformation(PID):
     return {

@@ -1,4 +1,5 @@
 import ProgramFiles.Blackjack.blackjack as blackJack
+NEEDS_FILESYSTEM_ACCESS = False
 def main(*args):
     blackJack.main(args[-2], args[-1])
     return args[-1]

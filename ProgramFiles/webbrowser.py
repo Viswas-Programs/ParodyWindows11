@@ -9,8 +9,10 @@ except ModuleNotFoundError:
     from tkinterweb import HtmlFrame
 import shelve
 from datetime import datetime
+from ProgramFiles.dwm import createTopFrame
 PROCESS_RUNNING = True
 INSTANCES = {}
+NEEDS_FILESYSTEM_ACCESS = False
 searchHistory = shelve.open("ProgramFiles/history")
 searches = []
 searchNo = -1
@@ -111,13 +113,14 @@ def main(*args):
     global text
     global THEME_FOREGROUND, THEME_WINDOW_BG
     THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
-    INSTANCES[args[-2]] = tkinter.Tk()
-    INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
-    INSTANCES[args[-2]].title("Web Browser")
-    mainFrame = tkinter.Frame(INSTANCES[args[-2]], background=THEME_WINDOW_BG)
-    mainFrame.grid(row=1, column=0)
+    INSTANCES[args[-1]] = tkinter.Tk()
+    INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "webbrowser", "Web Browser", args[-1])
+    INSTANCES[args[-1]].title("Web Browser")
+    mainFrame = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
+    mainFrame.grid(row=2, column=0)
     btnFrame = tkinter.Frame(mainFrame, background=THEME_WINDOW_BG)
-    btnFrame.grid(row=0, column=0)
+    btnFrame.grid(row=1, column=0)
     backButton = tkinter.Button(btnFrame, text="<-", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=goBack)
     backButton.grid(row=0, column=0)
     reloadButton = tkinter.Button(btnFrame, text="Reload", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=reloadWebsite)
@@ -125,20 +128,15 @@ def main(*args):
     text = tkinter.Entry(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=90)
     text.grid(row=0, column=2)
     text.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
-    btn = tkinter.Button(btnFrame, text="Go!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: browse(args[-2]))
+    btn = tkinter.Button(btnFrame, text="Go!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: browse(args[-1]))
     btn.grid(row=0, column=3)
-    optionsICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/settings.png', master=INSTANCES[args[-2]]).subsample(2, 2)
-    optionsBTN = tkinter.Button(btnFrame, image=optionsICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: optionsWindow(args[-2]))
+    optionsICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/settings.png', master=INSTANCES[args[-1]]).subsample(2, 2)
+    optionsBTN = tkinter.Button(btnFrame, image=optionsICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: optionsWindow(args[-1]))
     optionsBTN.IMGREF = optionsICON
     optionsBTN.grid(row=0, column=4)
-    def destroy():
-        callHost.acknowledgeEndTask(args[-2], args[-1])
-        INSTANCES[args[-2]].destroy()
-        return True
-    INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", destroy)
-    INSTANCES[args[-2]].mainloop()
+    INSTANCES[args[-1]].mainloop()
     searchHistory.close()
-    INSTANCES[args[-2]].destroy()
+    INSTANCES[args[-1]].destroy()
     return args[-1]
 def focusIn(PID): INSTANCES[PID].state(newstate='normal'); return True
 def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); return True

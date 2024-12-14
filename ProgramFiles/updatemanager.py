@@ -7,7 +7,9 @@ from ProgramFiles import callHost
 from ProgramFiles.errorHandler import messagebox as msgbox
 import datetime
 import time
+from ProgramFiles.dwm import createTopFrame
 INSTANCES = {}
+NEEDS_FILESYSTEM_ACCESS = False
 
 def FTRConfigSettings(path, data=None) -> tuple:
     if os.access(path, os.F_OK):
@@ -21,7 +23,9 @@ def FTRConfigSettings(path, data=None) -> tuple:
         with open(path, "w") as FTR_write_config: #FirstTimeRun_Write_config, full form.
             FTR_write_config.write(data)
     return config
-
+def focusIn(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='normal'); INSTANCES[PID].overrideredirect(True); return True
+def focusOut(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='iconic'); INSTANCES[PID].overrideredirect(True); return True
+def focusMaximise(PID): INSTANCES[PID].attributes("-topmost", True)
 try:
     changelogText = str(requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/CHANGELOG.txt").content.decode(encoding="utf-8"))
     NEW_VERSION = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/VERSION.txt").content.decode(encoding='utf-8').splitlines()
@@ -38,13 +42,14 @@ def main(username, notification, *args):
     UPDATE_CHGLOG = LAST_UPDATE.read()
     CURRENT_VERSION = FTRConfigSettings("ProgramFiles/update_config/VERSION.txt", "0.1")[0]
     THEME_WINDOW_BG, THEME_FOREGROUND = args[1]["THEME"]
-    INSTANCES[args[-2]] = tkinter.Tk()
-    INSTANCES[args[-2]].title("Update manager")
-    INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
-    changeeLogScrollbar = ttk.Scrollbar(INSTANCES[args[-2]])
-    changeeLogScrollbar.grid(row=0, column=1, sticky="nsw")
-    changelogs = tkinter.Text(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, yscrollcommand=changeeLogScrollbar.set)
-    changelogs.grid(row=0, column=0)
+    INSTANCES[args[-1]] = tkinter.Tk()
+    INSTANCES[args[-1]].title("Update manager")
+    INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "updatemanager", "Update Manager", args[-1])
+    changeeLogScrollbar = ttk.Scrollbar(INSTANCES[args[-1]])
+    changeeLogScrollbar.grid(row=1, column=1, sticky="nsw")
+    changelogs = tkinter.Text(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, yscrollcommand=changeeLogScrollbar.set)
+    changelogs.grid(row=1, column=0)
     changelogs.insert(1.0, changelogText)
     changelogs.configure(state="disabled")
     changeeLogScrollbar.configure(command=changelogs.yview, orient=tkinter.VERTICAL)
@@ -84,34 +89,27 @@ def main(username, notification, *args):
             notification.showNotification("Update available!", f"Windows 11 v{version} is ready to be installed!   {CURRENT_VERSION} => {version}", time.strftime("%H:%M:%S %p"), checkForUpdates)
             msgbox.showinfo("Update available", f"Windows 11 v{version} is ready to be installed!"
                             f"\n({CURRENT_VERSION} -> {version})")
-            updateButton = tkinter.Button(INSTANCES[args[-2]], text="Update to latest version!", command=updateToNew,
+            updateButton = tkinter.Button(INSTANCES[args[-1]], text="Update to latest version!", command=updateToNew,
                                             background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-            updateButton.grid(row=2, column=1)
+            updateButton.grid(row=3, column=1)
         else:
             msgbox.showinfo("All caught up!", "You're all set, no updates (yet)")
-    updateHistory = tkinter.Label(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=UPDATE_CHGLOG)
-    updateHistory.grid(row=0, column=1)
-    tkinter.Label(INSTANCES[args[-2]], text=f"Check for updates down below! your current version = {CURRENT_VERSION}",
-            background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=1, column=0)
-    checkForUpdatesBtn = tkinter.Button(INSTANCES[args[-2]], text="Check For Updates!", command=checkForUpdates,
+    updateHistory = tkinter.Label(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=UPDATE_CHGLOG)
+    updateHistory.grid(row=1, column=1)
+    tkinter.Label(INSTANCES[args[-1]], text=f"Check for updates down below! your current version = {CURRENT_VERSION}",
+            background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=2, column=0)
+    checkForUpdatesBtn = tkinter.Button(INSTANCES[args[-1]], text="Check For Updates!", command=checkForUpdates,
                                         background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    checkForUpdatesBtn.grid(row=1, column=1)
+    checkForUpdatesBtn.grid(row=2, column=1)
     if UPDATE_CHGLOG == "": updateStatus = "No updates yet"
     else:
         updateStatus = str(UPDATE_CHGLOG).split("\n")[-1]
-    tkinter.Label(INSTANCES[args[-2]], text=f"Last update = {updateStatus}",
+    tkinter.Label(INSTANCES[args[-1]], text=f"Last update = {updateStatus}",
             background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=2, column=0)
-    def destroy():
-        callHost.acknowledgeEndTask(args[-2], args[-1])
-        INSTANCES[args[-2]].destroy()
-        return True
-    INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", destroy)
-    INSTANCES[args[-2]].mainloop()
+    INSTANCES[args[-1]].mainloop()
     LAST_UPDATE.close()
-    INSTANCES[args[-2]].destroy()
+    INSTANCES[args[-1]].destroy()
     return args[-1]
-def focusIn(PID): INSTANCES[PID].state(newstate='normal'); return True
-def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); return True
 def endTask(PID):
     INSTANCES[PID].destroy()
     return True

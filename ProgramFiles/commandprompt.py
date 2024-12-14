@@ -5,8 +5,11 @@ import sys
 import subprocess
 import threading
 import base64
+import inspect
 from ProgramFiles import callHost
+from ParWFS import ParWFS
 INSTANCES = {}
+NEEDS_FILESYSTEM_ACCESS = True
 class RedirectOutput:
     def __init__(self, cmdInstance):
         self.cmdInstance = cmdInstance
@@ -14,17 +17,19 @@ class RedirectOutput:
         self.cmdInstance.showMsg(text)
         
 class cmdCommands(object):
-    def __init__(self, stdout: tkinter.Text, stdin: tkinter.Entry, root: tkinter.Tk,) -> None:
+    def __init__(self, stdout: tkinter.Text, stdin: tkinter.Entry, root: tkinter.Tk, FS: ParWFS=None) -> None:
         with shelve.open("ProgramFiles/SYS_CONFIG") as SYS_CONFIG:
             self.VERSION = SYS_CONFIG["VERSION"]
         self.ROOT = root
+        self.FILE_SYSTEM = FS
         self.ADMINISTRATOR = False
         self.UP_ARROW_COUNT = 0
         self.ACCEPT_COMMANDS = True
         self.stdout = stdout
         self.stdin = stdin
         self.LINE_COUNT = 0.0
-        self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator", "startFile", "mk", "rm", "cmd", "sendToRootTerminal"]
+        self.COMMAND_LIST = LIST_OF_CMDS = [attr for attr in dir(self) if inspect.ismethod(getattr(self,attr))]
+        #self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator", "startFile", "mk", "rm", "cmd", "sendToRootTerminal"]
         self.INPUTTED_COMMANDS_LIST = []
         self.CWD = os.getcwd()
         self.COMMAND_NOT_FOUND = "\nThe following command doesn't exist!"
@@ -61,6 +66,7 @@ class cmdCommands(object):
             self.clearStdIn()
             self.showMsg(f"\nWelcome to ParodyWindows11 Command Interpreter (OS Version 2.2)\nCurrent Working Directory: {os.getcwd()}")
     def user(self):
+            self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
             from pathlib import Path
             import base64
             if self.getParams(1, " ").lstrip('-') != "list":
@@ -78,6 +84,7 @@ class cmdCommands(object):
                         USER_CONFIG["CLOCK-WIDGET"] = 0
                         USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
                         USER_CONFIG["WALLPAPER"] = None
+                        USER_CONFIG["STARTUP_APPS"] = []
                         USER_CONFIG.close()
                         self.clearStdIn()
                         self.showMsg("\nUser created successfully!")
@@ -117,23 +124,21 @@ class cmdCommands(object):
         if " " not in self.stdin.get(): self.stdin.insert(tkinter.END, "  ")
         if self.getParams(0, " ") in self.COMMAND_LIST and self.ACCEPT_COMMANDS: self.showMsg(f"\n>{self.stdin.get()}"); exec(f"self.{self.stdin.get().split(' ')[0]}()")
     def clearStdIn(self):
-        self.stdin.destroy()
-        self.stdin = tkinter.Entry(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=110)
-        self.stdin.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, )
-        self.stdin.grid(row=1, column=0)
-        self.stdin.bind("<Return>", self.launchCmd)
-        self.stdin.focus()
+        self.stdin.delete(0, tkinter.END)
     def clear(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()
         self.stdout.configure(state="normal")
         try: self.stdout.delete(1.0, tkinter.END)
         except Exception as exp: self.showMsg(f"\nERROR OCCURED while clearing terminal: {exp}")
         finally: self.INPUTTED_COMMANDS_LIST.append("clear"); self.stdout.configure(state="disabled")
     def shutdown(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()
         self.showMsg("\nShutting down...")
         self.ROOT.after(5000, lambda: os._exit(0))
     def restart(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.ROOT.destroy()
         if self.getParams(1, "-") == "useparams": useparams = True; params = self.getParams(2, "-")
         self.clearStdIn()
@@ -141,6 +146,7 @@ class cmdCommands(object):
         else: os.system(""" python3 "Windows 11.py" """)
         exit()
     def sfcRepair(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         try: import requests
         except Exception: pass
         if self.ADMINISTRATOR:
@@ -213,19 +219,21 @@ class cmdCommands(object):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()
     def dir(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         for file in os.listdir(os.getcwd()):
             if os.path.isdir(os.path.join(os.getcwd(), file)):
                 self.showMsg(f"\n{file} [DIRECTORY]")
             else:
                 self.showMsg("\n"+file)
-        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()
     def mkd(self):
         os.mkdir(self.stdin.get().split(" ")[1])
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()
         self.showMsg("\nFolder created succesfully!")
     def rmd(self):
         import pathlib3x
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         Location = pathlib3x.Path(self.stdin.get().split(" ")[1])
         Location.rmtree(ignore_errors=True)
         self.clearStdIn()
@@ -243,14 +251,27 @@ class cmdCommands(object):
         self.clearStdIn()
         self.showMsg("\nCreated the file successfully!")
     def rm(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         if self.ADMINISTRATOR:
-            self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
             os.remove(self.stdin.get().split(" ")[1])
             self.showMsg("\nRemoved the file successfully!")
         else: self.showMsg("\nPlease enable administrator mode before removing a file")
         self.clearStdIn()
     def getParams(self, paramToGet: int, includeParamSeparator: str) -> str:
         return self.stdin.get().split(' ')[paramToGet].lstrip(includeParamSeparator)
+    def _getLenOfParams(self):
+        return len(self.stdin.get().split(' '))
+    def fsLoadConfig(self):
+        if not self.FILE_SYSTEM:
+            self.showMsg("\nCannot load the given config: File system hasn't been initialised into the command prompt!")
+            return None
+        key = self.getParams(1, "-")
+        path = "".join(word for word in self.stdin.get().split(" ")[2:]).lstrip("-")
+        try: self.FILE_SYSTEM.loadConfig(path, key)
+        except Exception as EXCP: self.showMsg(f"\nCan't load config!\nError: {EXCP}")
+        else: self.showMsg("\nConfig loaded succesfully!")
+        self.clearStdIn()
+
     def sendToRootTerminal(self):
         def run():
             def killer(*args):
@@ -270,10 +291,11 @@ class cmdCommands(object):
             print("\n")
             threading.Thread(target=run).start()
             sys.stdout = OLD_STD
+            self.clearStdIn()
         else: 
             self.showMsg("\nYou don't have permissions to run this command! Enable Administrator Mode and try again.")
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
-def main(*args): 
+def main(FILE_SYSTEM, *args): 
     def sendCommand(e=None):
         cmdInstance.showMsg(f"\n>{yourCommand.get()}")
         if " " not in yourCommand.get():
@@ -297,7 +319,8 @@ def main(*args):
     yourCommand = tkinter.Entry(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
     yourCommand.grid(row=1, column=0)
-    cmdInstance = cmdCommands(text, yourCommand, root=INSTANCES[args[-2]])
+    cmdInstance = cmdCommands(text, yourCommand, root=INSTANCES[args[-2]], FS=FILE_SYSTEM)
+    LIST_OF_CMDS = [attr for attr in dir(cmdInstance) if inspect.ismethod(getattr(cmdInstance,attr))]
     yourCommand.focus()
     yourCommand.bind("<Return>", sendCommand)
     if args[0] == "AUTORECOVERYENV":

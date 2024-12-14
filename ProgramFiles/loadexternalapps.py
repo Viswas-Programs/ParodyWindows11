@@ -3,12 +3,19 @@ import os
 import subprocess
 import tkinter.ttk as ttk
 from pathlib import Path
-from tkinter import filedialog
-
+from ProgramFiles import fileaskhandlers
+from ProgramFiles.dwm import createTopFrame
 from ProgramFiles import callHost
 THEME_WINDOW_BG, THEME_FOREGROUND = ["",""]
 PROCESS_RUNNING = True
 INSTANCES = {}
+NEEDS_FILESYSTEM_ACCESS = False
+def endTask(PID):
+    INSTANCES[PID].destroy()
+    return True
+def focusIn(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='normal'); INSTANCES[PID].overrideredirect(True); return True
+def focusOut(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='iconic'); INSTANCES[PID].overrideredirect(True); return True
+def focusMaximise(PID): INSTANCES[PID].attributes("-topmost", True)
 def refresh():
     global externalAppsList
     for i in externalAppsList.get_children():
@@ -51,7 +58,7 @@ def show(PID, e=None):
     externalAppsList.configure(style="Treeview")
     refresh()
 def loadCustomApp():
-    fileToOpen = filedialog.askopenfilename(title="Select app to run!", filetypes=(("Windows 11 Apps", "*.py"), ("All Files", "*.*")))
+    fileToOpen = fileaskhandlers.askopenfilename(title="Select app to run!", filetypes=(("Windows 11 Apps", "*.py"), ("All Files", "*.*")))
     load(file=fileToOpen)
 def main(*args):
     global externalAppsName
@@ -59,35 +66,21 @@ def main(*args):
     global THEME_FOREGROUND, THEME_WINDOW_BG
     global showRefreshBtn
     THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
-    INSTANCES[args[-2]] = tkinter.Tk()
-    INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
-    INSTANCES[args[-2]].title("Load External Apps")
+    INSTANCES[args[-1]] = tkinter.Tk()
+    INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "loadexternalapps", "Load External Apps", args[-1])
+    INSTANCES[args[-1]].title("Load External Apps", args[-1])
     externalAppsName = []
     buttonText = "Look for external apps!"
-    showRefreshBtn = tkinter.Button(INSTANCES[args[-2]], text=buttonText, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: show(args[-2]))
-    showRefreshBtn.grid(row=0, column=0)
-    loadCusttomBtn = tkinter.Button(INSTANCES[args[-2]], text="Load Custom App!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=loadCustomApp)
-    loadCusttomBtn.grid(row=0, column=1)
-    def destroy():
-        callHost.acknowledgeEndTask(args[-2], args[-1])
-        INSTANCES[args[-2]].destroy()
-        return True
-    INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", destroy)
-    INSTANCES[args[-2]].mainloop()
-    INSTANCES[args[-2]].destroy()
+    showRefreshBtn = tkinter.Button(INSTANCES[args[-1]], text=buttonText, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: show(args[-1]))
+    showRefreshBtn.grid(row=1, column=0)
+    loadCusttomBtn = tkinter.Button(INSTANCES[args[-1]], text="Load Custom App!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=loadCustomApp)
+    loadCusttomBtn.grid(row=1, column=1)
+    INSTANCES[args[-1]].mainloop()
+    INSTANCES[args[-1]].destroy()
     PROCESS_RUNNING = False
     return args[-1]
 
-def endTask(PID):
-    INSTANCES[PID].destroy()
-    return True
-def focusIn(PID):
-    INSTANCES[PID].focus()
-    INSTANCES[PID].state(newstate='normal')
-    return True
-def focusOut(PID):
-    INSTANCES[PID].state(newstate='iconic')
-    return True
 def returnInformation(PID):
     return {
         "title": INSTANCES[PID].title(),
