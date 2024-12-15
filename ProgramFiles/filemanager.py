@@ -63,7 +63,7 @@ def main(FILESYSTEM: ParWFS, *args):
                 filepath = os.path.join(filepath, selectedFile)
                 lookUpFiles(filepath)
             else:
-                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], FILESYSTEM.getConfig("USER_CONFIG"), args[-1][0], args[-1][1])
+                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], FILESYSTEM.getConfig("USER_CONFIG"))
 
         def goBackFolder(path: str):  
             if "\\" in path:
@@ -144,7 +144,7 @@ def main(FILESYSTEM: ParWFS, *args):
         fileView.configure(style="Treeview")
         files = tkinter.Menu(mainFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         files.add_command(label="Open", command=openFileOrFolder)
-        files.add_command(label="Open With", command=lambda: fileRouters.openWithSettings(INSTANCES[args[-1]], str(os.path.join(filepath, fileView.item(fileView.focus(), 'values')[0])).replace("\\", "/"), args[-1], args[0], args[1] ))
+        files.add_command(label="Open With", command=lambda: fileRouters.openWithSettings(INSTANCES[args[-1]], str(os.path.join(filepath, fileView.item(fileView.focus(), 'values')[0])).replace("\\", "/"), args[-2], args[0], args[1] ))
         files.add_command(label="Delete", command=delete)
         files.add_command(label="Copy", command=copyFiles)
         files.add_command(label="Cut", command=cutFiles)

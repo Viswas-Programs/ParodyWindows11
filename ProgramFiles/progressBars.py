@@ -1,7 +1,8 @@
 from threading import Thread
 import tkinter
 import math
-
+from ProgramFiles import dwm
+from ProgramFiles import callHost
 class ProgressOutOfMaxValueBar:
     def __init__(self, info: list, root: tkinter.Tk, headerText, T_BG, T_FG, autoQuitWhenCompletion = True):
         self.info = info
@@ -16,13 +17,18 @@ class ProgressOutOfMaxValueBar:
         else: self.increment = math.ceil(100/self.maxVal)
         self.progressBarWindow = tkinter.Toplevel(self.root, background=T_BG)
         self.headerText = headerText
+        self.PID = callHost.getRangeToGenPID(callHost.PRG_ID)
+        callHost.addToRunningAppsList(self.PID, f"ProgressBarHost - {root.title()}")
+        dwm.createTopFrame(self.progressBarWindow, T_FG, T_BG, "continue", self.headerText, self.PID)
         self.progressBarWindow.title(self.headerText)
-        self.headerTextLBL = tkinter.Label(self.progressBarWindow, background=T_BG, foreground=T_FG, text=self.headerText, pady=10, padx=10)
+        self.ProgressBarFRAME = tkinter.Frame(self.progressBarWindow, background=T_BG)
+        self.ProgressBarFRAME.grid(row=1, column=0)
+        self.headerTextLBL = tkinter.Label(self.ProgressBarFRAME, background=T_BG, foreground=T_FG, text=self.headerText, pady=10, padx=10)
         self.headerTextLBL.grid(row=0, column=0)
         self.ProgressText = f"Completed {self.currentVal} out of {self.maxVal} tasks!"
-        self.ProgressLBL = tkinter.Label(self.progressBarWindow, background=T_BG, foreground=T_FG, text=self.ProgressText)
+        self.ProgressLBL = tkinter.Label(self.ProgressBarFRAME, background=T_BG, foreground=T_FG, text=self.ProgressText)
         self.ProgressLBL.grid(row=1, column=0)
-        self.widgetFrame= tkinter.Frame(self.progressBarWindow, background=T_BG)
+        self.widgetFrame= tkinter.Frame(self.ProgressBarFRAME, background=T_BG)
         self.widgetFrame.grid(row=2, column=0)
         self.widgets = []
         self.function = None

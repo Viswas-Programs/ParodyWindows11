@@ -1,6 +1,10 @@
 import tkinter, shelve 
-from ProgramFiles import dwm
-from ProgramFiles import callHost
+try: 
+    from ProgramFiles import dwm
+    from ProgramFiles import callHost
+except:
+    import dwm
+    import callHost
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
 
 INSTANCES = {}

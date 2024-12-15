@@ -31,7 +31,7 @@ Restarting in a moment..."""
     except Exception as EXP: print(text, EXP)
 try:
     from ProgramFiles import dwm
-    from ParWFS import ParWFS
+    import ParWFS
     from datetime import datetime
     import sys
     import os
@@ -49,7 +49,7 @@ try:
 except Exception as E: 
     bsod(__name__, str(E) + "\nMODULE_NOT_FOUND_ERROR")
 CWD = os.getcwd()
-FILE_SYSTEM = ParWFS()
+FILE_SYSTEM = ParWFS.ParWFS()
 FILE_SYSTEM.loadConfig("ProgramFiles/SYS_CONFIG", "SYS_CONFIG")
 SYS_CONFIG = FILE_SYSTEM.getConfig("SYS_CONFIG")
 try:
@@ -60,7 +60,8 @@ except Exception:
 print("Starting OS...")
 RUNNING_APPS = FILE_SYSTEM.RUNNING_APPS
 ICONS = {}
-PROCESS_IDS = (1000, 9999)
+PROCESS_IDS = (1000, 5000)
+EXTERNAL_PID = (5000, 9999)
 MESSAGEBOX_IDS = (0, 200)
 PROGRESSBAR_IDS = (200, 400)
 FILEASK_WINDOWS = (400, 600)
@@ -580,18 +581,17 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
         tkinter.Label(shutdownWindow, text="Restart", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=2, column=1)
         shutdownWindow.mainloop()
 
-def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig= None, notifications=None, runAppFrame = None, runningApps = {}):
-    PID = random.randint(1000, 9999)
-    while PID in runningApps.keys():
-        PID = random.randint(1000, 9999)
-    print(params)
-    runningApps[PID] = app
+def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig= None, notifications=None,):
+    PID = random.randint(5000, 9999)
+    while PID in ParWFS._instances["root"].RUNNING_APPS.keys():
+        PID = random.randint(5000, 9999)
+    ParWFS._instances["root"].RUNNING_APPS[PID] = app
     ShelveRef = USER_CONFIG
     PER_PROGRAM_COMMAND_APPS_LIST = ShelveRef["APPS"][1]
     appToLaunch = GUIButtonCommand.AppImportNameCheck(app=app)
     progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
     exec(f"import {progAppImport}")
-    exec(f"ProgramFiles.{appToLaunch}.main(userConfig, notifications, '{params}', USER_CONFIG, {PID}, [runAppFrame, runningApps])")
+    exec(f"ProgramFiles.{appToLaunch}.main(userConfig, notifications, '{params}', USER_CONFIG, {PID})")
 
 class TaskManager:
     def __init__(self, root):

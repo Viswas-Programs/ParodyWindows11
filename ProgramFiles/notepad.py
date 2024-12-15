@@ -1,5 +1,10 @@
 import tkinter
-from ProgramFiles.errorHandler import messagebox
+try:
+    from ProgramFiles.errorHandler import messagebox
+    from ProgramFiles import callHost
+except: 
+    from errorHandler import messagebox
+    import callHost
 PROCESS_RUNNING = False
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
@@ -44,3 +49,5 @@ def returnInformation(PID):
         "state": INSTANCES[PID].state()
         # Would add more stuff here in the future, such as memory usage and shi. 
     }
+if __name__ == "__main__":
+    main("defaultuser0", None, None, dict({"THEME": ["Black", "White"]}), callHost.getRangeToGenPID(callHost.PRID) )
