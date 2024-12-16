@@ -10,30 +10,26 @@ Step1: Download the windows 11 file
 
 Step2: Download the ProgramFiles zip file and extract that thing into the environment.
 
-Step3: make a new file "accConfiguration1.conf" (yes the file type is .conf) and give your username in first line and password in second line.
+Step3: Run the windows 11 file with the -config parameter. so it would be `python3 "windows 11.py" -config`
 
 Now the directory structure should look similar to this
 
 YOURENV/
 
 ---------ProgramFiles/
-
 ------------------Icons/
-
 ---------------------------ALLICONS
 
 ------------------defaultuser0/<all files>
 
 ------------------<YOUR_USER_NAME>/
-
 ---------------------------<YOUR_USER_FILES>
 
 ------------------All Apps
-
 ------------------accConfiguration1.conf
 
 ---------Windows 11.py
-
+---------ParWFS.py
 ---------theme_config.txt
 
 If so, you're officially done with the manual setup! have a great time playing around!
