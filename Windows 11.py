@@ -65,6 +65,9 @@ EXTERNAL_PID = (5000, 9999)
 MESSAGEBOX_IDS = (0, 200)
 PROGRESSBAR_IDS = (200, 400)
 FILEASK_WINDOWS = (400, 600)
+TASK_MANAGERS = (600, 650)
+CONTROL_PANELS = (650, 700)
+DIALOGUE_BOXES = (700, 850)
 def returnRunningApps():
     return FILE_SYSTEM.RUNNING_APPS
 def giveIcon(appName: str, root):
@@ -125,8 +128,14 @@ class settings():
         self.SHOWN_APPOPENERCHANGER = False
         self.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
         self.settingsWindow = tkinter.Toplevel(ROOT_WINDOW, background=THEME_WINDOW_BG)
+        PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
+        while PID in RUNNING_APPS.keys():
+            PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
+        RUNNING_APPS[PID] = "Control Panel"
+        dwm.createTopFrame(self.settingsWindow, THEME_FOREGROUND, THEME_WINDOW_BG, "settings", "Control Panel", PID)
+        GUIButtonCommand.createRunningAppTaskbarIcon("settings", PID)
         btnFrame = tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
-        btnFrame.grid(row=0, column=0)
+        btnFrame.grid(row=1, column=0)
         homeBtn = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Home", command=self.homePage)
         homeBtn.grid(row=0, column=0)
         personalizeBtn = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Personalization", command=self.personalization)
@@ -134,11 +143,11 @@ class settings():
         appOpenerChangeBtn = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="App Associations", command=self.changeFileOpeners)
         appOpenerChangeBtn.grid(row=2, column=0)
         self.setting = tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
-        self.setting.grid(row=0, column=1)
+        self.setting.grid(row=1, column=1)
     def homePage(self):
         if self.SHOWN_PERSONALIZATION or self.SHOWN_APPSLIST or self.SHOWN_APPOPENERCHANGER: self.setting.destroy()
         self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
-        self.setting.grid(row=0, column=1)
+        self.setting.grid(row=1, column=1)
         self.SHOWN_HOMEPAGE = True
         infoText = f""" Windows 11 v2.3.5\nSystem RAM: {self.total_memory}\nBackground={THEME_WINDOW_BG}\n"""
         f"""Foreground={THEME_FOREGROUND}\n\nFor more info, please visit the respective categories! Thank you :)"""
@@ -207,7 +216,7 @@ class settings():
             wallpaperPath.configure(text=wallpaperText)
         if self.SHOWN_HOMEPAGE or self.SHOWN_ADVANCED or self.SHOWN_PERSONALIZATION or self.SHOWN_APPOPENERCHANGER: self.setting.destroy()
         self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
-        self.setting.grid(row=0, column=1)
+        self.setting.grid(row=1, column=1)
         crBg = tkinter.Label(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=f"Current Background = {THEME_WINDOW_BG}")
         crBg.grid(row=0, column=0)
         changeBackground = tkinter.Button(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Change Background!", command=changeBg)
@@ -216,7 +225,7 @@ class settings():
         crFg.grid(row=1, column=0)
         changeForeground = tkinter.Button(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Changr foreground!", command=changeFg)
         changeForeground.grid(row=1, column=1)
-        ttk.Style().configure("TCheckbutton", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+        ttk.Style(self.settingsWindow).configure("TCheckbutton", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         systemChangeTheme = tkinter.IntVar()
         applyToSystem = ttk.Checkbutton(self.setting, text="Also apply changes to system theme!", variable=systemChangeTheme)
         applyToSystem.grid(row=2, column=0)
@@ -256,7 +265,7 @@ class settings():
         self.SHOWN_APPOPENERCHANGER = True
         if self.SHOWN_HOMEPAGE or self.SHOWN_ADVANCED or self.SHOWN_PERSONALIZATION or reLaunch: self.setting.destroy()
         self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
-        self.setting.grid(row=0, column=1)
+        self.setting.grid(row=1, column=1)
         addEntryBtn = tkinter.Button(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Add New Entry", command=__internals_AddNewEntry)
         addEntryBtn.grid(row=0, column=0)
         for X, i in enumerate(dict(USER_CONFIG["DEFAULTAPPASSOCIATION"]).keys()):
@@ -349,12 +358,12 @@ def focus():
         import ProgramFiles.{realApp}
         if ProgramFiles.{realApp}.returnInformation({PID})["state"] == "normal": ProgramFiles.{realApp}.focusOut({PID})
         else: ProgramFiles.{realApp}.focusIn({PID})
-{realApp}ICON = ICONS["{realApp}"].subsample(2, 2)
+{realApp}ICON = giveIcon('{realApp}', ROOT_WINDOW).subsample(2, 2)
 taskBar{realApp}RnAppBtn = tkinter.Button(runningAppsFrame, text='{app}', background='{THEME_WINDOW_BG}', foreground='{THEME_FOREGROUND}', command=focus, image={realApp}ICON, compound='left')
 taskBar{realApp}RnAppBtn.grid(row=0, column={len(RUNNING_APPS)})
 taskBar{realApp}RnAppBtn.processInfo = (PID, '{app}')
 taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
-""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW, "ICONS": ICONS, "dwm": dwm})
+""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW, "ICONS": ICONS, "dwm": dwm, "giveIcon": giveIcon})
     @staticmethod
     def AppImportNameCheck(app: str, dontLower=False):
         if "/" in app:
@@ -597,15 +606,21 @@ class TaskManager:
     def __init__(self, root):
         self.ROOT = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
         self.fileView = ttk.Treeview(self.ROOT, style="Treeview")
+        PID = random.randint(TASK_MANAGERS[0], TASK_MANAGERS[1])
+        while PID in RUNNING_APPS.keys():
+            PID = random.randint(TASK_MANAGERS[0], TASK_MANAGERS[1])
+        dwm.createTopFrame(self.ROOT, THEME_FOREGROUND, THEME_WINDOW_BG, "taskmanager", "Task Manager", PID)
+        RUNNING_APPS[PID] = "Task Manager"
+        GUIButtonCommand.createRunningAppTaskbarIcon("Task Manager", PID)
         self.ROOT.title("Task Manager")
-        self.fileView.grid(row=0, column=0, sticky="w")
+        self.fileView.grid(row=1, column=0, sticky="w")
         self.fileView['column'] = "Applications"
         self.fileView.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
         self.fileView.column("Applications", anchor=tkinter.W, width=600)
         self.fileView.heading("Applications", text="Applications", anchor=tkinter.CENTER)
         self.fileView.configure(style="Treeview")
         self.endTaskButton = tkinter.Button(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="End Application", command=self.endTask)
-        self.endTaskButton.grid(row=1, column=0)
+        self.endTaskButton.grid(row=2, column=0)
         self.ROOT.after(500, self.updateEach1000Ms)
         self.ROOT.mainloop()
     def updateEach1000Ms(self):
@@ -723,7 +738,9 @@ def main():
                 location = list(RUNNING_APPS.keys()).index(widget.processInfo[0])
                 widget.grid_configure(row=0, column=location)
                 appNameReal = GUIButtonCommand.AppImportNameCheck(widget.processInfo[1])
-                exec(f"import ProgramFiles.{appNameReal}\nwidget.configure(text=ProgramFiles.{appNameReal}.returnInformation({widget.processInfo[0]})['title'])")
+                try: widget.configure(text=dwm.title(None, widget.processInfo[0]))
+                except:
+                    exec(f"import ProgramFiles.{appNameReal}\nwidget.configure(text=ProgramFiles.{appNameReal}.returnInformation({widget.processInfo[0]})['title'])")
             except Exception as EXP: 
                 print(EXP)
                 widget.destroy()

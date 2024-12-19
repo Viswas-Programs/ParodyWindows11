@@ -30,8 +30,8 @@ def main(FILESYSTEM: ParWFS, *args):
         global THEME_WINDOW_BG
         THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
         filepath = None
-        def newFolder(*event):
-            toplevel = tkinter.Toplevel(background=THEME_WINDOW_BG)
+        def newFolder(PID, *event):
+            toplevel = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
             def createNewFolder(*event):
                 try:
                     os.mkdir(os.path.join(filepath, newFolderEntry.get()))
@@ -92,7 +92,7 @@ def main(FILESYSTEM: ParWFS, *args):
         goBackButton.grid(row=0, column=2, sticky="nw", padx=2)
         addressBar.grid(row=0, column=0, sticky="n")
         commandBar = tkinter.Frame(mainFrame, background=THEME_WINDOW_BG)
-        newFolderBtn = tkinter.Button(commandBar, text="New Folder!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=newFolder)
+        newFolderBtn = tkinter.Button(commandBar, text="New Folder!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: newFolder(args[-1]))
         newFolderBtn.grid(row=0, column=0)
         # driveSelection = ttk.Treeview(mainFrame, style="Treeview")
         # driveSelection.grid(row=0, column=0, sticky="w")
