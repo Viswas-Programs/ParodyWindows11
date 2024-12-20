@@ -535,7 +535,6 @@ taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
         addIconBtn.grid(row=0, column=1) 
         addNewIcon.mainloop()
     def shutdownMenu(self, root: tkinter.Tk, e=None):
-        import shutil
         def waitUntillTaskFinishes(func):
             if FILE_SYSTEM.TASK_IN_PROGRESS != [0, 0]:
                 messagebox.showinfo("IO Operations pending!", "Please wait untill the file IO operations are completed. The system will automatically shutdown after.", root=root)
@@ -657,15 +656,16 @@ class TaskManager:
                 except Exception as U:
                     messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {U}\nFrom\n{E}\nFrom\n{EXP}", self.ROOT)
 print("Loaded GUI Option Modules...")
-idx = -1
+idx = 0
 afterCancelId = None
 def startUpTasks(CONFIG, ROOT: tkinter.Tk):
     global idx, afterCancelId
     afterCancelId = ROOT.after(100, lambda i=None: startUpTasks(CONFIG, ROOT))
     length = len(CONFIG["STARTUP_APPS"])
-    if idx >= length-1: ROOT.after_cancel(afterCancelId)
+    if idx >= length: ROOT.after_cancel(afterCancelId); return 0
     idx += 1
-    GUIButtonCommand.launchItem(CONFIG["STARTUP_APPS"][idx])
+    GUIButtonCommand.launchItem(CONFIG["STARTUP_APPS"][idx-1])
+    
 def main():
     print("Loaded operating system!")
     global THEME_WINDOW_BG, THEME_FOREGROUND
