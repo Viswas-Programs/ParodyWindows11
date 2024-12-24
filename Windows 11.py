@@ -42,7 +42,7 @@ try:
     from tkinter import colorchooser
     import random
     import ProgramFiles.tooltips as tooltips
-    from PIL import Image, ImageTk
+    from PIL import Image, ImageTk, ImageGrab
     import psutil
     from ProgramFiles.fileaskhandlers import askopenfilename
     from ProgramFiles.buttons import IconButton
@@ -75,7 +75,6 @@ def giveIcon(appName: str, root):
     try:
         return ICONS[appName]
     except Exception as exp:
-        print(exp, ICONS.keys())
         return tkinter.PhotoImage(file=f"ProgramFiles/Icons/{appName}.png", master=root)
 def loadAllIcons(appsList: list, root):
     global ICONS
@@ -348,9 +347,8 @@ else:
     @staticmethod
     def createRunningAppTaskbarIcon(app: str, PID:int):
         realApp = GUIButtonCommand.AppImportNameCheck(app=app)
-        print(RUNNING_APPS, len(RUNNING_APPS))
         exec(f"""
-def focus():
+def focus(e=None):
     try:
         dwm.focus({PID})
     except:
@@ -358,12 +356,43 @@ def focus():
         import ProgramFiles.{realApp}
         if ProgramFiles.{realApp}.returnInformation({PID})["state"] == "normal": ProgramFiles.{realApp}.focusOut({PID})
         else: ProgramFiles.{realApp}.focusIn({PID})
+def scrShotPreview(event):
+    oldFocus = None
+    try:
+        oldFocus = dwm.getFocus({PID})
+        dwm.focusIn({PID})
+        wnToFocus = dwm.returnWindow({PID})
+    except: 
+        import ProgramFiles.{realApp}
+        oldFocus = ProgramFiles.{realApp}.returnInformation({PID})["state"]
+        ProgramFiles.{realApp}.focusIn({PID})
+        wnToFocus = ProgramFiles.{realApp}.INSTANCES[{PID}]
+    x = wnToFocus.winfo_x()+(wnToFocus.winfo_x()/4)
+    y = wnToFocus.winfo_y()+(wnToFocus.winfo_y()/4)
+    width = wnToFocus.winfo_width()+(wnToFocus.winfo_width()/4)
+    height = wnToFocus.winfo_height()+(wnToFocus.winfo_height()/4)
+    image = ImageTk.PhotoImage(ImageGrab.grab(bbox=(x, y, x + width, y + height)).resize(tuple((350, 100))))
+    ROOT_WINDOW.E_IMG = image
+    ttl = None
+    try:
+        dwm.setFocus({PID}, oldFocus)
+        ttl = dwm.title(PID={PID})
+    except:
+        import ProgramFiles.{realApp}
+        ProgramFiles.{realApp}.INSTANCES[{PID}].update()
+        ProgramFiles.{realApp}.INSTANCES[{PID}].state(newstate=oldFocus)
+        ProgramFiles.{realApp}.INSTANCES[{PID}].update()
+        ttl = ProgramFiles.{realApp}.returnInformation({PID})["title"]
+    tooltips._createToolTipAtGivenPos({PID}, ROOT_WINDOW, ttl+'\\nPID: {PID}', focus, event, image=ROOT_WINDOW.E_IMG, compound="top")
+
 {realApp}ICON = giveIcon('{realApp}', ROOT_WINDOW).subsample(2, 2)
 taskBar{realApp}RnAppBtn = tkinter.Button(runningAppsFrame, text='{app}', background='{THEME_WINDOW_BG}', foreground='{THEME_FOREGROUND}', command=focus, image={realApp}ICON, compound='left')
 taskBar{realApp}RnAppBtn.grid(row=0, column={len(RUNNING_APPS)})
 taskBar{realApp}RnAppBtn.processInfo = (PID, '{app}')
 taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
-""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW, "ICONS": ICONS, "dwm": dwm, "giveIcon": giveIcon})
+taskBar{realApp}RnAppBtn.bind("<Enter>", scrShotPreview)
+taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID}, ROOT_WINDOW))
+""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW, "ICONS": ICONS, "dwm": dwm, "giveIcon": giveIcon, "tooltips": tooltips, "ImageGrab": ImageGrab, "ImageTk": ImageTk})
     @staticmethod
     def AppImportNameCheck(app: str, dontLower=False):
         if "/" in app:

@@ -10,7 +10,19 @@ def close(PID):
 def focusOut(PID):
     MANAGED_DWM_INSTANCES[PID][2].state(newstate="withdrawn")
 def focusIn(PID):
+    MANAGED_DWM_INSTANCES[PID][2].update()
     MANAGED_DWM_INSTANCES[PID][2].state(newstate="normal")
+    MANAGED_DWM_INSTANCES[PID][2].lift()
+    MANAGED_DWM_INSTANCES[PID][2].update()
+def getFocus(PID):
+    return MANAGED_DWM_INSTANCES[PID][2].state()
+def setFocus(PID, newState):
+    MANAGED_DWM_INSTANCES[PID][2].lift()
+    MANAGED_DWM_INSTANCES[PID][2].update()
+    MANAGED_DWM_INSTANCES[PID][2].state(newstate=newState)
+    MANAGED_DWM_INSTANCES[PID][2].update()
+def returnWindow(PID):
+    return MANAGED_DWM_INSTANCES[PID][2]
 def focus(PID, *args):
     print(MANAGED_DWM_INSTANCES[PID][2].state())
     MANAGED_DWM_INSTANCES[PID][2].update()
@@ -20,7 +32,7 @@ def focus(PID, *args):
         MANAGED_DWM_INSTANCES[PID][2].state(newstate="normal")
         MANAGED_DWM_INSTANCES[PID][2].lift()
     MANAGED_DWM_INSTANCES[PID][2].update()
-    print(MANAGED_DWM_INSTANCES[PID][2].state())
+    return (MANAGED_DWM_INSTANCES[PID][2].state())
 def focusMaximise(PID):
     # Force maximise ig, after you downsize you wont be able to extend the app with dynamic widgets sadly, so use this like a one-time F11 or smth man. 
     if f"{MANAGED_DWM_INSTANCES[PID][2].winfo_screenwidth()}x{MANAGED_DWM_INSTANCES[PID][2].winfo_screenheight()}" in MANAGED_DWM_INSTANCES[PID][2].geometry():

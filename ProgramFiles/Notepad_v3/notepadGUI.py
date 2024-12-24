@@ -9,7 +9,7 @@ import shelve
 import tkinter
 from tkinter import filedialog, ttk, font, colorchooser
 
-from ProgramFiles import callHost
+from ProgramFiles import callHost, dwm
 try:
     from ProgramFiles.errorHandler import messagebox
     import ProgramFiles.Notepad_v3.syntax_checker as syntax_checker
@@ -76,7 +76,7 @@ class NotepadRun(object):
         self.text = text_box
         self.text.configure(font=(self.font, self.size))
         self.buttonFrame = tkinter.Frame(self.root, background="Black", pady=10)
-        self.buttonFrame.grid(row=2, column=0)
+        self.buttonFrame.grid(row=3, column=0)
         self.saveTo = saveTo
         self.THEME_FOREGROUND = THEME_FOREGROUND
         self.THEME_TYPING_WIDGETS_BG = THEME_BACKGROUND
@@ -1090,11 +1090,11 @@ def main(initialFileOpener=None):
     text = tkinter.Text(root, height=20, width=100,
                         font=("Arial Rounded MT Bold",
                               18), )
-    text.grid(row=0, column=0, pady=10)
+    text.grid(row=1, column=0, pady=10)
     saveTo = tkinter.Text(root, height=2, width=50,
                           font=("Arial Rounded MT Bold",
                                 12))
-    saveTo.grid(row=1, column=0)
+    saveTo.grid(row=2, column=0)
     NotepadRun(text_box=text, gui=root, saveTo=saveTo, file_to_open =initialFileOpener)
     return True
 
