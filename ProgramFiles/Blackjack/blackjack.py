@@ -5,6 +5,7 @@ import tkinter
 from tkinter import ttk
 from ProgramFiles import callHost
 import ProgramFiles.Blackjack.functions_for_blackjack as functions_for_blackjack
+import ProgramFiles.dwm
 
 INSTANCES =  {}
 # Creating styles for background colours.
@@ -119,7 +120,9 @@ def fullscreen(PID, event=None):
     :param event: The event that it's going to capture to enable keyboard
     shortcut
     """
+    INSTANCES[PID].overrideredirect(False)
     INSTANCES[PID].attributes("-fullscreen", 1)
+    INSTANCES[PID].overrideredirect(True)
 
 
 def exitFullScreen(PID, event=None):
@@ -128,7 +131,9 @@ def exitFullScreen(PID, event=None):
     :param event: The event that it's going to capture to enable keyboard
     shortcut
     """
+    INSTANCES[PID].overrideredirect(False)
     INSTANCES[PID].attributes("-fullscreen", False)
+    INSTANCES[PID].overrideredirect(True)
 
 
 def quit(PID, event=None):
@@ -275,7 +280,7 @@ def exitter(PID):
 
 
 # The GUI
-def main(PID, RunAppsList):
+def main(PID):
     global player1Hand
     global player1HandT2
     global player2Hand
@@ -298,13 +303,9 @@ def main(PID, RunAppsList):
     global dCF
     global dealerHand
     global dealerHandT2
-    def destroy(PID=PID, RunAppsList=RunAppsList):
-        callHost.acknowledgeEndTask(PID, RunAppsList)
-        INSTANCES[PID].destroy()
-        return True
     INSTANCES[PID] = tkinter.Tk()
+    ProgramFiles.dwm.createTopFrame(INSTANCES[PID], "White", "Black", "blackjack", "Blackjack v2.0", PID)
     INSTANCES[PID].title("Blackjack v2.0")
-    INSTANCES[PID].geometry("1000x600")
     altMenu = tkinter.Menu(INSTANCES[PID])
     INSTANCES[PID].configure(menu=altMenu, background="grey")
     INSTANCES[PID].bind("<Control-q>", lambda: quit(PID))
@@ -320,7 +321,7 @@ def main(PID, RunAppsList):
     fileMenu.add_command(label="FullScreen", command=lambda: fullscreen(PID))
     fileMenu.add_command(label="Exit FullScreen", command=lambda: exitFullScreen(PID))
     fileMenu.add_separator()
-    fileMenu.add_command(label="Safe quit", command=lambda: destroy(PID, RunAppsList))
+    fileMenu.add_command(label="Safe quit", command=lambda: ProgramFiles.dwm.close(PID))
     optionsMenu = tkinter.Menu(altMenu, tearoff=0)
     altMenu.add_cascade(label="Options", menu=optionsMenu)
     optionsMenu.add_command(label="Reset Game", command=newGame)
@@ -336,7 +337,7 @@ def main(PID, RunAppsList):
     functions_for_blackjack.shuffler(deck, deck2)
 
     tabs = ttk.Notebook(INSTANCES[PID])
-    tabs.grid(row=0, column=0)
+    tabs.grid(row=1, column=0)
     mainT1 = ttk.Frame(tabs)
     mainT1.grid(row=1, column=0)
     mainT2 = ttk.Frame(tabs)
@@ -426,7 +427,6 @@ def main(PID, RunAppsList):
     player1Hand = []
     player1HandT2 = []
     player2Hand = []
-    INSTANCES[PID].protocol("WM_DELETE_WINDOW", destroy)
     initialDeal()
     INSTANCES[PID].mainloop()
     INSTANCES[PID].destroy()
