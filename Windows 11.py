@@ -305,6 +305,7 @@ comboBox{X}.grid(row=0, column=1)
         self.setting.grid(row=1, column=1)
         tkinter.Label(self.setting, text="Current startup apps:", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=0, column=0)
         startupApps = FILE_SYSTEM.getConfig("USER_CONFIG")["STARTUP_APPS"]
+        startupApps = list(startupApps)
         apps = []
         for app in APPS_LIST: 
             if app not in startupApps: apps.append(app)
