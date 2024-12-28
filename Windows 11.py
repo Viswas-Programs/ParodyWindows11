@@ -141,10 +141,13 @@ class settings():
         personalizeBtn.grid(row=1, column=0)
         appOpenerChangeBtn = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="App Associations", command=self.changeFileOpeners)
         appOpenerChangeBtn.grid(row=2, column=0)
+        startupApps = tkinter.Button(btnFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Startup Apps", command=self.addStartupApps)
+        startupApps.grid(row=3, column=0)
         self.setting = tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
         self.setting.grid(row=1, column=1)
+        self.homePage()
     def homePage(self):
-        if self.SHOWN_PERSONALIZATION or self.SHOWN_APPSLIST or self.SHOWN_APPOPENERCHANGER: self.setting.destroy()
+        self.setting.destroy()
         self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
         self.setting.grid(row=1, column=1)
         self.SHOWN_HOMEPAGE = True
@@ -213,7 +216,7 @@ class settings():
             except: pass
             wallpaperText = "Current Wallpaper: No wallpapers set yet!"
             wallpaperPath.configure(text=wallpaperText)
-        if self.SHOWN_HOMEPAGE or self.SHOWN_ADVANCED or self.SHOWN_PERSONALIZATION or self.SHOWN_APPOPENERCHANGER: self.setting.destroy()
+        self.setting.destroy()
         self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
         self.setting.grid(row=1, column=1)
         crBg = tkinter.Label(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=f"Current Background = {THEME_WINDOW_BG}")
@@ -261,8 +264,7 @@ class settings():
             comboBox.bind("<<ComboboxSelected>>", __internals_AddNewEntry_AddAppNames)
             comboBox.grid(row=0, column=1)
             addNewEntryWn.mainloop()
-        self.SHOWN_APPOPENERCHANGER = True
-        if self.SHOWN_HOMEPAGE or self.SHOWN_ADVANCED or self.SHOWN_PERSONALIZATION or reLaunch: self.setting.destroy()
+        self.setting.destroy()
         self.setting =  tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
         self.setting.grid(row=1, column=1)
         addEntryBtn = tkinter.Button(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Add New Entry", command=__internals_AddNewEntry)
@@ -283,12 +285,42 @@ def changeDefAppEvent{X}(e=None):
     except Exception as I:
         messagebox.showerror('Error changing default app association', 'Error changing default app association.', root_wn )
 global comboBox{X}
-comboBox{X} = ttk.Combobox(innerFrame{X})
-comboBox{X}['values'] = APPS_LIST
-comboBox{X}['state'] = "readonly"
+comboBox{X} = ttk.Combobox(innerFrame{X}, values=APPS_LIST, state='readonly', background=USER_CONFIG["THEME"][0], foreground=USER_CONFIG["THEME"][1])
 comboBox{X}.bind("<<ComboboxSelected>>", changeDefAppEvent{X})
 comboBox{X}.grid(row=0, column=1)
 """, {"root_wn": self.settingsWindow, "frame": self.setting, "USER_CONFIG": USER_CONFIG, "tkinter": tkinter, "THEME_WINDOW_BG": THEME_WINDOW_BG, "THEME_FOREGROUND": THEME_FOREGROUND, "messagebox": messagebox, "ttk": ttk, "i": i, "X": X, "APPS_LIST": APPS_LIST})
+    def addStartupApps(self):
+        def _addApp(*args):
+            appToAdd = combobox.get()
+            startupApps.append(appToAdd)
+            FILE_SYSTEM.editConfig("USER_CONFIG", "STARTUP_APPS", startupApps)
+            self.addStartupApps()
+        def _removeApp(*args):
+            appToRemove= rmcombobox.get()
+            startupApps.remove(appToRemove)
+            FILE_SYSTEM.editConfig("USER_CONFIG", "STARTUP_APPS", startupApps)
+            self.addStartupApps()
+        self.setting.destroy()
+        self.setting = tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG,)
+        self.setting.grid(row=1, column=1)
+        tkinter.Label(self.setting, text="Current startup apps:", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=0, column=0)
+        startupApps = FILE_SYSTEM.getConfig("USER_CONFIG")["STARTUP_APPS"]
+        apps = []
+        for app in APPS_LIST: 
+            if app not in startupApps: apps.append(app)
+        if len(startupApps) == 0: tkinter.Label(self.setting, text="No startup apps!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=1, column=0)
+        else:
+            for index, startupapp in enumerate(startupApps):
+                tkinter.Label(self.setting, text=startupapp, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=index+1, column=0)
+        tkinter.Label(self.setting, text="Add startup apps!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=0, column=1)
+        combobox = ttk.Combobox(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, values=apps, state="readonly")
+        combobox.grid(row=0, column=2)
+        combobox.bind("<<ComboboxSelected>>", _addApp)
+        tkinter.Label(self.setting, text="Remove startup apps!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=1, column=1)
+        rmcombobox = ttk.Combobox(self.setting, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, values=startupApps, state="readonly")
+        rmcombobox.grid(row=1, column=2)
+        rmcombobox.bind("<<ComboboxSelected>>", _removeApp)
+
     
 ROW_COUNT_DESKTOP_ICONS = 0
 COLUMN_COUNT_DESKTOP_ICONS = 0
@@ -753,7 +785,7 @@ def main():
         wallpaper.identifier = "wallpaper"
     ROOT_WINDOW.grid_rowconfigure(1, weight=1)
     ROOT_WINDOW.grid_columnconfigure(0, weight=1)
-    launcherComboBox = ttk.Combobox(taskbarFrame)
+    launcherComboBox = ttk.Combobox(taskbarFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     launcherComboBox['values'] = APPS_LIST
     launcherComboBox['state'] = "readonly"
     launcherComboBox.bind("<<ComboboxSelected>>", GuiInterfaceCommands.launchComboBoxEvent)
