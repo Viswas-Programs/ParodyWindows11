@@ -46,6 +46,7 @@ try:
     import psutil
     from ProgramFiles.fileaskhandlers import askopenfilename
     from ProgramFiles.buttons import IconButton
+    import platform
 except Exception as E: 
     bsod(__name__, str(E) + "\nMODULE_NOT_FOUND_ERROR")
 CWD = os.getcwd()
@@ -400,10 +401,15 @@ def scrShotPreview(event):
         oldFocus = ProgramFiles.{realApp}.returnInformation({PID})["state"]
         ProgramFiles.{realApp}.focusIn({PID})
         wnToFocus = ProgramFiles.{realApp}.INSTANCES[{PID}]
-    x = wnToFocus.winfo_x()+(wnToFocus.winfo_x()/4)
-    y = wnToFocus.winfo_y()+(wnToFocus.winfo_y()/4)
-    width = wnToFocus.winfo_width()+(wnToFocus.winfo_width()/4)
-    height = wnToFocus.winfo_height()+(wnToFocus.winfo_height()/4)
+    x = wnToFocus.winfo_x()
+    y = wnToFocus.winfo_y()
+    width = wnToFocus.winfo_width()
+    height = wnToFocus.winfo_height()
+    if (str(platform.system).lower() == "windows"):
+        x += (wnToFocus.winfo_x()/4)
+        y += (wnToFocus.winfo_y()/4)
+        width += (wnToFocus.winfo_width()/4)
+        height += (wnToFocus.winfo_height()/4)
     image = ImageTk.PhotoImage(ImageGrab.grab(bbox=(x, y, x + width, y + height)).resize(tuple((350, 100))))
     ROOT_WINDOW.E_IMG = image
     ttl = None
@@ -425,7 +431,7 @@ taskBar{realApp}RnAppBtn.processInfo = (PID, '{app}')
 taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
 taskBar{realApp}RnAppBtn.bind("<Enter>", scrShotPreview)
 taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID}, ROOT_WINDOW))
-""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW, "ICONS": ICONS, "dwm": dwm, "giveIcon": giveIcon, "tooltips": tooltips, "ImageGrab": ImageGrab, "ImageTk": ImageTk})
+""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW, "ICONS": ICONS, "dwm": dwm, "giveIcon": giveIcon, "tooltips": tooltips, "ImageGrab": ImageGrab, "ImageTk": ImageTk, "platform": platform})
     @staticmethod
     def AppImportNameCheck(app: str, dontLower=False):
         if "/" in app:
