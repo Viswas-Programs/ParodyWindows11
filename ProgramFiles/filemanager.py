@@ -150,6 +150,8 @@ def main(FILESYSTEM: ParWFS, *args):
         files.add_command(label="Cut", command=cutFiles)
         files.add_command(label="Paste", command=pasteFiles)
         lookUpFiles(addressBar.get())
+        if (args[2]):
+            lookUpFiles(args[2])
         INSTANCES[args[-1]].mainloop()
         return args[-1]
     except Exception as exp:

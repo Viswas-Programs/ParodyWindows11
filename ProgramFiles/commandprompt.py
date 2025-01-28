@@ -9,6 +9,7 @@ import inspect
 from ProgramFiles import callHost
 from ParWFS import ParWFS
 INSTANCES = {}
+USER_FOLDERS_LIST = ["My Documents", "My Pictures", "My Videos", "My Downloads"]
 NEEDS_FILESYSTEM_ACCESS = True
 class RedirectOutput:
     def __init__(self, cmdInstance):
@@ -71,13 +72,24 @@ class cmdCommands(object):
             import base64
             if self.getParams(1, " ").lstrip('-') != "list":
                 if self.ADMINISTRATOR:
-                    try:
-                        os.mkdir(os.path.join(os.path.join(self.CWD, "ProgramFiles"), self.stdin.get().split(' ')[2].lstrip('-')))
+                    try: 
+                        usersFolder = os.path.join(self.CWD, f"Users")
+                        username = self.stdin.get().split(' ')[2].lstrip('-')
+                        userNum = self.getParams(1, ' ').lstrip('-')
+                        os.mkdir(os.path.join(os.path.join(self.CWD, "ProgramFiles"), username))
+                        try: 
+                            os.mkdir(usersFolder)
+                            os.mkdir(f"{usersFolder}/{username}")
+                        except: 
+                            try: os.mkdir(f"{usersFolder}/{username}")
+                            except: pass
+                        for i in USER_FOLDERS_LIST:
+                            os.mkdir(f"{usersFolder}/{username}/{i}") 
                     except Exception: pass
                     finally:
-                        with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "wb") as writeConfig:
-                            writeConfig.writelines([base64.urlsafe_b64encode((self.getParams(2, ' ').lstrip('-')).encode("utf-8")), "\n".encode("utf-8") , base64.urlsafe_b64encode((self.getParams(3, ' ').lstrip('-')).encode("utf-8"))])
-                        USER_CONFIG = shelve.open(f"ProgramFiles/{self.getParams(2, ' ').lstrip('-')}/USER_CONFIG")
+                        with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{userNum}.conf"), "wb") as writeConfig:
+                            writeConfig.writelines([base64.urlsafe_b64encode(username).encode("utf-8"), "\n".encode("utf-8") , base64.urlsafe_b64encode((self.getParams(3, ' ').lstrip('-')).encode("utf-8"))])
+                        USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
                         USER_CONFIG["APPS"] = [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel"]]
                         USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
                         USER_CONFIG["THEME"] = ["Black", "White"]
@@ -85,6 +97,7 @@ class cmdCommands(object):
                         USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
                         USER_CONFIG["WALLPAPER"] = None
                         USER_CONFIG["STARTUP_APPS"] = []
+                        USER_CONFIG["PFP"] = os.path.join(self.CWD, "ProgramFiles/Icons/defaultpfp.png")
                         USER_CONFIG.close()
                         self.clearStdIn()
                         self.showMsg("\nUser created successfully!")

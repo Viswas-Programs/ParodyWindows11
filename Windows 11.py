@@ -52,6 +52,7 @@ CWD = os.getcwd()
 FILE_SYSTEM = ParWFS.ParWFS()
 FILE_SYSTEM.loadConfig("ProgramFiles/SYS_CONFIG", "SYS_CONFIG")
 SYS_CONFIG = FILE_SYSTEM.getConfig("SYS_CONFIG")
+USER_FOLDERS_LIST = ["My Documents", "My Pictures", "My Videos", "My Downloads"]
 try:
     THEME_WINDOW_BG, THEME_FOREGROUND = SYS_CONFIG["THEME"]
 except Exception:
@@ -70,18 +71,25 @@ CONTROL_PANELS = (650, 700)
 DIALOGUE_BOXES = (700, 850)
 def returnRunningApps():
     return FILE_SYSTEM.RUNNING_APPS
-def giveIcon(appName: str, root):
+def giveIcon(appName: str, root, subsample=False):
     global ICONS
     try:
-        return ICONS[appName]
+        if not subsample: return ICONS[appName]
+        else:
+            return ICONS[appName].subsample(subsample)
     except Exception as exp:
-        return tkinter.PhotoImage(file=f"ProgramFiles/Icons/{appName}.png", master=root)
+        print(exp)
+        try:
+            if not subsample: return tkinter.PhotoImage(file=f"ProgramFiles/Icons/{appName}.png", master=root)
+            else: return tkinter.PhotoImage(file=f"ProgramFiles/Icons/{appName}.png", master=root).subsample(subsample)
+        except EXP: print(EXP)
 def loadAllIcons(appsList: list, root):
     global ICONS
     for app in appsList:
         realApp = GUIButtonCommand.AppImportNameCheck(app)
         try:
             ICONS[realApp] = tkinter.PhotoImage(file=f"ProgramFiles/Icons/{realApp}.png", master=root)
+            root.erm = ICONS[realApp]
         except: pass
 ROW_COUNT_NOTIFICATION_WINDOW = 0
 class Notifications(object):
@@ -166,6 +174,8 @@ class settings():
             if systemChangeTheme.get(): 
                 SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
             USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
+            dwm.changeThemeForAllApps(THEME_WINDOW_BG, THEME_FOREGROUND)
+            dwm._changeThemeForAllApps(THEME_WINDOW_BG, THEME_FOREGROUND, ROOT_WINDOW)
             for child in children:
                 try:
                     child.configure(background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -184,6 +194,8 @@ class settings():
             if systemChangeTheme.get(): 
                 SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
             USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
+            dwm.changeThemeForAllApps(THEME_WINDOW_BG, THEME_FOREGROUND)
+            dwm._changeThemeForAllApps(THEME_WINDOW_BG, THEME_FOREGROUND, ROOT_WINDOW)
             for child in children:
                 try:
                     child.configure(background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -328,7 +340,6 @@ COLUMN_COUNT_DESKTOP_ICONS = 0
 MAX_ROW_DESKTOP = 10
 MAX_COLUMN_DESKTOP = 15
 class GUIButtonCommand:
-    global launcherComboBox
     global APPS_LIST
     global PINNED_APPS
     global ROW_COUNT_DESKTOP_ICONS
@@ -343,6 +354,12 @@ class GUIButtonCommand:
     @staticmethod
     def launchItem(application: str, params= None, e=None): 
         global RUNNING_APPS, runningAppsFrame
+        if GUIButtonCommand.AppImportNameCheck(application) == "controlpanel":
+            settings()
+            return
+        elif GUIButtonCommand.AppImportNameCheck(application) == "taskmanager":
+            TaskManager(ROOT_WINDOW)
+            return
         if application == "Command Prompt":
             import ProgramFiles.commandprompt as CMD
             appToLaunchPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
@@ -363,20 +380,12 @@ while {appToLaunch}PID in RUNNING_APPS.keys():
 RUNNING_APPS[{appToLaunch}PID] = application""")
             exec(f"GUIButtonCommand.createRunningAppTaskbarIcon(application, {appToLaunch}PID)")
             exec(f"""if {progAppImport}.NEEDS_FILESYSTEM_ACCESS:
-    if (params == None ): ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, {params},  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
+    if (params == None ): ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, None,  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
     else:   ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, '{params}',  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
 else:
-    if (params == None ): ProgramFiles.{appToLaunch}.main(username, notification, {params},  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
+    if (params == None ): ProgramFiles.{appToLaunch}.main(username, notification, None,  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
     else:   ProgramFiles.{appToLaunch}.main(username, notification, '{params}',  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
         """)
-    def launchComboBoxEvent(self, e=None):
-        Item = launcherComboBox.get()
-        if Item == "Control Panel":
-            settings()
-        elif Item == "Task Manager":
-            TaskManager(ROOT_WINDOW)
-        else:
-            self.launchItem(Item)
     @staticmethod
     def createRunningAppTaskbarIcon(app: str, PID:int):
         realApp = GUIButtonCommand.AppImportNameCheck(app=app)
@@ -613,7 +622,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
         def restart():
             if safeModeRestartVar.get() == 1:
                 try:
-                    children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
+                    children = [contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
                     for child in children:
                         child.destroy()
                 finally:
@@ -623,7 +632,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                     waitUntillTaskFinishes(sigma)
             else:
                 try:
-                    children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
+                    children = [ contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
                     for child in children:
                         child.destroy()
                 finally:
@@ -662,6 +671,118 @@ def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig
     progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
     exec(f"import {progAppImport}")
     exec(f"ProgramFiles.{appToLaunch}.main(userConfig, notifications, '{params}', USER_CONFIG, {PID})")
+class Scrollable(tkinter.Frame):
+    """
+       Make a frame scrollable with scrollbar on the right.
+       After adding or removing widgets to the scrollable frame,
+       call the update() method to refresh the scrollable area.
+    """
+
+    def __init__(self, frame, width, height, mousewheel=True):
+        self.canvas = tkinter.Canvas(frame, width=width, height=height, background=THEME_WINDOW_BG, highlightthickness=0)
+        self.canvas.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+        if mousewheel: 
+            self.canvas.bind("<MouseWheel>", self._on_mousewheel)
+            frame.bind("<MouseWheel>", self._on_mousewheel)
+
+        self.canvas.bind('<Configure>', self.__fill_canvas)
+
+        # base class initialization
+        tkinter.Frame.__init__(self, frame, background=THEME_WINDOW_BG)
+        self.bind("<MouseWheel>", self._on_mousewheel)
+
+        # assign this obj (the inner frame) to the windows item of the canvas
+        self.windows_item = self.canvas.create_window(0,0, window=self, anchor=tkinter.NW)
+
+
+    def __fill_canvas(self, event):
+        "Enlarge the windows item to the canvas width"
+
+        canvas_width = event.width
+        self.canvas.itemconfig(self.windows_item, width = canvas_width)
+
+    def update(self):
+        "Update the canvas and the scrollregion"
+
+        self.update_idletasks()
+        self.canvas.config(scrollregion=self.canvas.bbox(self.windows_item))
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+START_MENU_ACTIVE = False
+class StartMenu: 
+    def __init__(self, btn: tkinter.Button, taskbarFrame: tkinter.Frame, *e):
+        global START_MENU_ACTIVE
+        if START_MENU_ACTIVE:
+            START_MENU_ACTIVE.destroy()
+            return
+        START_MENU_ACTIVE = self
+        self.height = ROOT_WINDOW.winfo_fpixels(f"{ROOT_WINDOW.winfo_screenheight()/3}p")
+        self.width = ROOT_WINDOW.winfo_fpixels(f"{ROOT_WINDOW.winfo_screenwidth()/5}p")
+        btn.update()
+        ROOT_WINDOW.update()
+        self.posX = btn.winfo_rootx()
+        self.posY = taskbarFrame.winfo_height()
+
+        self.startMenuFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, width=self.width, height=self.height, borderwidth=5, border=5, highlightcolor="white", highlightthickness=3)
+        self.startMenuFrame.place(x=self.posX, y=self.posY, bordermode="outside")
+        self.appsListFrame = tkinter.Frame(self.startMenuFrame, background=THEME_WINDOW_BG, height=self.height, width=self.width/2)
+        self.appsListFrame.grid(row=0, column=0)
+        self.appsListFrame = Scrollable(self.appsListFrame, width=self.width/2, height=self.height)
+        self._RSideFrame = tkinter.Frame(self.startMenuFrame, background=THEME_WINDOW_BG, width=self.width/2, height=self.height)
+        self._RSideFrame.grid(row=0, column=1)
+        #self._RSideFrame = Scrollable(self._RSideFrame, self.width/2, self.height/2, False)
+        self.selectFolders = tkinter.Frame(self._RSideFrame, background=THEME_WINDOW_BG, height=self.height, width=self.width/2)
+        self.selectFolders.grid(row=0, column=0)
+        self.selectFolders = Scrollable(self.selectFolders, self.width/2, self.height, False)
+        self.shutdownBtn = tkinter.Button(self._RSideFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Shutdown", command=lambda e=None: GuiInterfaceCommands.shutdownMenu(ROOT_WINDOW))
+        self.shutdownBtn.grid(row=1, column=0)
+        self.BUTTON_INSTANCES = []
+        self.FLDR_BTN_INSTANCES = []
+        self.IMAGE_INSTANCES = []
+        tkinter.Label(self.appsListFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="All Apps", justify='center').pack()
+        pfpUsrnameFrame = tkinter.Frame(self.selectFolders, background=THEME_WINDOW_BG)
+        pfpUsrnameFrame.pack()
+        self.selectFolders.update()
+        self.pfpImage = Image.open(fp=USER_CONFIG["PFP"])
+        self.pfpImage = ImageTk.PhotoImage(self.pfpImage.resize(tuple([int(self.width/4.5), int(self.width/4.5)])))
+        pfp = tkinter.Label(pfpUsrnameFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, image=self.pfpImage, justify="center")
+        pfp.pfpimg = self.pfpImage
+        btn.pfpImage = self.pfpImage
+        pfp.grid(row=0, column=0)
+        pfpUsrnameFrame.update()
+        pfp.update()
+        self.selectFolders.update()
+        _ = tkinter.Label(pfpUsrnameFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=username)
+        _.grid(row=1, column=0)
+        _.update()
+        self.selectFolders.update()
+        def _lnchApp(app, prm=None): GuiInterfaceCommands.launchItem(GuiInterfaceCommands.AppImportNameCheck(app), prm)
+        for x, i in enumerate(APPS_LIST):
+            img = ICONS[GUIButtonCommand.AppImportNameCheck(i)]
+            img = img.subsample(2, 2)
+            btn.e = img
+            self.IMAGE_INSTANCES.append(img)
+            self.appsListFrame.update()
+            BUTTON = tkinter.Button(self.appsListFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda e=i: _lnchApp(e), text=i, image=self.IMAGE_INSTANCES[x], compound="left", justify="left", anchor="w")
+            BUTTON.e = img
+            BUTTON.pack(fill='both', expand=True)
+            BUTTON.bind("<MouseWheel>", self.appsListFrame._on_mousewheel)
+            self.BUTTON_INSTANCES.append(BUTTON)
+            self.BUTTON_INSTANCES[x].update()
+            self.appsListFrame.update()
+        for x, i in enumerate(USER_FOLDERS_LIST):
+            folderPath = os.path.join(CWD, "Users", username, i).replace("\\", "/")
+            self.selectFolders.update()
+            BUTTON_FLDR = tkinter.Button(self.selectFolders, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=i, command=lambda e=folderPath: _lnchApp("File Manager", e), justify="left", anchor="w")
+            BUTTON_FLDR.pack(fill='both', expand=True)
+            BUTTON_FLDR.update()
+            self.selectFolders.update()
+        cntrlpanelbutton = tkinter.Button(self.selectFolders, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Control Panel", command=lambda: _lnchApp("Control Panel"), justify="left", anchor="w")
+        cntrlpanelbutton.pack(fill="both", expand=True)
+    def destroy(self):
+        global START_MENU_ACTIVE
+        self.startMenuFrame.destroy()
+        START_MENU_ACTIVE = False
 
 class TaskManager:
     def __init__(self, root):
@@ -738,7 +859,6 @@ def main():
         safeMode()
     global SYS_CONFIG
     global USER_CONFIG
-    global launcherComboBox
     global contextMenu
     global ROOT_WINDOW
     global APPS_LIST
@@ -773,7 +893,7 @@ def main():
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
     loadAllIcons(APPS_LIST, ROOT_WINDOW)
-    loadAllIcons(["shutdown", "restart"], ROOT_WINDOW)
+    loadAllIcons(["shutdown", "restart", "start"], ROOT_WINDOW)
     taskbarFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG)
     taskbarFrame.identifier = "taskbar"
     ROOT_WINDOW.identifier = "root_window"
@@ -786,10 +906,6 @@ def main():
         wallpaper.identifier = "wallpaper"
     ROOT_WINDOW.grid_rowconfigure(1, weight=1)
     ROOT_WINDOW.grid_columnconfigure(0, weight=1)
-    launcherComboBox = ttk.Combobox(taskbarFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    launcherComboBox['values'] = APPS_LIST
-    launcherComboBox['state'] = "readonly"
-    launcherComboBox.bind("<<ComboboxSelected>>", GuiInterfaceCommands.launchComboBoxEvent)
     contextMenu = tkinter.Menu(taskbarFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     contextMenu.add_command(label="Taskbar settings", command=GuiInterfaceCommands.taskbarselfGUI)
     contextMenu.identifier = "taskbar"
@@ -816,13 +932,16 @@ def main():
     
             ClockRepeatID = clock.after(1000, recurringClockFunc)
             clock.grid(row=0, column=2, sticky="ne")
-    launcherComboBox.grid(row=0, column=0, sticky="w")
     try:
         if USER_CONFIG["CLOCK-WIDGET"] == 1: recurringClockFunc()
     except: pass
     appsFrame = tkinter.Frame(taskbarFrame, background=THEME_WINDOW_BG, border=5)
-    shutDown = tkinter.Button(appsFrame, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
-                                command=lambda: GuiInterfaceCommands.shutdownMenu(ROOT_WINDOW))
+    img = Image.open(os.path.join(CWD, "ProgramFiles/Icons/start.png"))
+    img = img.resize((int(img.width/2), int(img.height/2)))
+    img = ImageTk.PhotoImage(img)
+    shutDown = tkinter.Button(taskbarFrame, text="Start", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
+                                command=lambda: StartMenu(shutDown, taskbarFrame), image=img, compound="left")
+    shutDown.img = img
     shutDown.grid(row=0, column=0, padx=5)
     tooltips.createToolTipAtGivenPos(shutDown, 1, ROOT_WINDOW, "Shutdown or restart the shell!", )
     appsFrame.grid(row=0, column=1, sticky="n")
@@ -841,7 +960,7 @@ def main():
     
     ROOT_WINDOW.attributes('-fullscreen', True)
     ROOT_WINDOW.bind("<Escape>", safeModePREPTask)
-    children = [launcherComboBox, contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
+    children = [contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
     GuiInterfaceCommands.refreshDesktop(PINNED_APPS_DESKTOP)
     for app in PINNED_APPS:
         try: GuiInterfaceCommands.pinApps(f"{app}", False)
@@ -1146,13 +1265,22 @@ if __name__ == "__main__":
                         Rpassword = base64.urlsafe_b64encode(password.encode("utf-8"))
                         WRITE.writelines([Rusername, "\n".encode("utf-8"),  Rpassword])
                     os.mkdir(f"ProgramFiles/{username}")
-                    
-
                 except Exception:
                     print("User already exists, skipping user creation tasks...")
                 finally:
                     FILE_SYSTEM.loadConfig(f"ProgramFiles/{username}/USER_CONFIG", "USER_CONFIG")
                     USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
+                try: 
+                    try: 
+                        os.mkdir(f"Users")
+                        os.mkdir(f"Users/{username}")
+                    except: 
+                        try: os.mkdir(f"Users/{username}")
+                        except: pass
+                    for i in USER_FOLDERS_LIST:
+                        os.mkdir(f"Users/{username}/{i}")
+                except Exception: 
+                    print("User folders already exist, skipping...")
                 FILE_SYSTEM.editConfig("USER_CONFIG", "APPS", [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskManager"]])
                 FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", [["File Manager"], ["Notepad", "File Manager"]])
                 FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [background, foreground])
@@ -1160,6 +1288,7 @@ if __name__ == "__main__":
                 FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"})
                 FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", None)
                 FILE_SYSTEM.editConfig("USER_CONFIG", "STARTUP_APPS", [])
+                FILE_SYSTEM.editConfig("USER_CONFIG", "PFP", os.path.join(CWD, "ProgramFiles/Icons/defaultpfp.png"))
                 FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", ["Black", "White"]) 
                 FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
                 print("Initialized new entries!")

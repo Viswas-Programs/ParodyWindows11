@@ -1,6 +1,25 @@
 import tkinter
 import ProgramFiles.callHost as callHost
 MANAGED_DWM_INSTANCES = {}
+
+def _changeThemeForAllApps(newBg, newFg, widget: tkinter.BaseWidget):
+    for wdg in widget.winfo_children():
+        _changeThemeForAllApps(newBg, newFg, wdg)
+    try:
+        widget.configure(background=newBg)
+        widget.configure(foreground=newFg)
+    except Exception: pass
+def changeThemeForAllApps(newBg, newFg):
+    roots = []
+    for appLists in MANAGED_DWM_INSTANCES.values():
+        roots.append(appLists[2])
+    for root in roots:
+        _changeThemeForAllApps(newBg, newFg, root)
+    closeBtns = []
+    for closeBtn in MANAGED_DWM_INSTANCES.values():
+        closeBtns.append(closeBtn[3])
+    for closeBn in closeBtns:
+        closeBn.configure(background="red", foreground="white")
 def title(newTitle=None, PID=0):
     if newTitle: MANAGED_DWM_INSTANCES[PID][1].configure(text=newTitle); MANAGED_DWM_INSTANCES[PID][0] = newTitle
     return MANAGED_DWM_INSTANCES[PID][0]
@@ -62,7 +81,8 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     if not destroyFunc: destroyFunc = close
     root.title = ttl
     root.overrideredirect(True)
-    DWMFrame = tkinter.Frame(root, background=T_BG, border=5, borderwidth=5)
+    DWMFrame = tkinter.Frame(root, background=T_BG, borderwidth=5, highlightthickness=2, highlightcolor="grey")
+    root.configure(highlightthickness=2, highlightcolor="grey")
     DWMFrame.rowconfigure(0, weight=1)
     for i in range(1, root.winfo_screenwidth()+1):
         DWMFrame.columnconfigure(i, weight=i)
@@ -91,7 +111,10 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     lbl.bind("<ButtonRelease-1>", stop_move)
     lbl.bind("<B1-Motion>", _handleDrag)
     root.OLD_GEO = root.MAX_RETURN = root.geometry()
+    root.QUIT_FUNC = root.quit
+    def _quit(): callHost.acknowledgeEndTask(PID); root.QUIT_FUNC()
+    root.quit = _quit
     # resizer()
-    MANAGED_DWM_INSTANCES[PID] = [appName, lbl, root]
+    MANAGED_DWM_INSTANCES[PID] = [appName, lbl, root, closeBtn]
     return DWMFrame
     
