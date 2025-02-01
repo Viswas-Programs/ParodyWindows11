@@ -5,6 +5,7 @@ from ProgramFiles import callHost
 from ProgramFiles.errorHandler import messagebox
 import shelve
 from ProgramFiles.dwm import close, createTopFrame
+from ProgramFiles.entryWidget import Entry
 THEME_WINDOW_BG, THEME_FOREGROUND = ["", ""]
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
@@ -65,11 +66,11 @@ def configureServer(event=None):
 
     serverConfWn = tkinter.Toplevel(background=THEME_WINDOW_BG)
     tkinter.Label(serverConfWn, text="Configure IP Address", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=0, column=0)
-    ipAddressEntry = tkinter.Entry(serverConfWn, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    ipAddressEntry = Entry(serverConfWn, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     ipAddressEntry.grid(row=0, column=1)
     ipAddressEntry.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
     tkinter.Label(serverConfWn, text="Configure port", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=1, column=0)
-    portEntry = tkinter.Entry(serverConfWn, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    portEntry = Entry(serverConfWn, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     portEntry.grid(row=1, column=1)
     portEntry.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
     submitButton = tkinter.Button(serverConfWn, text="Submit", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=configureS)
@@ -128,7 +129,7 @@ def main(*args):
     msg_list.pack()
     messages_frame.pack()
 
-    entry_field = tkinter.Entry(mainFrame, textvariable=my_msg, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=90)
+    entry_field = Entry(mainFrame, textvariable=my_msg, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=90)
     entry_field.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
     entry_field.bind("<Return>", lambda: send(args[-1]))
     entry_field.pack()

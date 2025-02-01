@@ -7,6 +7,7 @@ import ProgramFiles.callHost as callHost
 from ParWFS import ParWFS
 from ProgramFiles.dwm import createTopFrame
 from ProgramFiles.progressBars import ProgressOutOfMaxValueBar
+from ProgramFiles.entryWidget import Entry
 NEEDS_FILESYSTEM_ACCESS = True
 THEME_WINDOW_BG, THEME_FOREGROUND = ["",""]
 INSTANCES = {}
@@ -38,7 +39,7 @@ def main(FILESYSTEM: ParWFS, *args):
                     lookUpFiles(os.path.join(filepath, newFolderEntry.get()))
                 except Exception as EXCEPTION: messagebox.showerror("ERROR!", EXCEPTION)
             tkinter.Label(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Folder Name!").grid(row=0, column=0)
-            newFolderEntry = tkinter.Entry(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            newFolderEntry = Entry(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
             newFolderEntry.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
             newFolderEntry.grid(row=1, column=0)
             btn = tkinter.Button(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=createNewFolder, text="Create Folder")
@@ -82,7 +83,7 @@ def main(FILESYSTEM: ParWFS, *args):
         ttk.Style(INSTANCES[args[-1]]).configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         mainFrame = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
         mainFrame.grid(row=1, column=0)
-        addressBar = tkinter.Entry(mainFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
+        addressBar = Entry(mainFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
         addressBar.insert(tkinter.END, os.getcwd())
         goButton = tkinter.Button(mainFrame, text="Go!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
                                 command=lambda: lookUpFiles(addressBar.get()))

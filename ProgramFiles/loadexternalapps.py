@@ -6,6 +6,7 @@ from pathlib import Path
 from ProgramFiles import fileaskhandlers
 from ProgramFiles.dwm import createTopFrame
 from ProgramFiles import callHost
+
 THEME_WINDOW_BG, THEME_FOREGROUND = ["",""]
 PROCESS_RUNNING = True
 INSTANCES = {}

@@ -3,6 +3,7 @@ from datetime import datetime
 import time
 from ProgramFiles import callHost
 from ProgramFiles.errorHandler import messagebox
+from ProgramFiles.entryWidget import Entry
 THEME_WINDOW_BG, THEME_FOREGROUND = ["", ""]
 SHOWN_TIMER = False
 SHOWN_ALARMS = False
@@ -36,7 +37,7 @@ def showTimer(PID, e=None):
     SHOWN_ALARMS = False
     timerFrame = tkinter.Frame(INSTANCES[PID], background=THEME_WINDOW_BG)
     timerFrame.grid(row=1, column=1)
-    timerEntry = tkinter.Entry(timerFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    timerEntry = Entry(timerFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     timerEntry.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
     timerEntry.grid(row=1, column=0)
     startTimerBtn = tkinter.Button(timerFrame, text="Start Timer!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=updateTime)

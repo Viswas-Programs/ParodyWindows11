@@ -8,6 +8,7 @@ from ProgramFiles.errorHandler import messagebox as msgbox
 import datetime
 import time
 from ProgramFiles.dwm import createTopFrame
+from ProgramFiles.entryWidget import Text
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
 
@@ -48,7 +49,7 @@ def main(username, notification, *args):
     createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "updatemanager", "Update Manager", args[-1])
     changeeLogScrollbar = ttk.Scrollbar(INSTANCES[args[-1]])
     changeeLogScrollbar.grid(row=1, column=1, sticky="nsw")
-    changelogs = tkinter.Text(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, yscrollcommand=changeeLogScrollbar.set)
+    changelogs = Text(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, yscrollcommand=changeeLogScrollbar.set)
     changelogs.grid(row=1, column=0)
     changelogs.insert(1.0, changelogText)
     changelogs.configure(state="disabled")

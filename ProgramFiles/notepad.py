@@ -3,8 +3,11 @@ try:
     from ProgramFiles.errorHandler import messagebox
     from ProgramFiles import callHost
     from ProgramFiles import dwm
+    from ProgramFiles.entryWidget import Text
 except: 
     from errorHandler import messagebox
+    try: from entryWidget import Text
+    except: from tkinter import Text
     import callHost
 PROCESS_RUNNING = False
 INSTANCES = {}
@@ -19,11 +22,11 @@ def main(username, notifications, filename, *args):
         INSTANCES[args[-1]] = tkinter.Tk()
         dwm.createTopFrame(INSTANCES[args[-1]], user_config[1], user_config[0], "notepad", "Notepad GUI v3.0", args[-1])
         INSTANCES[args[-1]].title("Notepad GUI v3.0 STABLE")
-        text = tkinter.Text(INSTANCES[args[-1]], height=20, width=100,
+        text = Text(INSTANCES[args[-1]], height=20, width=100,
                             font=("Arial Rounded MT Bold",
                                 18), )
         text.grid(row=1, column=0, pady=10)
-        saveTo = tkinter.Text(INSTANCES[args[-1]], height=2, width=50,
+        saveTo = Text(INSTANCES[args[-1]], height=2, width=50,
                             font=("Arial Rounded MT Bold",
                                     12))
         saveTo.grid(row=2, column=0)

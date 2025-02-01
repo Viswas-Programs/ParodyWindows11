@@ -1,5 +1,6 @@
 import tkinter
 import ProgramFiles.callHost as callHost
+from ProgramFiles.entryWidget import Entry
 MANAGED_DWM_INSTANCES = {}
 
 def _changeThemeForAllApps(newBg, newFg, widget: tkinter.BaseWidget):
@@ -81,6 +82,9 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     if not destroyFunc: destroyFunc = close
     root.title = ttl
     root.overrideredirect(True)
+    root.update()
+    root.update_idletasks()
+    #root.wm_attributes('-type', 'splash')
     DWMFrame = tkinter.Frame(root, background=T_BG, borderwidth=5, highlightthickness=2, highlightcolor="grey")
     root.configure(highlightthickness=2, highlightcolor="grey")
     DWMFrame.rowconfigure(0, weight=1)
@@ -94,6 +98,7 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     DWMFrame.PID = PID
     DWMFrame.ROOT = root
     img = callHost.getReqIcon(iconName, root)
+    root.Entry = Entry
     img = img.subsample(3, 3)
     DWMFrame.img = img
     lbl = tkinter.Label(DWMFrame, text=appName, background=T_BG, foreground=T_FG, image=img, compound='left')

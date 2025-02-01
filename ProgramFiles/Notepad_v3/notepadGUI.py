@@ -13,12 +13,14 @@ from ProgramFiles import callHost, dwm
 try:
     from ProgramFiles.errorHandler import messagebox
     import ProgramFiles.Notepad_v3.syntax_checker as syntax_checker
+    from ProgramFiles.entryWidget import Text, Entry
 except ModuleNotFoundError:
     import tkinter.messagebox as messagebox
     try: 
         import Notepad_v3.syntax_checker as syntax_checker
     except: 
         import syntax_checker
+    from tkinter import Text, Entry
 import typing
 import socket
 try:
@@ -58,8 +60,8 @@ filetype = (
 class NotepadRun(object):
     """ notepad run, so that people can use objects without GUI"""
 
-    def __init__(self, text_box: tkinter.Text, gui: tkinter.Tk, saveTo:
-    tkinter.Text, file_to_open: str=None, THEME_FOREGROUND="White", THEME_BACKGROUND="Black", PID=0) -> bool:
+    def __init__(self, text_box: Text, gui: tkinter.Tk, saveTo:
+    Text, file_to_open: str=None, THEME_FOREGROUND="White", THEME_BACKGROUND="Black", PID=0) -> bool:
         print(f"Program started at {datetime.datetime.now()}")
         self.PID =  PID
         self.CURRENT_VERSION, self.UPDATE_BRANCH = versionFind()
@@ -331,7 +333,7 @@ Never gonna run around and desert you""")
                                 background=self.THEME_WINDOW_BG,
                                 foreground=self.THEME_FOREGROUND)
             msg.grid(row=0, column=0, columnspan=2)
-            createFolderText = tkinter.Text(createFolder, width=40, height=2)
+            createFolderText = Text(createFolder, width=40, height=2)
             createFolderText.grid(row=1, column=0, padx=30, pady=30)
             createFolderButton = tkinter.Button(createFolder,
                                                 text="Create folder!",
@@ -349,7 +351,7 @@ Never gonna run around and desert you""")
         self.command = self.disableProgrammerMode
         TEMP = self.text.get(1.0, tkinter.END)
         self.text.destroy()
-        self.text = tkinter.Text(self.root, height=20, width=100,
+        self.text = Text(self.root, height=20, width=100,
                                  font=(self.font, self.size),
                                  background=self.THEME_TYPING_WIDGETS_BG,
                                  foreground=self.THEME_FOREGROUND)
@@ -450,7 +452,7 @@ Never gonna run around and desert you""")
         self.root.unbind_all("<Key>")
         TEMP = self.text.get(1.0, tkinter.END)
         self.text.destroy()
-        self.text = tkinter.Text(self.root, height=20, width=100,
+        self.text = Text(self.root, height=20, width=100,
                                  font=(self.font, self.size),
                                  background=self.THEME_TYPING_WIDGETS_BG,
                                  foreground=self.THEME_FOREGROUND)
@@ -545,14 +547,14 @@ Never gonna run around and desert you""")
                               background=self.THEME_WINDOW_BG,
                               foreground=self.THEME_FOREGROUND).grid(row=1,
                                                                      column=0)
-                usrname_check = tkinter.Entry(gui, background=self.THEME_TYPING_WIDGETS_BG, foreground=self.THEME_FOREGROUND)
+                usrname_check = Entry(gui, background=self.THEME_TYPING_WIDGETS_BG, foreground=self.THEME_FOREGROUND)
                 usrname_check.configure(insertbackground=self.THEME_FOREGROUND, selectbackground=self.THEME_FOREGROUND, selectforeground=self.THEME_WINDOW_BG)
                 usrname_check.grid(row=1, column=1)
                 tkinter.Label(gui, text='Enter password -> ',
                               background=self.THEME_WINDOW_BG,
                               foreground=self.THEME_FOREGROUND).grid(row=2,
                                                                      column=0)
-                password_check = tkinter.Entry(gui, background=self.THEME_TYPING_WIDGETS_BG, foreground=self.THEME_FOREGROUND)
+                password_check = Entry(gui, background=self.THEME_TYPING_WIDGETS_BG, foreground=self.THEME_FOREGROUND)
                 password_check.configure(insertbackground=self.THEME_FOREGROUND, selectbackground=self.THEME_FOREGROUND, selectforeground=self.THEME_WINDOW_BG)
                 password_check.grid(row=2, column=1)
                 submit = tkinter.Button(gui, text="Check!", command=proceed,
@@ -696,7 +698,7 @@ Never gonna run around and desert you""")
                                     )
 
         def change_colour(event=None):
-            """ changes colour of `zoom_size` tkinter.Entry widget"""
+            """ changes colour of `zoom_size` Entry widget"""
             nonlocal colour
             if colour == self.THEME_WINDOW_BG:
                 colour = "White"
@@ -706,7 +708,7 @@ Never gonna run around and desert you""")
                 zoom_size.configure(bg=self.THEME_WINDOW_BG)
 
         def change_colour_zoom(event=None):
-            """ changes colour of `zoom` tkinter.Entry widget"""
+            """ changes colour of `zoom` Entry widget"""
             nonlocal colour
             if colour == self.THEME_WINDOW_BG:
                 colour = "White"
@@ -717,7 +719,7 @@ Never gonna run around and desert you""")
 
         def apply_zoom_modif_size():
             """ apply zooming size, i.e. whether to zoom in +5 ot 2 or any
-            other you enter to `zoom_size` tkinter.Entry widget!"""
+            other you enter to `zoom_size` Entry widget!"""
             self.ZOOM_SIZE = int(zoom_size.get())
             zoom_plus.configure(text=f"Zoom in ({self.ZOOM_SIZE})")
             zoom_minus.configure(text=f"Zoom out ({self.ZOOM_SIZE})")
@@ -783,7 +785,7 @@ Never gonna run around and desert you""")
         tkinter.Label(control_window, text="Zooming-> ",
                       background=self.THEME_WINDOW_BG,
                       foreground=self.THEME_FOREGROUND).grid(row=1, column=0)
-        zoom_size = tkinter.Entry(control_window, bg=self.THEME_WINDOW_BG)
+        zoom_size = Entry(control_window, bg=self.THEME_WINDOW_BG)
         zoom_size.grid(row=1, column=1)
         zoom_size.insert(0, str(self.ZOOM_SIZE))
         zoom_size.bind("<Enter>", change_colour)
@@ -792,7 +794,7 @@ Never gonna run around and desert you""")
                       background=self.THEME_WINDOW_BG,
                       foreground=self.THEME_FOREGROUND).grid(row=2,
                                                              column=0)
-        zoom = tkinter.Entry(control_window, bg=self.THEME_WINDOW_BG)
+        zoom = Entry(control_window, bg=self.THEME_WINDOW_BG)
         zoom.grid(row=2, column=1)
         zoom.insert(0, str(self.size))
         zoom.bind("<Enter>", change_colour_zoom)
@@ -862,7 +864,7 @@ Never gonna run around and desert you""")
                               background=self.THEME_WINDOW_BG,
                               foreground=self.THEME_FOREGROUND)
             a.grid(row=0, column=0)
-            ip_address = tkinter.Entry(send_file_gui)
+            ip_address = Entry(send_file_gui)
             ip_address.grid(row=0, column=1)
             b = tkinter.Label(send_file_gui,
                               text="Enter the file needed to be sent:->",
@@ -888,7 +890,7 @@ Never gonna run around and desert you""")
                                        background=self.THEME_WINDOW_BG,
                                        foreground=self.THEME_FOREGROUND,)
             port_label.grid(row=2, column=0)
-            port = tkinter.Entry(send_file_gui,)
+            port = Entry(send_file_gui,)
             port.insert(tkinter.END, 5001)
             port.grid(row=2, column=1)
             submit = tkinter.Button(send_file_gui,
@@ -915,14 +917,14 @@ Never gonna run around and desert you""")
                               background=self.THEME_WINDOW_BG,
                               foreground=self.THEME_FOREGROUND)
             a.grid(row=0, column=0)
-            ip_address = tkinter.Entry(recieve_files)
+            ip_address = Entry(recieve_files)
             ip_address.grid(row=0, column=1)
             b = tkinter.Label(recieve_files,
                               text="Enter the port:->",
                               background=self.THEME_WINDOW_BG,
                               foreground=self.THEME_FOREGROUND)
             b.grid(row=1, column=0)
-            port = tkinter.Entry(recieve_files)
+            port = Entry(recieve_files)
             port.grid(row=1, column=1)
             submit = tkinter.Button(recieve_files,
                                     text="Submit the form",
@@ -1087,11 +1089,11 @@ def main(initialFileOpener=None):
     """ main """
     root = tkinter.Tk()
     root.title("Notepad GUI v3.3 STABLE")
-    text = tkinter.Text(root, height=20, width=100,
+    text = Text(root, height=20, width=100,
                         font=("Arial Rounded MT Bold",
                               18), )
     text.grid(row=1, column=0, pady=10)
-    saveTo = tkinter.Text(root, height=2, width=50,
+    saveTo = Text(root, height=2, width=50,
                           font=("Arial Rounded MT Bold",
                                 12))
     saveTo.grid(row=2, column=0)

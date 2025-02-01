@@ -4,6 +4,7 @@ import os
 from ProgramFiles.errorHandler import messagebox
 from ProgramFiles import callHost
 from ProgramFiles import dwm
+from ProgramFiles.entryWidget import Entry
 THEME_WINDOW_BG, THEME_FOREGROUND = ["Black", "white"]
 RETURN_VALUE = None
 PROCESS_RUNNING = False
@@ -26,7 +27,7 @@ def main(*args):
                     lookUpFiles(os.path.join(os.getcwd(), newFolderEntry.get()))
                 except Exception as EXCEPTION: messagebox.showerror("ERROR!", EXCEPTION)
             tkinter.Label(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Folder Name!").grid(row=0, column=0)
-            newFolderEntry = tkinter.Entry(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            newFolderEntry = Entry(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
             newFolderEntry.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
             newFolderEntry.grid(row=1, column=0)
             btn = tkinter.Button(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=createNewFolder, text="Create Folder")
@@ -117,7 +118,7 @@ def main(*args):
         ttk.Style(INSTANCES[PID]).configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         mainFrame = tkinter.Frame(INSTANCES[PID], background=THEME_WINDOW_BG)
         mainFrame.grid(row=1, column=0)
-        addressBar = tkinter.Entry(mainFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
+        addressBar = Entry(mainFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
         addressBar.insert(tkinter.END, os.getcwd())
         goButton = tkinter.Button(mainFrame, text="Go!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
                                 command=lambda: lookUpFiles(addressBar.get()))

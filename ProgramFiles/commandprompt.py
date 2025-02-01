@@ -8,6 +8,10 @@ import base64
 import inspect
 from ProgramFiles import callHost
 from ParWFS import ParWFS
+try:
+    from  ProgramFiles.entryWidget import Entry
+except:
+    from tkinter import Entry
 INSTANCES = {}
 USER_FOLDERS_LIST = ["My Documents", "My Pictures", "My Videos", "My Downloads"]
 NEEDS_FILESYSTEM_ACCESS = True
@@ -18,7 +22,7 @@ class RedirectOutput:
         self.cmdInstance.showMsg(text)
         
 class cmdCommands(object):
-    def __init__(self, stdout: tkinter.Text, stdin: tkinter.Entry, root: tkinter.Tk, FS: ParWFS=None) -> None:
+    def __init__(self, stdout: tkinter.Text, stdin: Entry, root: tkinter.Tk, FS: ParWFS=None) -> None:
         with shelve.open("ProgramFiles/SYS_CONFIG") as SYS_CONFIG:
             self.VERSION = SYS_CONFIG["VERSION"]
         self.ROOT = root
@@ -56,7 +60,7 @@ class cmdCommands(object):
             text = tkinter.Text(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=120)
             text.grid(row=0, column=0)
             text.insert(tkinter.END, f"Welcome to ParodyWindows 11 Command Interpreter (OS Version 2.2)\nCurrent Working Directory: {os.getcwd()}")
-            yourCommand = tkinter.Entry(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            yourCommand = Entry(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
             yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
             yourCommand.grid(row=1, column=0)
             yourCommand.focus()
@@ -318,21 +322,21 @@ def main(FILE_SYSTEM, *args):
             cmdInstance.showMsg("\n\n>")
         elif not cmdInstance.ACCEPT_COMMANDS: cmdInstance.clear()
         else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
-    INSTANCES[args[-2]] = tkinter.Tk()
-    INSTANCES[args[-2]].configure(background=THEME_WINDOW_BG)
-    INSTANCES[args[-2]].title("Command Interpreter")
+    INSTANCES[args[-1]] = tkinter.Tk()
+    INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
+    INSTANCES[args[-1]].title("Command Interpreter")
     def destroy():
         os.chdir(cmdInstance.CWD)
-        if args[0] != "AUTORECOVERYENV": callHost.acknowledgeEndTask(args[-2], args[-1])
-        INSTANCES[args[-2]].destroy()
+        if args[0] != "AUTORECOVERYENV": callHost.acknowledgeEndTask(args[-1])
+        INSTANCES[args[-1]].destroy()
         return True
-    INSTANCES[args[-2]].protocol("WM_DELETE_WINDOW", destroy)
-    text = tkinter.Text(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
+    INSTANCES[args[-1]].protocol("WM_DELETE_WINDOW", destroy)
+    text = tkinter.Text(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
     text.grid(row=0, column=0)
-    yourCommand = tkinter.Entry(INSTANCES[args[-2]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+    yourCommand = Entry(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
     yourCommand.grid(row=1, column=0)
-    cmdInstance = cmdCommands(text, yourCommand, root=INSTANCES[args[-2]], FS=FILE_SYSTEM)
+    cmdInstance = cmdCommands(text, yourCommand, root=INSTANCES[args[-1]], FS=FILE_SYSTEM)
     LIST_OF_CMDS = [attr for attr in dir(cmdInstance) if inspect.ismethod(getattr(cmdInstance,attr))]
     yourCommand.focus()
     yourCommand.bind("<Return>", sendCommand)
@@ -340,8 +344,8 @@ def main(FILE_SYSTEM, *args):
         cmdInstance.ADMINISTRATOR = True
         cmdInstance.showMsg("\nDetected launch from recovery environment\nSuccesfully turned on administrator mode!")
         cmdInstance.ROOT.title("Administrator - Command Interpreter")
-    INSTANCES[args[-2]].mainloop()
-    INSTANCES[args[-2]].destroy()
+    INSTANCES[args[-1]].mainloop()
+    INSTANCES[args[-1]].destroy()
     return args[-1]
 
 

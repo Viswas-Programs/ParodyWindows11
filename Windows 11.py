@@ -684,22 +684,31 @@ class Scrollable(tkinter.Frame):
        call the update() method to refresh the scrollable area.
     """
 
-    def __init__(self, frame, width, height, mousewheel=True):
+    def __init__(self, frame: tkinter.Frame, width, height, mousewheel=True):
         self.canvas = tkinter.Canvas(frame, width=width, height=height, background=THEME_WINDOW_BG, highlightthickness=0)
         self.canvas.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
-        if mousewheel: 
-            self.canvas.bind("<MouseWheel>", self._on_mousewheel)
-            frame.bind("<MouseWheel>", self._on_mousewheel)
-
-        self.canvas.bind('<Configure>', self.__fill_canvas)
-
+        #frame.focus_force()
         # base class initialization
         tkinter.Frame.__init__(self, frame, background=THEME_WINDOW_BG)
         self.bind("<MouseWheel>", self._on_mousewheel)
+        self.canvas.focus_force()
+        frame.focus_force()
+        self.focus_force()
+        if mousewheel: 
+            self.canvas.bind("<MouseWheel>", self._on_mousewheel)
+            self.bind("<MouseWheel>", self._on_mousewheel)
+            frame.bind("<MouseWheel>", self._on_mousewheel)
+
+        self.canvas.bind('<Configure>', self.__fill_canvas)
+        self.bind('<Configure>', self.__fill_canvas)
+        frame.bind('<Configure>', self.__fill_canvas)
+        self.focus()
+        self.focus_force()
 
         # assign this obj (the inner frame) to the windows item of the canvas
         self.windows_item = self.canvas.create_window(0,0, window=self, anchor=tkinter.NW)
-
+        ttk.Style().configure("TScrollbar", background=THEME_WINDOW_BG)
+        self.update()
 
     def __fill_canvas(self, event):
         "Enlarge the windows item to the canvas width"
@@ -731,9 +740,13 @@ class StartMenu:
 
         self.startMenuFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, width=self.width, height=self.height, borderwidth=5, border=5, highlightcolor="white", highlightthickness=3)
         self.startMenuFrame.place(x=self.posX, y=self.posY, bordermode="outside")
-        self.appsListFrame = tkinter.Frame(self.startMenuFrame, background=THEME_WINDOW_BG, height=self.height, width=self.width/2)
-        self.appsListFrame.grid(row=0, column=0)
+        self._LSideFrame = tkinter.Frame(self.startMenuFrame, background=THEME_WINDOW_BG, height=self.height, width=self.width/2)
+        self._LSideFrame.grid(row=0, column=0)
+        self.appsListFrame = tkinter.Frame(self._LSideFrame, background=THEME_WINDOW_BG, height=self.height, width=self.width/2)
+        self.appsListFrame.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
         self.appsListFrame = Scrollable(self.appsListFrame, width=self.width/2, height=self.height)
+        self.scrollbar = ttk.Scrollbar(self._LSideFrame, command=self.appsListFrame.canvas.yview)
+        self.scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.BOTH, expand=True, anchor="e")
         self._RSideFrame = tkinter.Frame(self.startMenuFrame, background=THEME_WINDOW_BG, width=self.width/2, height=self.height)
         self._RSideFrame.grid(row=0, column=1)
         #self._RSideFrame = Scrollable(self._RSideFrame, self.width/2, self.height/2, False)
@@ -773,9 +786,14 @@ class StartMenu:
             BUTTON.e = img
             BUTTON.pack(fill='both', expand=True)
             BUTTON.bind("<MouseWheel>", self.appsListFrame._on_mousewheel)
+            BUTTON.update()
+            BUTTON.focus()
+            BUTTON.focus_force()
             self.BUTTON_INSTANCES.append(BUTTON)
             self.BUTTON_INSTANCES[x].update()
             self.appsListFrame.update()
+        self.appsListFrame.update()
+        self.appsListFrame.focus_force()
         for x, i in enumerate(USER_FOLDERS_LIST):
             folderPath = os.path.join(CWD, "Users", username, i).replace("\\", "/")
             self.selectFolders.update()
@@ -785,6 +803,9 @@ class StartMenu:
             self.selectFolders.update()
         cntrlpanelbutton = tkinter.Button(self.selectFolders, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Control Panel", command=lambda: _lnchApp("Control Panel"), justify="left", anchor="w")
         cntrlpanelbutton.pack(fill="both", expand=True)
+        self.appsListFrame.update()
+        self.appsListFrame.focus_force()
+        self.appsListFrame.update()
     def destroy(self):
         global START_MENU_ACTIVE
         self.startMenuFrame.destroy()

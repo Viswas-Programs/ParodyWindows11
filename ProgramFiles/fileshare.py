@@ -5,6 +5,7 @@ import os
 from cryptography.fernet import Fernet
 
 from ProgramFiles import callHost
+from ProgramFiles.entryWidget import Entry
 
 if os.access("theme_config.txt", os.F_OK):
     with open("theme_config.txt") as read_config:
@@ -107,7 +108,7 @@ def send_file():
                         background=THEME_WINDOW_BG,
                         foreground=THEME_FOREGROUND)
     a.grid(row=0, column=0)
-    ip_address = tkinter.Entry(send_file_gui)
+    ip_address = Entry(send_file_gui)
     ip_address.grid(row=0, column=1)
     b = tkinter.Label(send_file_gui, text="Enter the port to be sent through.",
                     background=THEME_WINDOW_BG,
@@ -118,7 +119,7 @@ def send_file():
                         background=THEME_WINDOW_BG,
                         foreground=THEME_FOREGROUND)
     c.grid(row=2, column=0)
-    sendThruPort = tkinter.Entry(send_file_gui)
+    sendThruPort = Entry(send_file_gui)
     sendThruPort.grid(row=1, column=1)
 
     def fileselector():
@@ -157,19 +158,19 @@ def recieveFiles():
                         background=THEME_WINDOW_BG,
                         foreground=THEME_FOREGROUND)
     a.grid(row=0, column=0)
-    ip_address = tkinter.Entry(recieve_files)
+    ip_address = Entry(recieve_files)
     ip_address.grid(row=0, column=1)
     b = tkinter.Label(recieve_files,
                         text="Enter the port:->",
                         background=THEME_WINDOW_BG,
                         foreground=THEME_FOREGROUND)
     b.grid(row=1, column=0)
-    port = tkinter.Entry(recieve_files)
+    port = Entry(recieve_files)
     port.grid(row=1, column=1)
     c = tkinter.Label(recieve_files, text="Decryption Key-> ",
     background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     c.grid(row=2, column=0)
-    decryption_key = tkinter.Entry(recieve_files)
+    decryption_key = Entry(recieve_files)
     decryption_key.grid(row=2, column=1)
     submit = tkinter.Button(recieve_files,
                             text="Submit the form",
