@@ -8,6 +8,11 @@ from ParWFS import ParWFS
 from ProgramFiles.dwm import createTopFrame
 from ProgramFiles.progressBars import ProgressOutOfMaxValueBar
 from ProgramFiles.entryWidget import Entry
+try: 
+    import psutil
+except:
+    os.system("pip install psutil")
+    import psutil
 NEEDS_FILESYSTEM_ACCESS = True
 THEME_WINDOW_BG, THEME_FOREGROUND = ["",""]
 INSTANCES = {}
@@ -95,12 +100,21 @@ def main(FILESYSTEM: ParWFS, *args):
         commandBar = tkinter.Frame(mainFrame, background=THEME_WINDOW_BG)
         newFolderBtn = tkinter.Button(commandBar, text="New Folder!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: newFolder(args[-1]))
         newFolderBtn.grid(row=0, column=0)
-        # driveSelection = ttk.Treeview(mainFrame, style="Treeview")
-        # driveSelection.grid(row=0, column=0, sticky="w")
-        # driveSelection['column'] = "Drives"
-        # driveSelection.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
-        # driveSelection.column("Drives", anchor=tkinter.W, width=100)
-        # driveSelection.heading("Drives", text="Drives", anchor=tkinter.CENTER)
+        fileContentFrame = tkinter.Frame(mainFrame, background=THEME_WINDOW_BG)
+        fileContentFrame.grid(row=2, column=0)
+        _DRVSELECTFRAME = tkinter.Frame(fileContentFrame, background=THEME_WINDOW_BG)
+        _DRVSELECTFRAME.grid(row=0, column=0, sticky="w")
+        tkinter.Label(_DRVSELECTFRAME, text="Mounted Partitions/Drives", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, justify='center').grid(row=0, column=0, sticky="we")
+        driveSelection = tkinter.Listbox(_DRVSELECTFRAME, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND )
+        driveSelection.grid(row=1, column=0, sticky="news")
+        PARTITIONS = psutil.disk_partitions()
+        for IDX, partition in enumerate(PARTITIONS):
+            driveSelection.insert(IDX, partition.mountpoint)
+        driveSelection.bind("<<ListboxSelect>>", lambda e=None: lookUpFiles(driveSelection.get(driveSelection.curselection()[0])))
+        #driveSelection['column'] = "Drives"
+        #driveSelection.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
+        #driveSelection.column("Drives", anchor=tkinter.W, width=100)
+        #driveSelection.heading("Drives", text="Drives", anchor=tkinter.CENTER)
         def delete(*args):
             import shutil
             selectedFileIndex = fileView.focus()
@@ -134,8 +148,9 @@ def main(FILESYSTEM: ParWFS, *args):
             lookUpFiles(filepath)
 
         commandBar.grid(row=1, column=0)
-        fileView = ttk.Treeview(mainFrame, style="Treeview")
-        fileView.grid(row=2, column=0, sticky="w")
+        ttk.Style().configure("Treeview", width=100)
+        fileView = ttk.Treeview(fileContentFrame, style="Treeview")
+        fileView.grid(row=0, column=1, sticky="w")
         fileView['column'] = "Files"
         fileView.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
         fileView.column("Files", anchor=tkinter.W, width=600)
