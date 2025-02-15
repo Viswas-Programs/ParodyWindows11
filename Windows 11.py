@@ -18,7 +18,6 @@ Restarting in a moment..."""
         except Exception as EXP: exp = EXP; 
         finally:
             bsodWind = tkinter.Tk()
-            bsodWind.geometry("600x480")
             bsodWind.configure(background="blue")
             bsodWind.attributes("-fullscreen", True)
             tkinter.Label(bsodWind, background="Blue", foreground="White", text=text, font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
@@ -1127,7 +1126,7 @@ def autoRecoveryEnv() -> None:
         cmdBTN.grid(row=0, column=1)
         recoveryWin.mainloop()
     except Exception: print("ERROR OCCURED WHILE LOADING AUTORECOVERYENV..."); recoveryWin.destroy(); safeMode(forceNoARENV=True)
-def safeMode(forceNoARENV=False) -> None:
+def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
     def a1():
         def resetConfigurations():
             userToreset = input("Enter the username of the user to reset the user too... [Type in defaultuser0 to only do system wise reset]")
@@ -1219,6 +1218,7 @@ def safeMode(forceNoARENV=False) -> None:
         SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
     except Exception as PRB:
         try:
+            if forceNoARENV and forceNoBootRec: raise NotImplementedError("Skipping attempt to launch fullscreen command prompt")
             def sendCommand(e=None):
                 cmdInstance.showMsg(f"\n>{yourCommand.get()}")
                 if " " not in yourCommand.get():
@@ -1242,6 +1242,7 @@ def safeMode(forceNoARENV=False) -> None:
             cmdInstance.showMsg("""\nYou're in a safe mode back up CLI mode. This is a fullscreen Command Prompt
 \nThe system failed to boot. if you can diagnose & repair the system, you can use the available commands\n
 Or else, type in the command 'restart' and your system will reboot""")
+            root.mainloop()
         except Exception as PRB:
             print(f"Cannot launch safe mode UI, going full CLI!\n PRB: {PRB}")
             time.sleep(5)
@@ -1277,6 +1278,10 @@ if __name__ == "__main__":
         else:
             if "-safemode" in arguements:
                 safeMode()
+            elif "-safemodecli" in arguements:
+                safeMode(True, True)
+            elif "-safemodefullcmd" in arguements:
+                safeMode(True)
             elif "-config" in arguements:
                 username = input("Enter the username to create first run settings: ")
                 password = input("Enter your user's password: ")

@@ -294,7 +294,7 @@ class cmdCommands(object):
             def killer(*args):
                 pipe.kill()
                 self.showMsg("\nCommand killed with Ctrl-C!")
-            pipe = subprocess.Popen(self.stdin.get().replace("sendToRootTerminal -", "").split(), stdout=subprocess.PIPE, bufsize=1, text=True, stderr=subprocess.PIPE)
+            pipe = subprocess.Popen(self.stdin.get().replace("sendToRootTerminal -", "").split(" "), stdout=subprocess.PIPE, bufsize=1, text=True, stderr=subprocess.PIPE)
             Unbinder= self.ROOT.bind("<Control-c>", killer)
             while pipe.poll() is None:
                 msg = pipe.stdout.readline().strip() # read a line from the process output
@@ -308,7 +308,7 @@ class cmdCommands(object):
             print("\n")
             threading.Thread(target=run).start()
             sys.stdout = OLD_STD
-            self.clearStdIn()
+            #self.clearStdIn()
         else: 
             self.showMsg("\nYou don't have permissions to run this command! Enable Administrator Mode and try again.")
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
