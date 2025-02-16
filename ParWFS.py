@@ -15,6 +15,7 @@ class ParWFS:
         self.TASK_IN_PROGRESS = [0, 0]
         self.RUNNING_APPS = {}
         self.RunAppsFrame = None
+        self.ROOT = None
         _instances[purpose] = self
     def loadConfig(self, configFileName: str, configName: str):
         if not self.currentLoadedConfigFiles: self.currentLoadedConfigFiles = {}

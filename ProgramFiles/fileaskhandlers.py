@@ -5,6 +5,11 @@ from ProgramFiles.errorHandler import messagebox
 from ProgramFiles import callHost
 from ProgramFiles import dwm
 from ProgramFiles.entryWidget import Entry
+try:
+    import psutil
+except:
+    os.system("pip install psutil")
+    import psutil
 THEME_WINDOW_BG, THEME_FOREGROUND = ["Black", "white"]
 RETURN_VALUE = None
 PROCESS_RUNNING = False
@@ -133,6 +138,17 @@ def main(*args):
         if (args[0] == "folder-mode"):
             selectFolderBtn = tkinter.Button(commandBar, text="Select Folder", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda e=None: selectFolder(PID))
             selectFolderBtn.grid(row=0, column=1)
+        fileContentFrame = tkinter.Frame(mainFrame, background=THEME_WINDOW_BG)
+        fileContentFrame.grid(row=2, column=0)
+        _DRVSELECTFRAME = tkinter.Frame(fileContentFrame, background=THEME_WINDOW_BG)
+        _DRVSELECTFRAME.grid(row=0, column=0, sticky="w")
+        tkinter.Label(_DRVSELECTFRAME, text="Mounted Partitions/Drives", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, justify='center').grid(row=0, column=0, sticky="we")
+        driveSelection = tkinter.Listbox(_DRVSELECTFRAME, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND )
+        driveSelection.grid(row=1, column=0, sticky="news")
+        PARTITIONS = psutil.disk_partitions()
+        for IDX, partition in enumerate(PARTITIONS):
+            driveSelection.insert(IDX, partition.mountpoint)
+        driveSelection.bind("<<ListboxSelect>>", lambda e=None: lookUpFiles(driveSelection.get(driveSelection.curselection()[0])))
         # driveSelection = ttk.Treeview(mainFrame, style="Treeview")
         # driveSelection.grid(row=0, column=0, sticky="w")
         # driveSelection['column'] = "Drives"
@@ -151,8 +167,8 @@ def main(*args):
         files = tkinter.Menu(mainFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         files.add_command(label="Select", command=lambda e=None : openFileOrFolder(PID))
         commandBar.grid(row=1, column=0)
-        fileView = ttk.Treeview(mainFrame, style="Treeview")
-        fileView.grid(row=2, column=0, sticky="w")
+        fileView = ttk.Treeview(fileContentFrame, style="Treeview")
+        fileView.grid(row=0, column=1, sticky="w")
         fileView['column'] = "Files"
         fileView.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
         fileView.column("Files", anchor=tkinter.W, width=600)

@@ -433,13 +433,13 @@ def scrShotPreview(event):
     tooltips._createToolTipAtGivenPos({PID}, ROOT_WINDOW, ttl+'\\nPID: {PID}', focus, event, image=ROOT_WINDOW.E_IMG, compound="top")
 
 {realApp}ICON = giveIcon('{realApp}', ROOT_WINDOW).subsample(2, 2)
-taskBar{realApp}RnAppBtn = tkinter.Button(runningAppsFrame, text='{app}', background='{THEME_WINDOW_BG}', foreground='{THEME_FOREGROUND}', command=focus, image={realApp}ICON, compound='left')
+taskBar{realApp}RnAppBtn = tkinter.Button(ParWFS._instances["root"].RunAppsFrame, text='{app}', background='{THEME_WINDOW_BG}', foreground='{THEME_FOREGROUND}', command=focus, image={realApp}ICON, compound='left')
 taskBar{realApp}RnAppBtn.grid(row=0, column={len(RUNNING_APPS)})
 taskBar{realApp}RnAppBtn.processInfo = (PID, '{app}')
 taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
 taskBar{realApp}RnAppBtn.bind("<Enter>", scrShotPreview)
 taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID}, ROOT_WINDOW))
-""", {"tkinter": tkinter, "runningAppsFrame": runningAppsFrame, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ROOT_WINDOW, "ICONS": ICONS, "dwm": dwm, "giveIcon": giveIcon, "tooltips": tooltips, "ImageGrab": ImageGrab, "ImageTk": ImageTk, "platform": platform})
+""", {"tkinter": tkinter, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ParWFS._instances["root"].ROOT, "ICONS": ICONS, "dwm": dwm, "giveIcon": giveIcon, "tooltips": tooltips, "ImageGrab": ImageGrab, "ImageTk": ImageTk, "platform": platform, "ParWFS": ParWFS})
     @staticmethod
     def AppImportNameCheck(app: str, dontLower=False):
         if "/" in app:
@@ -674,6 +674,7 @@ def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig
     PER_PROGRAM_COMMAND_APPS_LIST = ShelveRef["APPS"][1]
     appToLaunch = GUIButtonCommand.AppImportNameCheck(app=app)
     progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
+    GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID)
     exec(f"import {progAppImport}")
     exec(f"ProgramFiles.{appToLaunch}.main(userConfig, notifications, '{params}', USER_CONFIG, {PID})")
 class Scrollable(tkinter.Frame):
@@ -992,6 +993,7 @@ def main():
         try: GuiInterfaceCommands.pinApps(f"{app}", False)
         except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"Error pinning {app} in the taskbar.\nPROB:{EXP}", root=ROOT_WINDOW)
     startUpTasks(USER_CONFIG, ROOT_WINDOW)
+    FILE_SYSTEM.ROOT = ROOT_WINDOW
     ROOT_WINDOW.mainloop()
 import base64
 def loginVerification(e=None):
