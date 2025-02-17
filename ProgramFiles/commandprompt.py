@@ -313,6 +313,8 @@ class cmdCommands(object):
             self.showMsg("\nYou don't have permissions to run this command! Enable Administrator Mode and try again.")
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
 def main(FILE_SYSTEM, *args): 
+    ABLE_TO_USE_DWM = False
+    EXP = None
     def sendCommand(e=None):
         cmdInstance.showMsg(f"\n>{yourCommand.get()}")
         if " " not in yourCommand.get():
@@ -324,22 +326,32 @@ def main(FILE_SYSTEM, *args):
         else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
+    try:
+        from ProgramFiles import dwm
+        dwm.createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "commandprompt", "Command Prompt", args[-1])
+        ABLE_TO_USE_DWM = True
+    except Exception as erm: EXP = erm
     INSTANCES[args[-1]].title("Command Interpreter")
     def destroy():
         os.chdir(cmdInstance.CWD)
         if args[0] != "AUTORECOVERYENV": callHost.acknowledgeEndTask(args[-1])
         INSTANCES[args[-1]].destroy()
         return True
-    INSTANCES[args[-1]].protocol("WM_DELETE_WINDOW", destroy)
     text = tkinter.Text(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
-    text.grid(row=0, column=0)
+    text.grid(row=1, column=0)
     yourCommand = Entry(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
-    yourCommand.grid(row=1, column=0)
+    yourCommand.grid(row=2, column=0)
     cmdInstance = cmdCommands(text, yourCommand, root=INSTANCES[args[-1]], FS=FILE_SYSTEM)
-    LIST_OF_CMDS = [attr for attr in dir(cmdInstance) if inspect.ismethod(getattr(cmdInstance,attr))]
     yourCommand.focus()
     yourCommand.bind("<Return>", sendCommand)
+    if not ABLE_TO_USE_DWM:
+        cmdInstance.showMsg(f"\nERROR Importing window manager libraries from ProgramFiles.dwm! Using OS-Default Window manager!\nProblem: {EXP}")
+    else: 
+        yourCommand.focus_force()
+        yourCommand.update()
+        yourCommand.update_idletasks()
+        yourCommand.bind("<Button-1>", lambda e=None: yourCommand.focus_force())
     if args[0] == "AUTORECOVERYENV":
         cmdInstance.ADMINISTRATOR = True
         cmdInstance.showMsg("\nDetected launch from recovery environment\nSuccesfully turned on administrator mode!")
