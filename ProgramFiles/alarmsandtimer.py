@@ -1,7 +1,5 @@
 import tkinter
-from datetime import datetime
 import time
-from ProgramFiles import callHost
 from ProgramFiles.errorHandler import messagebox
 from ProgramFiles.entryWidget import Entry
 THEME_WINDOW_BG, THEME_FOREGROUND = ["", ""]

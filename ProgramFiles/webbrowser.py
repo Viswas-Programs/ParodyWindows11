@@ -43,7 +43,7 @@ def browse(PID, e=None):
     frame.on_link_click(addToList)
     if DARK_THEME: frame.enable_dark_theme(True, True)
     frame.on_title_change(a)
-    frame.grid(row=1, column=0)
+    frame.grid(row=2, column=0)
 def optionsWindow(PID, e=None):
     global DARK_THEME
     def showHistory():
@@ -119,7 +119,7 @@ def main(*args):
     createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "webbrowser", "Web Browser", args[-1])
     INSTANCES[args[-1]].title("Web Browser")
     mainFrame = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
-    mainFrame.grid(row=2, column=0)
+    mainFrame.grid(row=1, column=0)
     btnFrame = tkinter.Frame(mainFrame, background=THEME_WINDOW_BG)
     btnFrame.grid(row=1, column=0)
     backButton = tkinter.Button(btnFrame, text="<-", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=goBack)

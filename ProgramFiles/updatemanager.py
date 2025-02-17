@@ -106,7 +106,7 @@ def main(username, notification, *args):
     else:
         updateStatus = str(UPDATE_CHGLOG).split("\n")[-1]
     tkinter.Label(INSTANCES[args[-1]], text=f"Last update = {updateStatus}",
-            background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=2, column=0)
+            background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).grid(row=3, column=0)
     INSTANCES[args[-1]].mainloop()
     LAST_UPDATE.close()
     INSTANCES[args[-1]].destroy()
