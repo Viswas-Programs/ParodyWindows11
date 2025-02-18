@@ -120,9 +120,9 @@ class Notifications(object):
             a = tkinter.Label(notificationsWindow, text="No notifications (yet)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
             a.grid(row=0, column=0)
         for index, notif in enumerate(self.NotificationsList):
-            exec(f'a{index} = tkinter.Label(notificationsWindow, text=f"{notif}\t: {self.TimeofNotification[index]}", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)')
-            exec(f'a{index}.grid(row=index, column=0)')
-            exec(f"a{index}.bind('<Button-1>', self.actions[index])")
+            lbl = tkinter.Label(notificationsWindow, text=f"{notif}\t: {self.TimeofNotification[index]}", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            lbl.grid(row=index, column=0)
+            lbl.bind('<Button-1>', self.actions[index])
         notificationsWindow.mainloop()
         self.NotificationsList, self.actions, self.TimeofNotification = [], [], []
 notification = Notifications()
@@ -552,8 +552,6 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
             realAppName = GUIButtonCommand.AppImportNameCheck(app=appName)
             appFrame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)
             appFrame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)
-            exec(f"{realAppName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
-            exec(f"{realAppName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
             ROW_COUNT_DESKTOP_ICONS += 1
             appIcon = giveIcon(realAppName, ROOT_WINDOW)
             appBtn = IconButton(appFrame, image=appIcon, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(command))
@@ -673,8 +671,11 @@ def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig
     appToLaunch = GUIButtonCommand.AppImportNameCheck(app=app)
     progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
     GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID)
-    exec(f"import {progAppImport}")
-    exec(f"ProgramFiles.{appToLaunch}.main(userConfig, notifications, '{params}', USER_CONFIG, {PID})")
+    appImport = importlib.import_module(progAppImport)
+    if appImport.NEEDS_FILESYSTEM_ACCESS:
+        appImport.main(FILE_SYSTEM, userConfig, notifications, params, USER_CONFIG, PID)
+    else:
+        appImport.main(userConfig, notifications, '{params}', USER_CONFIG, {PID})
 class Scrollable(tkinter.Frame):
     """
        Make a frame scrollable with scrollbar on the right.
@@ -846,16 +847,17 @@ class TaskManager:
     def endTask(self):
         application = self.fileView.focus()
         try:
-            appToEnd = str(RUNNING_APPS[int(application)])
-            appToEnd.replace(f"<<<PID: {application}>>>", "")
-            command = COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f"ProgramFiles.{ GuiInterfaceCommands.AppImportNameCheck(app=appToEnd)}")] 
-            exec(f"import {command}")
-            exec(f"{command}.endTask(int({application}))")
-            del RUNNING_APPS[int(application)]
+            dwm.close(PID=int(application))
+            
         except Exception as EXP:
             print(EXP) 
             try:
-                dwm.close(PID=int(application))
+                appToEnd = str(RUNNING_APPS[int(application)])
+                appToEnd.replace(f"<<<PID: {application}>>>", "")
+                command = COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f"ProgramFiles.{ GuiInterfaceCommands.AppImportNameCheck(app=appToEnd)}")] 
+                appImport = importlib.import_module(command)
+                appImport.endTask(int(application))
+                del RUNNING_APPS[int(application)]
             except Exception as E:
                 print(E)
                 try: 
@@ -943,7 +945,8 @@ def main():
                 appNameReal = GUIButtonCommand.AppImportNameCheck(widget.processInfo[1])
                 try: widget.configure(text=dwm.title(None, widget.processInfo[0]))
                 except:
-                    exec(f"import ProgramFiles.{appNameReal}\nwidget.configure(text=ProgramFiles.{appNameReal}.returnInformation({widget.processInfo[0]})['title'])")
+                    appImport = importlib.import_module(f"ProgramFiles.{appNameReal}")
+                    widget.configure(text=appImport.returnInformation(widget.processInfo[0])['title'])
             except Exception as EXP: 
                 print(EXP)
                 widget.destroy()
