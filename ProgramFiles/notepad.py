@@ -24,11 +24,11 @@ def main(username, notifications, filename, *args):
         INSTANCES[args[-1]].title("Notepad GUI v3.0 STABLE")
         text = Text(INSTANCES[args[-1]], height=20, width=100,
                             font=("Arial Rounded MT Bold",
-                                18), )
+                                18),background=user_config[0], foreground=user_config[1] )
         text.grid(row=1, column=0, pady=10)
         saveTo = Text(INSTANCES[args[-1]], height=2, width=50,
                             font=("Arial Rounded MT Bold",
-                                    12))
+                                    12), background=user_config[0], foreground=user_config[1])
         saveTo.grid(row=2, column=0)
         notepad.NotepadRun(text_box=text, gui=INSTANCES[args[-1]], saveTo=saveTo, file_to_open=filename, THEME_BACKGROUND=user_config[0], THEME_FOREGROUND=user_config[1], PID=args[-1])
         print("notepadrun quit ig")

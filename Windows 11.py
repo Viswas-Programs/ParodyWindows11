@@ -373,7 +373,7 @@ class GUIButtonCommand:
             appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
             progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
             exec(f"import {progAppImport}")
-            exec(f"{appToLaunch}PID = random.randint(1000, 9999)")
+            exec(f"{appToLaunch}PID = random.randint(1000, 5000)")
             exec(f"""
 while {appToLaunch}PID in RUNNING_APPS.keys():
     {appToLaunch}PID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
