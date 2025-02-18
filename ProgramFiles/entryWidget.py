@@ -27,7 +27,6 @@ class Text(tkinter.Text):
         THEME_TEXT_BG = "Black"
         THEME_TEXT_FG = "White"
         try: 
-            print(args, kwargs)
             THEME_TEXT_BG = kwargs["background"]
             THEME_TEXT_FG = kwargs["foreground"]
         except: pass

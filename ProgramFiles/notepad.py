@@ -31,7 +31,7 @@ def main(username, notifications, filename, *args):
                                     12), background=user_config[0], foreground=user_config[1])
         saveTo.grid(row=2, column=0)
         notepad.NotepadRun(text_box=text, gui=INSTANCES[args[-1]], saveTo=saveTo, file_to_open=filename, THEME_BACKGROUND=user_config[0], THEME_FOREGROUND=user_config[1], PID=args[-1])
-        print("notepadrun quit ig")
+        #print("notepadrun quit ig")
         PROCESS_RUNNING = False
     except Exception as exp:
         messagebox.showerror("Can't load app!", f"App not found! please re-install the app!\nPROB:{exp}", root=None)

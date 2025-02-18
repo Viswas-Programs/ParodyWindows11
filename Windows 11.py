@@ -1,4 +1,5 @@
 import tkinter
+import importlib
 def bsod(obj, supportCode) -> None:
     text = f"""A problem has occured on ParodyWin11 and has been shutdown to prevent further damage\n
 If this is the first time you're seeing this stop screen, please make sure you have proper configuration files 
@@ -372,20 +373,16 @@ class GUIButtonCommand:
         else: 
             appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
             progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
-            exec(f"import {progAppImport}")
-            exec(f"{appToLaunch}PID = random.randint(1000, 5000)")
-            exec(f"""
-while {appToLaunch}PID in RUNNING_APPS.keys():
-    {appToLaunch}PID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
-RUNNING_APPS[{appToLaunch}PID] = application""")
-            exec(f"GUIButtonCommand.createRunningAppTaskbarIcon(application, {appToLaunch}PID)")
-            exec(f"""if {progAppImport}.NEEDS_FILESYSTEM_ACCESS:
-    if (params == None ): ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, None,  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
-    else:   ProgramFiles.{appToLaunch}.main(FILE_SYSTEM, username, notification, '{params}',  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
-else:
-    if (params == None ): ProgramFiles.{appToLaunch}.main(username, notification, None,  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
-    else:   ProgramFiles.{appToLaunch}.main(username, notification, '{params}',  FILE_SYSTEM.getConfig("USER_CONFIG"), {appToLaunch}PID)
-        """)
+            appImport = importlib.import_module(f"ProgramFiles.{appToLaunch}")
+            appPID = random.randint(PROCESS_IDS[0], PROCESS_IDS[1])
+            while appPID in RUNNING_APPS.keys():
+                appPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
+            RUNNING_APPS[appPID] = application
+            GUIButtonCommand.createRunningAppTaskbarIcon(application, appPID) 
+            if appImport.NEEDS_FILESYSTEM_ACCESS:
+                appImport.main(FILE_SYSTEM, username, notification, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appPID)
+            else:
+                appImport.main(username, notification, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appPID)
     @staticmethod
     def createRunningAppTaskbarIcon(app: str, PID:int):
         realApp = GUIButtonCommand.AppImportNameCheck(app=app)
@@ -490,19 +487,18 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
         appName: str = appToPin
         appName = GUIButtonCommand.AppImportNameCheck(appToPin)
         self.TASKBAR_ICON_COUNT += 1
-        exec(f"global {appName}BTN")
         
         if writeto:
             apList = USER_CONFIG["PINNED"]
             apList[0].append(appName)
             USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
-        exec(f"global {appName}ICON")
-        exec(f"{appName}ICON = ICONS['{appName}'].subsample(2, 2)")
-        exec(f"{appName}BTN = tkinter.Button(appsFrame, image={appName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(f'{appToPin}'))")
-        exec(f"{appName}BTN.IMGREF = {appName}ICON")
-        exec(f"{appName}BTN.grid(row=0, column={self.TASKBAR_ICON_COUNT})")
+        appIcon = giveIcon(appName, ROOT_WINDOW, 2)
+        appBtn = tkinter.Button(appsFrame, image=appIcon, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(appToPin) )
+        appBtn.imgRef = appIcon
+        appBtn.grid(row=0, column=self.TASKBAR_ICON_COUNT)
 
     def taskbarselfGUI(self, e=None):
+        # SHIT CODE, WILL PROBABLY CHANGE TO A COMBOBOX PRETTY SOON
         global PINNED_APPS
         global GuiInterfaceCommands
         taskbarselfWindow = tkinter.Toplevel(ROOT_WINDOW)
@@ -554,15 +550,17 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                 apList[1].append(appName)
                 USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
             realAppName = GUIButtonCommand.AppImportNameCheck(app=appName)
+            appFrame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)
+            appFrame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)
             exec(f"{realAppName}Frame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)")
             exec(f"{realAppName}Frame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)")
             ROW_COUNT_DESKTOP_ICONS += 1
-            exec(f"{realAppName}ICON = ICONS['{realAppName}']")
-            exec(f"{realAppName}BTN = IconButton({realAppName}Frame, image={realAppName}ICON, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem('{command}'))")
-            exec(f"{realAppName}BTN.IMGREF = {realAppName}ICON")
-            exec(f"{realAppName}BTN.grid(row=0, column=0)")
-            exec(f"{realAppName}LABEL = tkinter.Label({realAppName}Frame, text=f'{appName}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)")
-            exec(f"{realAppName}LABEL.grid(row=1, column=0)")
+            appIcon = giveIcon(realAppName, ROOT_WINDOW)
+            appBtn = IconButton(appFrame, image=appIcon, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(command))
+            appBtn.ref = appIcon
+            appBtn.grid(row=0, column=0)
+            appLbl = tkinter.Label(appFrame, text=appName, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            appLbl.grid(row=1, column=0)
             self.CurrentDesktopIconsList.append(command)
         else:
             messagebox.showerror(None, None, ROOT_WINDOW, True, "APP_NOT_FOUND_ERROR")
