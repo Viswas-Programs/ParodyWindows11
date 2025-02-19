@@ -92,30 +92,45 @@ def loadAllIcons(appsList: list, root):
             ICONS[realApp] = tkinter.PhotoImage(file=f"ProgramFiles/Icons/{realApp}.png", master=root)
             root.erm = ICONS[realApp]
         except: pass
-ROW_COUNT_NOTIFICATION_WINDOW = 0
+class PW11GlobalVars():
+    def __init__(self):
+        self.ROW_COUNT_NOTIFICATION_WINDOW = 0
+        self.ROW_COUNT_DESKTOP_ICONS = 0
+        self.COLUMN_COUNT_DESKTOP_ICONS = 0
+        self.MAX_ROW_DESKTOP = 10
+        self.MAX_COLUMN_DESKTOP = 15
+        self.START_MENU_ACTIVE: StartMenu = False
+        self.DESKTOP_FRAME: tkinter.Frame = None
+        self.WALLPAPER: tkinter.Label = None
+        self.APPS_FRAME: tkinter.Frame = None
+        self.RUNNING_APPS_FRAME: tkinter.Frame = None
+        self.NOTIFICATION_BUTTON: tkinter.Button = None
+        self.ROOT_WINDOW: tkinter.Tk = None
+        self.DESKTOP_CONTEXT_MENU: tkinter.Menu = None
+        self.TASKBAR_CONTEXT_MENU: tkinter.Menu = None
+        self.CLOCK_LABEL: tkinter.Label = None
+        self.CLOCK_LOOP_ID = None
+
+GLOBAL_VARS = PW11GlobalVars()
+
 class Notifications(object):
-    global ROW_COUNT_NOTIFICATION_WINDOW
-    global notificationsButton
-    global notificationsWindow
     def __init__(self):
         self.NotificationsList = []
         self.TimeofNotification = []
         self.actions = []
     def createNotification(self, msg: str, time: str, action: str):
-        global ROW_COUNT_NOTIFICATION_WINDOW
         self.NotificationsList.append(msg)
         self.TimeofNotification.append(time)
         self.actions.append(action)
-        ROW_COUNT_NOTIFICATION_WINDOW += 1
-        notificationsButton.configure(text=f"Notifications ({len(self.NotificationsList)})")
+        GLOBAL_VARS.ROW_COUNT_NOTIFICATION_WINDOW += 1
+        GLOBAL_VARS.NOTIFICATION_BUTTON.configure(text=f"Notifications ({len(self.NotificationsList)})")
     def showNotification(self, title: str, msg: str, time: str, action: str) -> None:
         from ProgramFiles.errorHandler import messagebox
         self.createNotification(msg=msg, time=time, action=action)
-        messagebox.showinfo(title, msg, ROOT_WINDOW)
+        messagebox.showinfo(title, msg, GLOBAL_VARS.ROOT_WINDOW)
     def showNotificationsList(self, event=None):
-        global notificationsWindow
         notificationsWindow = tkinter.Toplevel(background=THEME_WINDOW_BG)
-        notificationsButton.configure(text="Notifications (0)")
+        GLOBAL_VARS.NOTIFICATION_BUTTON.configure(text="Notifications (0)")
         if len(self.NotificationsList) == 0:
             a = tkinter.Label(notificationsWindow, text="No notifications (yet)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
             a.grid(row=0, column=0)
@@ -135,7 +150,7 @@ class settings():
         self.SHOWN_APPSLIST = False
         self.SHOWN_APPOPENERCHANGER = False
         self.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
-        self.settingsWindow = tkinter.Toplevel(ROOT_WINDOW, background=THEME_WINDOW_BG)
+        self.settingsWindow = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW, background=THEME_WINDOW_BG)
         PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
         while PID in RUNNING_APPS.keys():
             PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
@@ -166,7 +181,6 @@ class settings():
     def personalization(self):
         self.SHOWN_PERSONALIZATION = True
         def changeBg():
-            global children
             global THEME_WINDOW_BG
             global  USER_CONFIG, SYS_CONFIG
             colorToUse = colorchooser.askcolor(title="Select background!")
@@ -176,17 +190,14 @@ class settings():
                 SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
             USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
             dwm.changeThemeForAllApps(THEME_WINDOW_BG, THEME_FOREGROUND)
-            dwm._changeThemeForAllApps(THEME_WINDOW_BG, THEME_FOREGROUND, ROOT_WINDOW)
-            for child in children:
-                try:
-                    child.configure(background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-                    ROOT_WINDOW.configure(background=THEME_WINDOW_BG,)
-                    appsFrame.configure(background=THEME_WINDOW_BG)
-                    desktopFrame.configure(background=THEME_WINDOW_BG)
-                except Exception: pass
-            ROOT_WINDOW.update()
+            dwm._changeThemeForAllApps(THEME_WINDOW_BG, THEME_FOREGROUND, GLOBAL_VARS.ROOT_WINDOW)
+            try:
+                GLOBAL_VARS.ROOT_WINDOW.configure(background=THEME_WINDOW_BG,)
+                GLOBAL_VARS.APPS_FRAME.configure(background=THEME_WINDOW_BG)
+                GLOBAL_VARS.DESKTOP_FRAME.configure(background=THEME_WINDOW_BG)
+            except Exception: pass
+            GLOBAL_VARS.ROOT_WINDOW.update()
         def changeFg():
-            global children
             global THEME_FOREGROUND
             global  USER_CONFIG, SYS_CONFIG
             colorToUse = colorchooser.askcolor(title="Select foreground!")
@@ -196,27 +207,21 @@ class settings():
                 SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
             USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [THEME_WINDOW_BG, THEME_FOREGROUND])
             dwm.changeThemeForAllApps(THEME_WINDOW_BG, THEME_FOREGROUND)
-            dwm._changeThemeForAllApps(THEME_WINDOW_BG, THEME_FOREGROUND, ROOT_WINDOW)
-            for child in children:
-                try:
-                    child.configure(background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-                    ROOT_WINDOW.configure(background=THEME_WINDOW_BG,)
-                except Exception: pass
-            ROOT_WINDOW.update()
+            dwm._changeThemeForAllApps(THEME_WINDOW_BG, THEME_FOREGROUND, GLOBAL_VARS.ROOT_WINDOW)
+            GLOBAL_VARS.ROOT_WINDOW.update()
         def changeWallpaper():
-            global wallpaper
             nonlocal wallpaperText
             global USER_CONFIG
             wallpaperChoose = askopenfilename("Open a wallpaper file (png)", (("PNG Files", "*.png"), ("All Files", "*.*")))
             img = GUIButtonCommand.getWallpaperImageResized(wallpaperChoose)
-            ROOT_WINDOW.image = img
+            GLOBAL_VARS.ROOT_WINDOW.image = img
             try:
-                wallpaper.configure(image=img)
+                GLOBAL_VARS.WALLPAPER.configure(image=img)
 
             except: 
-                wallpaper = tkinter.Label(ROOT_WINDOW, image=img)
-                wallpaper.grid(row=1, column=0, sticky="EWSN")
-            desktopFrame.lift()
+                GLOBAL_VARS.WALLPAPER = tkinter.Label(GLOBAL_VARS.ROOT_WINDOW, image=img)
+                GLOBAL_VARS.WALLPAPER.grid(row=1, column=0, sticky="EWSN")
+            GLOBAL_VARS.DESKTOP_FRAME.lift()
             wallpaperText = "Current Wallpaper: " + wallpaperChoose
             wallpaperPath.configure(text=wallpaperText)
             USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", wallpaperChoose)
@@ -225,7 +230,7 @@ class settings():
             global USER_CONFIG
             USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", None)
             try: 
-                wallpaper.destroy()
+                GLOBAL_VARS.WALLPAPER.destroy()
             except: pass
             wallpaperText = "Current Wallpaper: No wallpapers set yet!"
             wallpaperPath.configure(text=wallpaperText)
@@ -335,18 +340,10 @@ comboBox{X}.grid(row=0, column=1)
         rmcombobox.grid(row=1, column=2)
         rmcombobox.bind("<<ComboboxSelected>>", _removeApp)
 
-    
-ROW_COUNT_DESKTOP_ICONS = 0
-COLUMN_COUNT_DESKTOP_ICONS = 0
-MAX_ROW_DESKTOP = 10
-MAX_COLUMN_DESKTOP = 15
+
 class GUIButtonCommand:
     global APPS_LIST
     global PINNED_APPS
-    global ROW_COUNT_DESKTOP_ICONS
-    global COLUMN_COUNT_DESKTOP_ICONS
-    global MAX_COLUMN_DESKTOP
-    global MAX_ROW_DESKTOP
     global RUNNING_APPS
     def __init__(self, PINNED_APPS):
         self.CurrentDesktopIconsList = []
@@ -354,12 +351,12 @@ class GUIButtonCommand:
         self.TASKBAR_ICON_COUNT = 0
     @staticmethod
     def launchItem(application: str, params= None, e=None): 
-        global RUNNING_APPS, runningAppsFrame
+        global RUNNING_APPS
         if GUIButtonCommand.AppImportNameCheck(application) == "controlpanel":
             settings()
             return
         elif GUIButtonCommand.AppImportNameCheck(application) == "taskmanager":
-            TaskManager(ROOT_WINDOW)
+            TaskManager(GLOBAL_VARS.ROOT_WINDOW)
             return
         if application == "Command Prompt":
             import ProgramFiles.commandprompt as CMD
@@ -368,8 +365,8 @@ class GUIButtonCommand:
                 appToLaunchPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
             RUNNING_APPS[appToLaunchPID] = application
             GUIButtonCommand.createRunningAppTaskbarIcon(application, appToLaunchPID)
-            try: CMD.main(FILE_SYSTEM, username, notification, None, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID, [runningAppsFrame, RUNNING_APPS] )
-            except: CMD.main(FILE_SYSTEM, username, notification, None, dict({"THEME": ["Black", "White"]}), appToLaunchPID, [runningAppsFrame, RUNNING_APPS] )        
+            try: CMD.main(FILE_SYSTEM, username, notification, None, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID, [GLOBAL_VARS.RUNNING_APPS_FRAME, RUNNING_APPS] )
+            except: CMD.main(FILE_SYSTEM, username, notification, None, dict({"THEME": ["Black", "White"]}), appToLaunchPID, [GLOBAL_VARS.RUNNING_APPS_FRAME, RUNNING_APPS] )        
         else: 
             appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
             progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
@@ -457,32 +454,28 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                 i.destroy()
         del RunningAppsList[1][pid]
     def currentTime(self):
-        global clock
-        global ClockRepeatID
         global USER_CONFIG
         cr_time = None
         if USER_CONFIG["CLOCK-WIDGET"] == 0:
             def recurringClockFunction(e=None):
-                global ClockRepeatID
                 nonlocal cr_time
                 cr_time = time.strftime("%H:%M:%S %p")
-                clock = tkinter.Label(ROOT_WINDOW, text=cr_time, background=THEME_WINDOW_BG,
+                GLOBAL_VARS.CLOCK_LABEL = tkinter.Label(GLOBAL_VARS.ROOT_WINDOW, text=cr_time, background=THEME_WINDOW_BG,
                                         foreground=THEME_FOREGROUND)
-                ClockRepeatID = clock.after(1000, recurringClockFunction)
-                clock.grid(row=0, column=2, sticky="ne")
+                GLOBAL_VARS.CLOCK_LOOP_ID = GLOBAL_VARS.CLOCK_LABEL.after(1000, recurringClockFunction)
+                GLOBAL_VARS.CLOCK_LABEL.grid(row=0, column=2, sticky="ne")
             USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 1)
             recurringClockFunction()
 
         else:
             try: 
                cr_time = None
-               clock.after_cancel(ClockRepeatID)
-               clock.destroy()
+               GLOBAL_VARS.CLOCK_LABEL.after_cancel(GLOBAL_VARS.CLOCK_LOOP_ID)
+               GLOBAL_VARS.CLOCK_LABEL.destroy()
                USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
             except Exception as E:
                 messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}")
     def pinApps(self, appToPin, writeto=True):
-        global appsFrame
         global USER_CONFIG
         appName: str = appToPin
         appName = GUIButtonCommand.AppImportNameCheck(appToPin)
@@ -492,8 +485,8 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
             apList = USER_CONFIG["PINNED"]
             apList[0].append(appName)
             USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
-        appIcon = giveIcon(appName, ROOT_WINDOW, 2)
-        appBtn = tkinter.Button(appsFrame, image=appIcon, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(appToPin) )
+        appIcon = giveIcon(appName, GLOBAL_VARS.ROOT_WINDOW, 2)
+        appBtn = tkinter.Button(GLOBAL_VARS.APPS_FRAME, image=appIcon, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(appToPin) )
         appBtn.imgRef = appIcon
         appBtn.grid(row=0, column=self.TASKBAR_ICON_COUNT)
 
@@ -501,7 +494,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
         # SHIT CODE, WILL PROBABLY CHANGE TO A COMBOBOX PRETTY SOON
         global PINNED_APPS
         global GuiInterfaceCommands
-        taskbarselfWindow = tkinter.Toplevel(ROOT_WINDOW)
+        taskbarselfWindow = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW)
         taskbarselfWindow.configure(background=THEME_WINDOW_BG)
         taskbarselfWindow.title("Taskbar app pinning")
         addWidgetsFrame = tkinter.LabelFrame(taskbarselfWindow, text="Add widgets", 
@@ -515,45 +508,53 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
         pinItems.grid(row=1, column=0)
         r = -1
         PINNED_APPS = list(PINNED_APPS)
+        NOT_PINNED_APPS = []
         for app in APPS_LIST:
             if app not in PINNED_APPS:
-                r += 1
-                if len(PINNED_APPS) == 1 or len(PINNED_APPS) == 2:
-                    i = 0
-                appN = app.replace(" ", "")
-                exec(f"{appN} = tkinter.Button(pinItems, text='{appN}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.pinApps('{app}'),"
-                    f")\n{appN}.grid(row=r, column=0)")
+                NOT_PINNED_APPS.append(app)
+        combobox = ttk.Combobox(pinItems, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, values=NOT_PINNED_APPS, state='readonly')
+        combobox.grid(row=0, column=0)
+        combobox.bind("<<ComboboxSelected>>", lambda e: GuiInterfaceCommands.pinApps(combobox.get()) )
         taskbarselfWindow.mainloop()
-
-    def popup(self, event=None, *args):
+    @staticmethod
+    def standardisedContextMenuPopup(contextMenuObj: tkinter.Menu,  event=None, *args):
         """ the context menu popup"""
         try:
-            contextMenu.tk_popup(event.x_root, event.y_root, 0)
-            print(contextMenu.grab_status())
-            contextMenu.grab_set()
-            contextMenu.grab_release()
+            contextMenuObj.tk_popup(event.x_root, event.y_root, 0)
+            print(contextMenuObj.grab_status())
+            contextMenuObj.grab_set()
+            contextMenuObj.grab_release()
         except Exception as PROBLEM:
             print(PROBLEM)
+    @staticmethod
+    def OSContextMenuPopup(event: tkinter.Event=None, *args):
+        if (GLOBAL_VARS.ROOT_WINDOW.winfo_containing(event.x_root, event.y_root)).identifier == "taskbar": 
+            #GuiInterfaceCommands.popup(event=event)
+            GLOBAL_VARS.TASKBAR_CONTEXT_MENU.focus()
+        else:
+            try:
+                GLOBAL_VARS.DESKTOP_CONTEXT_MENU.tk_popup(event.x_root, event.y_root, 0)
+                print(PROBLEM)
+            finally:
+                GLOBAL_VARS.DESKTOP_CONTEXT_MENU.grab_release()
     def createAppIcon(self, appName: str, command: str, writeto=True, event=None):
         """ creates desktop icons!"""
-        global desktopFrame
-        global COLUMN_COUNT_DESKTOP_ICONS, ROW_COUNT_DESKTOP_ICONS
         global USER_CONFIG
-        if ROW_COUNT_DESKTOP_ICONS > MAX_ROW_DESKTOP:
-            if COLUMN_COUNT_DESKTOP_ICONS > MAX_COLUMN_DESKTOP:
-                messagebox.showerror("Desktop pin", "Can't place the item! no more space left!", ROOT_WINDOW)
+        if GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS > GLOBAL_VARS.MAX_ROW_DESKTOP:
+            if GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS > GLOBAL_VARS.MAX_COLUMN_DESKTOP:
+                messagebox.showerror("Desktop pin", "Can't place the item! no more space left!", GLOBAL_VARS.ROOT_WINDOW)
             else:
-                COLUMN_COUNT_DESKTOP_ICONS += 1
+                GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS += 1
         if appName not in self.CurrentDesktopIconsList:
             if writeto:
                 apList = USER_CONFIG["PINNED"]
                 apList[1].append(appName)
                 USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
             realAppName = GUIButtonCommand.AppImportNameCheck(app=appName)
-            appFrame = tkinter.Frame(desktopFrame, background=THEME_WINDOW_BG)
-            appFrame.grid(row=ROW_COUNT_DESKTOP_ICONS, column=COLUMN_COUNT_DESKTOP_ICONS)
-            ROW_COUNT_DESKTOP_ICONS += 1
-            appIcon = giveIcon(realAppName, ROOT_WINDOW)
+            appFrame = tkinter.Frame(GLOBAL_VARS.DESKTOP_FRAME, background=THEME_WINDOW_BG)
+            appFrame.grid(row=GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS, column=GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS)
+            GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS += 1
+            appIcon = giveIcon(realAppName, GLOBAL_VARS.ROOT_WINDOW)
             appBtn = IconButton(appFrame, image=appIcon, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(command))
             appBtn.ref = appIcon
             appBtn.grid(row=0, column=0)
@@ -561,28 +562,25 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
             appLbl.grid(row=1, column=0)
             self.CurrentDesktopIconsList.append(command)
         else:
-            messagebox.showerror(None, None, ROOT_WINDOW, True, "APP_NOT_FOUND_ERROR")
+            messagebox.showerror(None, None, GLOBAL_VARS.ROOT_WINDOW, True, "APP_NOT_FOUND_ERROR")
     @staticmethod
     def getWallpaperImageResized(path: str):
         image = Image.open(path)
-        resizedImage = image.resize((ROOT_WINDOW.winfo_screenwidth(), ROOT_WINDOW.winfo_screenheight()))
+        resizedImage = image.resize((GLOBAL_VARS.ROOT_WINDOW.winfo_screenwidth(), GLOBAL_VARS.ROOT_WINDOW.winfo_screenheight()))
         actualImage= ImageTk.PhotoImage(resizedImage)
         return actualImage
     def refreshDesktop(self, pinnedAppsDesktop):
         self.CurrentDesktopIconsList = []
-        global ROW_COUNT_DESKTOP_ICONS, COLUMN_COUNT_DESKTOP_ICONS
-        ROW_COUNT_DESKTOP_ICONS = 0
-        COLUMN_COUNT_DESKTOP_ICONS = 0
-        for frame in dict(desktopFrame.children).values():
+        for frame in dict(GLOBAL_VARS.DESKTOP_FRAME.children).values():
             frame.destroy()
         for app in pinnedAppsDesktop:
             try:
                 GuiInterfaceCommands.createAppIcon(f"{app}", f"{app}", False)
-            except Exception as EXP: messagebox.showerror("Error pinning app", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=ROOT_WINDOW)
+            except Exception as EXP: messagebox.showerror("Error pinning app", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
     def addNewIcon(self, *args):
         INDEX=0
         iconToAdd = None
-        addNewIcon = tkinter.Toplevel(ROOT_WINDOW, background=THEME_WINDOW_BG)
+        addNewIcon = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW, background=THEME_WINDOW_BG)
         desktopAppsList = ttk.Combobox(addNewIcon)
         # for z in self.CurrentDesktopIconsList:
         #     CURRENT_LIST = APPS_LIST
@@ -623,9 +621,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
         def restart():
             if safeModeRestartVar.get() == 1:
                 try:
-                    children = [contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
-                    for child in children:
-                        child.destroy()
+                    GLOBAL_VARS.ROOT_WINDOW.destroy()
                 finally:
                     def sigma():
                         os.system("""python "Windows 11.py" -safemode """)
@@ -633,9 +629,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                     waitUntillTaskFinishes(sigma)
             else:
                 try:
-                    children = [ contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
-                    for child in children:
-                        child.destroy()
+                    GLOBAL_VARS.ROOT_WINDOW.destroy()
                 finally:
                     os.system(""" python "Windows 11.py" """)
                     exit()
@@ -675,7 +669,7 @@ def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig
     if appImport.NEEDS_FILESYSTEM_ACCESS:
         appImport.main(FILE_SYSTEM, userConfig, notifications, params, USER_CONFIG, PID)
     else:
-        appImport.main(userConfig, notifications, '{params}', USER_CONFIG, {PID})
+        appImport.main(userConfig, notifications, params, USER_CONFIG, {PID})
 class Scrollable(tkinter.Frame):
     """
        Make a frame scrollable with scrollbar on the right.
@@ -722,22 +716,20 @@ class Scrollable(tkinter.Frame):
         self.canvas.config(scrollregion=self.canvas.bbox(self.windows_item))
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-START_MENU_ACTIVE = False
 class StartMenu: 
     def __init__(self, btn: tkinter.Button, taskbarFrame: tkinter.Frame, *e):
-        global START_MENU_ACTIVE
-        if START_MENU_ACTIVE:
-            START_MENU_ACTIVE.destroy()
+        if GLOBAL_VARS.START_MENU_ACTIVE:
+            GLOBAL_VARS.START_MENU_ACTIVE.destroy()
             return
-        START_MENU_ACTIVE = self
-        self.height = ROOT_WINDOW.winfo_fpixels(f"{ROOT_WINDOW.winfo_screenheight()/3}p")
-        self.width = ROOT_WINDOW.winfo_fpixels(f"{ROOT_WINDOW.winfo_screenwidth()/5}p")
+        GLOBAL_VARS.START_MENU_ACTIVE = self
+        self.height = GLOBAL_VARS.ROOT_WINDOW.winfo_fpixels(f"{GLOBAL_VARS.ROOT_WINDOW.winfo_screenheight()/3}p")
+        self.width = GLOBAL_VARS.ROOT_WINDOW.winfo_fpixels(f"{GLOBAL_VARS.ROOT_WINDOW.winfo_screenwidth()/5}p")
         btn.update()
-        ROOT_WINDOW.update()
+        GLOBAL_VARS.ROOT_WINDOW.update()
         self.posX = btn.winfo_rootx()
         self.posY = taskbarFrame.winfo_height()
 
-        self.startMenuFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, width=self.width, height=self.height, borderwidth=5, border=5, highlightcolor="white", highlightthickness=3)
+        self.startMenuFrame = tkinter.Frame(GLOBAL_VARS.ROOT_WINDOW, background=THEME_WINDOW_BG, width=self.width, height=self.height, borderwidth=5, border=5, highlightcolor="white", highlightthickness=3)
         self.startMenuFrame.place(x=self.posX, y=self.posY, bordermode="outside")
         self._LSideFrame = tkinter.Frame(self.startMenuFrame, background=THEME_WINDOW_BG, height=self.height, width=self.width/2)
         self._LSideFrame.grid(row=0, column=0)
@@ -752,7 +744,7 @@ class StartMenu:
         self.selectFolders = tkinter.Frame(self._RSideFrame, background=THEME_WINDOW_BG, height=self.height, width=self.width/2)
         self.selectFolders.grid(row=0, column=0)
         self.selectFolders = Scrollable(self.selectFolders, self.width/2, self.height, False)
-        self.shutdownBtn = tkinter.Button(self._RSideFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Shutdown", command=lambda e=None: GuiInterfaceCommands.shutdownMenu(ROOT_WINDOW))
+        self.shutdownBtn = tkinter.Button(self._RSideFrame, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Shutdown", command=lambda e=None: GuiInterfaceCommands.shutdownMenu(GLOBAL_VARS.ROOT_WINDOW))
         self.shutdownBtn.grid(row=1, column=0)
         self.BUTTON_INSTANCES = []
         self.FLDR_BTN_INSTANCES = []
@@ -806,9 +798,8 @@ class StartMenu:
         self.appsListFrame.focus_force()
         self.appsListFrame.update()
     def destroy(self):
-        global START_MENU_ACTIVE
         self.startMenuFrame.destroy()
-        START_MENU_ACTIVE = False
+        GLOBAL_VARS.START_MENU_ACTIVE = False
 
 class TaskManager:
     def __init__(self, root):
@@ -866,56 +857,36 @@ class TaskManager:
                 except Exception as U:
                     messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {U}\nFrom\n{E}\nFrom\n{EXP}", self.ROOT)
 print("Loaded GUI Option Modules...")
-idx = 0
-afterCancelId = None
 def startUpTasks(CONFIG, ROOT: tkinter.Tk):
-    global idx, afterCancelId
-    afterCancelId = ROOT.after(100, lambda i=None: startUpTasks(CONFIG, ROOT))
-    length = len(CONFIG["STARTUP_APPS"])
-    if idx >= length: ROOT.after_cancel(afterCancelId); return 0
-    idx += 1
-    GUIButtonCommand.launchItem(CONFIG["STARTUP_APPS"][idx-1])
+    idx = 0
+    afterCancelId = None
+    def __startup():
+        nonlocal idx, afterCancelId
+        afterCancelId = ROOT.after(100, lambda i=None: __startup(CONFIG, ROOT))
+        length = len(CONFIG["STARTUP_APPS"])
+        if idx >= length: ROOT.after_cancel(afterCancelId); return 0
+        idx += 1
+        GUIButtonCommand.launchItem(CONFIG["STARTUP_APPS"][idx-1])
     
 def main():
     print("Loaded operating system!")
     global THEME_WINDOW_BG, THEME_FOREGROUND
-    global children
     def safeModePREPTask(e=None):
-        for child in children:
-            child.destroy()
+        ROOT_WINDOW.destroy()
         safeMode()
     global SYS_CONFIG
     global USER_CONFIG
-    global contextMenu
-    global ROOT_WINDOW
     global APPS_LIST
-    global notificationsButton
-    global desktopFrame
     global PINNED_APPS
     global GuiInterfaceCommands
-    global appsFrame
-    global desktopContextMenu
     global COMMAND_APPS_LIST
     global RUNNING_APPS
-    global runningAppsFrame
-    global wallpaper
     FILE_SYSTEM.loadConfig(f"ProgramFiles/{username}/USER_CONFIG", "USER_CONFIG")
     USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
     APPS_LIST, COMMAND_APPS_LIST = USER_CONFIG["APPS"]
     THEME_WINDOW_BG, THEME_FOREGROUND = USER_CONFIG["THEME"]
     PINNED_APPS, PINNED_APPS_DESKTOP = USER_CONFIG["PINNED"]
     print("Loaded apps and user settings!")
-    def popup(event=None, *args):
-        """ the context menu popup"""
-        if (ROOT_WINDOW.winfo_containing(event.x_root, event.y_root)).identifier == "taskbar": 
-            #GuiInterfaceCommands.popup(event=event)
-            contextMenu.focus()
-        else:
-            try:
-                desktopContextMenu.tk_popup(event.x_root, event.y_root, 0)
-                print(PROBLEM)
-            finally:
-                desktopContextMenu.grab_release()
     GuiInterfaceCommands = GUIButtonCommand(PINNED_APPS)
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=THEME_WINDOW_BG)
@@ -924,13 +895,14 @@ def main():
     taskbarFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG)
     taskbarFrame.identifier = "taskbar"
     ROOT_WINDOW.identifier = "root_window"
+    GLOBAL_VARS.ROOT_WINDOW = ROOT_WINDOW
     desktopFrame = tkinter.Frame(ROOT_WINDOW, background=THEME_WINDOW_BG, border=15)
     if (USER_CONFIG["WALLPAPER"]):
         image = GUIButtonCommand.getWallpaperImageResized(USER_CONFIG["WALLPAPER"])
         ROOT_WINDOW.wallpaperImage = image
-        wallpaper = tkinter.Label(ROOT_WINDOW, image=image)
-        wallpaper.grid(row=1, column=0, sticky="EWSN")
-        wallpaper.identifier = "wallpaper"
+        GLOBAL_VARS.WALLPAPER = tkinter.Label(ROOT_WINDOW, image=image)
+        GLOBAL_VARS.WALLPAPER.grid(row=1, column=0, sticky="EWSN")
+        GLOBAL_VARS.WALLPAPER.identifier = "wallpaper"
     ROOT_WINDOW.grid_rowconfigure(1, weight=1)
     ROOT_WINDOW.grid_columnconfigure(0, weight=1)
     contextMenu = tkinter.Menu(taskbarFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -952,14 +924,12 @@ def main():
                 widget.destroy()
     ROOT_WINDOW.after(300, runningTaskbarAppsLOOP)
     def recurringClockFunc():
-            global clock
-            global ClockRepeatID
             cr_time = time.strftime("%H:%M:%S %p")
-            clock = tkinter.Label(taskbarFrame, text=cr_time, background=THEME_WINDOW_BG,
+            GLOBAL_VARS.CLOCK_LABEL = tkinter.Label(taskbarFrame, text=cr_time, background=THEME_WINDOW_BG,
                                     foreground=THEME_FOREGROUND)
     
-            ClockRepeatID = clock.after(1000, recurringClockFunc)
-            clock.grid(row=0, column=2, sticky="ne")
+            GLOBAL_VARS.CLOCK_LOOP_ID = GLOBAL_VARS.CLOCK_LABEL.after(1000, recurringClockFunc)
+            GLOBAL_VARS.CLOCK_LABEL.grid(row=0, column=2, sticky="ne")
     try:
         if USER_CONFIG["CLOCK-WIDGET"] == 1: recurringClockFunc()
     except: pass
@@ -973,22 +943,27 @@ def main():
     shutDown.grid(row=0, column=0, padx=5)
     tooltips.createToolTipAtGivenPos(shutDown, 1, ROOT_WINDOW, "Shutdown or restart the shell!", )
     appsFrame.grid(row=0, column=1, sticky="n")
-    FILE_SYSTEM.RunAppsFrame = runningAppsFrame = tkinter.Frame(taskbarFrame, background=THEME_WINDOW_BG, padx=10, border=5)
+    FILE_SYSTEM.RunAppsFrame = runningAppsFrame = GLOBAL_VARS.RUNNING_APPS_FRAME = tkinter.Frame(taskbarFrame, background=THEME_WINDOW_BG, padx=10, border=5)
     runningAppsFrame.grid(row=0, column=4, sticky="n")
     notificationsButton = tkinter.Button(taskbarFrame, text="Notifications (0)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command= lambda: notification.showNotificationsList(notification))
     notificationsButton.grid(row=0, column=3, sticky="ne", padx=5)
+    GLOBAL_VARS.NOTIFICATION_BUTTON = notificationsButton
+    GLOBAL_VARS.DESKTOP_FRAME = desktopFrame
+    GLOBAL_VARS.APPS_FRAME = appsFrame
+    GLOBAL_VARS.RUNNING_APPS_FRAME = runningAppsFrame
     desktopContextMenu = tkinter.Menu(appsFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     desktopContextMenu.add_command(label="Refresh", command=lambda: GuiInterfaceCommands.refreshDesktop(PINNED_APPS_DESKTOP))
     desktopContextMenu.add_command(label="Add new icon", command=GuiInterfaceCommands.addNewIcon)
-    ROOT_WINDOW.bind("<Button-3>", popup)
-    taskbarFrame.bind("<Button-3>", GuiInterfaceCommands.popup)
+    GLOBAL_VARS.DESKTOP_CONTEXT_MENU = desktopContextMenu
+    GLOBAL_VARS.TASKBAR_CONTEXT_MENU = contextMenu
+    ROOT_WINDOW.bind("<Button-3>", GUIButtonCommand.OSContextMenuPopup)
+    taskbarFrame.bind("<Button-3>", lambda event: GUIButtonCommand.standardisedContextMenuPopup(contextMenu, event))
     taskbarFrame.grid(row=0, column=0, sticky="EW")
     desktopFrame.grid(row=1, column=0, sticky="NW")
     desktopFrame.lift()
     
     ROOT_WINDOW.attributes('-fullscreen', True)
     ROOT_WINDOW.bind("<Escape>", safeModePREPTask)
-    children = [contextMenu, appsFrame, notificationsButton, desktopFrame, desktopContextMenu, ROOT_WINDOW]
     GuiInterfaceCommands.refreshDesktop(PINNED_APPS_DESKTOP)
     for app in PINNED_APPS:
         try: GuiInterfaceCommands.pinApps(f"{app}", False)
@@ -997,10 +972,8 @@ def main():
     FILE_SYSTEM.ROOT = ROOT_WINDOW
     ROOT_WINDOW.mainloop()
 import base64
-def loginVerification(e=None):
+def loginVerification(userNameText: tkinter.Entry, passwordText: tkinter.Entry, loginWindow: tkinter.Tk, e=None):
     print("Checking credentials")
-    global userNameText
-    global passwordText
     global userNum
     global username
     try:
@@ -1047,10 +1020,7 @@ def login():
         shutdownBtn.destroy()
         loginWindow.destroy()
         safeMode()
-    global userNameText
-    global passwordText
     global userNum
-    global loginWindow
     loginWindow = tkinter.Tk()
     loginWindow.title("Login to Windows 11")
     loginWindow.configure(background=THEME_WINDOW_BG)
@@ -1074,23 +1044,17 @@ def login():
     userNum.grid(row=2, column=1)
     userNum.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
     msg3.grid(row=2, column=0)
-    userNum.bind("<Return>", loginVerification)
+    userNum.bind("<Return>", lambda e=None: loginVerification(userNameText, passwordText, loginWindow))
     loginBtn = tkinter.Button(loginWindow, text="Login", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
-                                command=loginVerification)
+                                command=lambda e=None: loginVerification(userNameText, passwordText, loginWindow))
     loginBtn.grid(row=3, column=1)
     shutdownBtn = tkinter.Button(loginWindow, text="Shutdown", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND,
                                 command=lambda: GUIButtonCommand.shutdownMenu(GUIButtonCommand, loginWindow))
-    shutdownBtn.grid(row=0, column=MAX_COLUMN_DESKTOP)
+    shutdownBtn.grid(row=0, column=GLOBAL_VARS.MAX_COLUMN_DESKTOP)
     loginWindow.attributes('-fullscreen', True)
     loginWindow.bind("<Escape>", safeModePREPTask)
     loginWindow.mainloop()
-cmdImg = None
-img = None
-reprImg = None
 def autoRecoveryEnv() -> None:
-    global cmdImg
-    global img
-    global reprImg
     recoveryWin = tkinter.Tk()
     recoveryWin.configure(background="Black")
     recoveryWin.attributes("-fullscreen", True)
