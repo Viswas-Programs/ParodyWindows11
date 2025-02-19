@@ -60,7 +60,28 @@ except Exception:
     THEME_WINDOW_BG = "Black"
     THEME_FOREGROUND = "White"
 print("Starting OS...")
-RUNNING_APPS = FILE_SYSTEM.RUNNING_APPS
+class PW11GlobalVars():
+    def __init__(self):
+        self.ROW_COUNT_NOTIFICATION_WINDOW = 0
+        self.ROW_COUNT_DESKTOP_ICONS = 0
+        self.COLUMN_COUNT_DESKTOP_ICONS = 0
+        self.MAX_ROW_DESKTOP = 10
+        self.MAX_COLUMN_DESKTOP = 15
+        self.START_MENU_ACTIVE: StartMenu = False
+        self.DESKTOP_FRAME: tkinter.Frame = None
+        self.WALLPAPER: tkinter.Label = None
+        self.APPS_FRAME: tkinter.Frame = None
+        self.RUNNING_APPS_FRAME: tkinter.Frame = None
+        self.NOTIFICATION_BUTTON: tkinter.Button = None
+        self.ROOT_WINDOW: tkinter.Tk = None
+        self.DESKTOP_CONTEXT_MENU: tkinter.Menu = None
+        self.TASKBAR_CONTEXT_MENU: tkinter.Menu = None
+        self.CLOCK_LABEL: tkinter.Label = None
+        self.CLOCK_LOOP_ID = None
+        self.RUNNING_APPS = {}
+
+GLOBAL_VARS = PW11GlobalVars()
+RUNNING_APPS = GLOBAL_VARS.RUNNING_APPS =  FILE_SYSTEM.RUNNING_APPS
 ICONS = {}
 PROCESS_IDS = (1000, 5000)
 EXTERNAL_PID = (5000, 9999)
@@ -92,26 +113,6 @@ def loadAllIcons(appsList: list, root):
             ICONS[realApp] = tkinter.PhotoImage(file=f"ProgramFiles/Icons/{realApp}.png", master=root)
             root.erm = ICONS[realApp]
         except: pass
-class PW11GlobalVars():
-    def __init__(self):
-        self.ROW_COUNT_NOTIFICATION_WINDOW = 0
-        self.ROW_COUNT_DESKTOP_ICONS = 0
-        self.COLUMN_COUNT_DESKTOP_ICONS = 0
-        self.MAX_ROW_DESKTOP = 10
-        self.MAX_COLUMN_DESKTOP = 15
-        self.START_MENU_ACTIVE: StartMenu = False
-        self.DESKTOP_FRAME: tkinter.Frame = None
-        self.WALLPAPER: tkinter.Label = None
-        self.APPS_FRAME: tkinter.Frame = None
-        self.RUNNING_APPS_FRAME: tkinter.Frame = None
-        self.NOTIFICATION_BUTTON: tkinter.Button = None
-        self.ROOT_WINDOW: tkinter.Tk = None
-        self.DESKTOP_CONTEXT_MENU: tkinter.Menu = None
-        self.TASKBAR_CONTEXT_MENU: tkinter.Menu = None
-        self.CLOCK_LABEL: tkinter.Label = None
-        self.CLOCK_LOOP_ID = None
-
-GLOBAL_VARS = PW11GlobalVars()
 
 class Notifications(object):
     def __init__(self):
@@ -152,9 +153,9 @@ class settings():
         self.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
         self.settingsWindow = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW, background=THEME_WINDOW_BG)
         PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
-        while PID in RUNNING_APPS.keys():
+        while PID in GLOBAL_VARS.RUNNING_APPS.keys():
             PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
-        RUNNING_APPS[PID] = "Control Panel"
+        GLOBAL_VARS.RUNNING_APPS[PID] = "Control Panel"
         dwm.createTopFrame(self.settingsWindow, THEME_FOREGROUND, THEME_WINDOW_BG, "settings", "Control Panel", PID)
         GUIButtonCommand.createRunningAppTaskbarIcon("settings", PID)
         btnFrame = tkinter.Frame(self.settingsWindow, background=THEME_WINDOW_BG)
@@ -342,16 +343,13 @@ comboBox{X}.grid(row=0, column=1)
 
 
 class GUIButtonCommand:
-    global APPS_LIST
     global PINNED_APPS
-    global RUNNING_APPS
     def __init__(self, PINNED_APPS):
         self.CurrentDesktopIconsList = []
         self.PINNED_APPS = PINNED_APPS
         self.TASKBAR_ICON_COUNT = 0
     @staticmethod
     def launchItem(application: str, params= None, e=None): 
-        global RUNNING_APPS
         if GUIButtonCommand.AppImportNameCheck(application) == "controlpanel":
             settings()
             return
@@ -361,20 +359,20 @@ class GUIButtonCommand:
         if application == "Command Prompt":
             import ProgramFiles.commandprompt as CMD
             appToLaunchPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
-            while appToLaunchPID in RUNNING_APPS.keys():
+            while appToLaunchPID in GLOBAL_VARS.RUNNING_APPS.keys():
                 appToLaunchPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
-            RUNNING_APPS[appToLaunchPID] = application
+            GLOBAL_VARS.RUNNING_APPS[appToLaunchPID] = application
             GUIButtonCommand.createRunningAppTaskbarIcon(application, appToLaunchPID)
             try: CMD.main(FILE_SYSTEM, username, notification, None, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID, [GLOBAL_VARS.RUNNING_APPS_FRAME, RUNNING_APPS] )
             except: CMD.main(FILE_SYSTEM, username, notification, None, dict({"THEME": ["Black", "White"]}), appToLaunchPID, [GLOBAL_VARS.RUNNING_APPS_FRAME, RUNNING_APPS] )        
         else: 
             appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
-            progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
+            #progAppImport = f"{COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
             appImport = importlib.import_module(f"ProgramFiles.{appToLaunch}")
             appPID = random.randint(PROCESS_IDS[0], PROCESS_IDS[1])
-            while appPID in RUNNING_APPS.keys():
+            while appPID in GLOBAL_VARS.RUNNING_APPS.keys():
                 appPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
-            RUNNING_APPS[appPID] = application
+            GLOBAL_VARS.RUNNING_APPS[appPID] = application
             GUIButtonCommand.createRunningAppTaskbarIcon(application, appPID) 
             if appImport.NEEDS_FILESYSTEM_ACCESS:
                 appImport.main(FILE_SYSTEM, username, notification, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appPID)
@@ -428,12 +426,12 @@ def scrShotPreview(event):
 
 {realApp}ICON = giveIcon('{realApp}', ROOT_WINDOW).subsample(2, 2)
 taskBar{realApp}RnAppBtn = tkinter.Button(ParWFS._instances["root"].RunAppsFrame, text='{app}', background='{THEME_WINDOW_BG}', foreground='{THEME_FOREGROUND}', command=focus, image={realApp}ICON, compound='left')
-taskBar{realApp}RnAppBtn.grid(row=0, column={len(RUNNING_APPS)})
+taskBar{realApp}RnAppBtn.grid(row=0, column={len(GLOBAL_VARS.RUNNING_APPS)})
 taskBar{realApp}RnAppBtn.processInfo = (PID, '{app}')
 taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
 taskBar{realApp}RnAppBtn.bind("<Enter>", scrShotPreview)
 taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID}, ROOT_WINDOW))
-""", {"tkinter": tkinter, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ParWFS._instances["root"].ROOT, "ICONS": ICONS, "dwm": dwm, "giveIcon": giveIcon, "tooltips": tooltips, "ImageGrab": ImageGrab, "ImageTk": ImageTk, "platform": platform, "ParWFS": ParWFS})
+""", {"tkinter": tkinter, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": GLOBAL_VARS.RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ParWFS._instances["root"].ROOT, "ICONS": ICONS, "dwm": dwm, "giveIcon": giveIcon, "tooltips": tooltips, "ImageGrab": ImageGrab, "ImageTk": ImageTk, "platform": platform, "ParWFS": ParWFS})
     @staticmethod
     def AppImportNameCheck(app: str, dontLower=False):
         if "/" in app:
@@ -806,10 +804,10 @@ class TaskManager:
         self.ROOT = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
         self.fileView = ttk.Treeview(self.ROOT, style="Treeview")
         PID = random.randint(TASK_MANAGERS[0], TASK_MANAGERS[1])
-        while PID in RUNNING_APPS.keys():
+        while PID in GLOBAL_VARS.RUNNING_APPS.keys():
             PID = random.randint(TASK_MANAGERS[0], TASK_MANAGERS[1])
         dwm.createTopFrame(self.ROOT, THEME_FOREGROUND, THEME_WINDOW_BG, "taskmanager", "Task Manager", PID)
-        RUNNING_APPS[PID] = "Task Manager"
+        GLOBAL_VARS.RUNNING_APPS[PID] = "Task Manager"
         GUIButtonCommand.createRunningAppTaskbarIcon("Task Manager", PID)
         self.ROOT.title("Task Manager")
         self.fileView.grid(row=1, column=0, sticky="w")
@@ -827,8 +825,8 @@ class TaskManager:
         SELECTED_SMTH = self.fileView.focus()
         for i in self.fileView.get_children():
             self.fileView.delete(i)
-        for i, PID in enumerate(RUNNING_APPS):
-            appToIns = RUNNING_APPS.get(PID)
+        for i, PID in enumerate(GLOBAL_VARS.RUNNING_APPS):
+            appToIns = GLOBAL_VARS.RUNNING_APPS.get(PID)
             appToIns += f" <<<PID: {PID}>>> "
             self.fileView.configure(style="Treeview")
             self.fileView.insert(parent='', iid=PID, text='', index='end', values=[appToIns],)
@@ -843,17 +841,17 @@ class TaskManager:
         except Exception as EXP:
             print(EXP) 
             try:
-                appToEnd = str(RUNNING_APPS[int(application)])
+                appToEnd = str(GLOBAL_VARS.RUNNING_APPS[int(application)])
                 appToEnd.replace(f"<<<PID: {application}>>>", "")
                 command = COMMAND_APPS_LIST[COMMAND_APPS_LIST.index(f"ProgramFiles.{ GuiInterfaceCommands.AppImportNameCheck(app=appToEnd)}")] 
                 appImport = importlib.import_module(command)
                 appImport.endTask(int(application))
-                del RUNNING_APPS[int(application)]
+                del GLOBAL_VARS.RUNNING_APPS[int(application)]
             except Exception as E:
                 print(E)
                 try: 
                     dwm.MANAGED_DWM_INSTANCES[int(application)][2].destroy()
-                    del RUNNING_APPS[int(application)]
+                    del GLOBAL_VARS.RUNNING_APPS[int(application)]
                 except Exception as U:
                     messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {U}\nFrom\n{E}\nFrom\n{EXP}", self.ROOT)
 print("Loaded GUI Option Modules...")
@@ -880,7 +878,6 @@ def main():
     global PINNED_APPS
     global GuiInterfaceCommands
     global COMMAND_APPS_LIST
-    global RUNNING_APPS
     FILE_SYSTEM.loadConfig(f"ProgramFiles/{username}/USER_CONFIG", "USER_CONFIG")
     USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
     APPS_LIST, COMMAND_APPS_LIST = USER_CONFIG["APPS"]
@@ -912,7 +909,7 @@ def main():
         ROOT_WINDOW.after(300, runningTaskbarAppsLOOP)
         for widget in dict(runningAppsFrame.children).values():
             try:
-                location = list(RUNNING_APPS.keys()).index(widget.processInfo[0])
+                location = list(GLOBAL_VARS.RUNNING_APPS.keys()).index(widget.processInfo[0])
                 widget.grid_configure(row=0, column=location)
                 appNameReal = GUIButtonCommand.AppImportNameCheck(widget.processInfo[1])
                 try: widget.configure(text=dwm.title(None, widget.processInfo[0]))
