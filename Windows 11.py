@@ -85,6 +85,9 @@ class PW11GlobalVars():
         self.USERNAME = None
         self.APPS_LIST = []
         self.COMMAND_APPS_LIST = []
+        self.USER_CONFIG = None
+        self.PINNED_APPS_DESKTOP = None
+        self.PINNED_APPS = None
 
 GLOBAL_VARS = PW11GlobalVars()
 GLOBAL_VARS.RUNNING_APPS =  FILE_SYSTEM.RUNNING_APPS
@@ -187,13 +190,13 @@ class settings():
         self.SHOWN_PERSONALIZATION = True
         def changeBg():
             
-            global  USER_CONFIG, SYS_CONFIG
+            global SYS_CONFIG
             colorToUse = colorchooser.askcolor(title="Select background!")
             GLOBAL_VARS.THEME_WINDOW_BG = colorToUse[1]
             crBg.configure(text=f"Current Background = {GLOBAL_VARS.THEME_WINDOW_BG}")
             if systemChangeTheme.get(): 
                 SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
-            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
+            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
             dwm.changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND)
             dwm._changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.ROOT_WINDOW)
             try:
@@ -203,12 +206,12 @@ class settings():
             except Exception: pass
             GLOBAL_VARS.ROOT_WINDOW.update()
         def changeFg():
-            global  USER_CONFIG, SYS_CONFIG
+            global SYS_CONFIG
             colorToUse = colorchooser.askcolor(title="Select foreground!")
             GLOBAL_VARS.THEME_FOREGROUND = colorToUse[1]
             print(GLOBAL_VARS.THEME_FOREGROUND)
             crFg.configure(text=f"Current foreground = {GLOBAL_VARS.THEME_FOREGROUND}")
-            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
+            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
             if systemChangeTheme.get(): 
                 SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
             dwm.changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND)
@@ -216,7 +219,7 @@ class settings():
             GLOBAL_VARS.ROOT_WINDOW.update()
         def changeWallpaper():
             nonlocal wallpaperText
-            global USER_CONFIG
+            
             wallpaperChoose = askopenfilename("Open a wallpaper file (png)", (("PNG Files", "*.png"), ("All Files", "*.*")))
             img = GUIButtonCommand.getWallpaperImageResized(wallpaperChoose)
             GLOBAL_VARS.ROOT_WINDOW.image = img
@@ -229,11 +232,11 @@ class settings():
             GLOBAL_VARS.DESKTOP_FRAME.lift()
             wallpaperText = "Current Wallpaper: " + wallpaperChoose
             wallpaperPath.configure(text=wallpaperText)
-            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", wallpaperChoose)
+            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", wallpaperChoose)
         def removeWallpaper():
             nonlocal wallpaperText
-            global USER_CONFIG
-            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", None)
+            
+            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", None)
             try: 
                 GLOBAL_VARS.WALLPAPER.destroy()
             except: pass
@@ -255,7 +258,7 @@ class settings():
         applyToSystem = ttk.Checkbutton(self.setting, text="Also apply changes to system theme!", variable=systemChangeTheme)
         applyToSystem.grid(row=2, column=0)
         wallpaperText = "Current Wallpaper: "
-        if USER_CONFIG["WALLPAPER"]: wallpaperText += USER_CONFIG["WALLPAPER"]
+        if GLOBAL_VARS.USER_CONFIG["WALLPAPER"]: wallpaperText += GLOBAL_VARS.USER_CONFIG["WALLPAPER"]
         else: wallpaperText += "No wallpapers set yet!"
         wallpaperPath = tkinter.Label(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=wallpaperText)
         wallpaperPath.grid(row=3, column=0)
@@ -266,13 +269,13 @@ class settings():
     def changeFileOpeners(self, reLaunch=False):
         def __internals_AddNewEntry(*args):
             def __internals_AddNewEntry_AddAppNames(*args):
-                global USER_CONFIG
+                
                 app = comboBox.get()
                 try: 
                     extension = textAssociationEntry.get()
-                    CurrentConfig: dict = USER_CONFIG["DEFAULTAPPASSOCIATION"]
+                    CurrentConfig: dict = GLOBAL_VARS.USER_CONFIG["DEFAULTAPPASSOCIATION"]
                     CurrentConfig.update({extension: app})
-                    USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
+                    GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
                     self.changeFileOpeners(True)
                 except Exception as I:
                     messagebox.showerror('Error changing default app association', f'Error changing default app association.\nProb: {I}', addNewEntryWn )
@@ -292,7 +295,7 @@ class settings():
         self.setting.grid(row=1, column=1)
         addEntryBtn = tkinter.Button(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Add New Entry", command=__internals_AddNewEntry)
         addEntryBtn.grid(row=0, column=0)
-        for X, i in enumerate(dict(USER_CONFIG["DEFAULTAPPASSOCIATION"]).keys()):
+        for X, i in enumerate(dict(GLOBAL_VARS.USER_CONFIG["DEFAULTAPPASSOCIATION"]).keys()):
             exec(f""" 
 innerFrame{X} = tkinter.Frame(frame, background=GLOBAL_VARS.THEME_WINDOW_BG)
 innerFrame{X}.grid(row=X+1, column=0)
@@ -311,7 +314,7 @@ global comboBox{X}
 comboBox{X} = ttk.Combobox(innerFrame{X}, values=GLOBAL_VARS.APPS_LIST, state='readonly', background=USER_CONFIG["THEME"][0], foreground=USER_CONFIG["THEME"][1])
 comboBox{X}.bind("<<ComboboxSelected>>", changeDefAppEvent{X})
 comboBox{X}.grid(row=0, column=1)
-""", {"root_wn": self.settingsWindow, "frame": self.setting, "USER_CONFIG": USER_CONFIG, "tkinter": tkinter, "GLOBAL_VARS.THEME_WINDOW_BG": GLOBAL_VARS.THEME_WINDOW_BG, "THEME_FOREGROUND": THEME_FOREGROUND, "messagebox": messagebox, "ttk": ttk, "i": i, "X": X, "GLOBAL_VARS.APPS_LIST": GLOBAL_VARS.APPS_LIST})
+""", {"root_wn": self.settingsWindow, "frame": self.setting, "USER_CONFIG": GLOBAL_VARS.USER_CONFIG, "tkinter": tkinter, "GLOBAL_VARS.THEME_WINDOW_BG": GLOBAL_VARS.THEME_WINDOW_BG, "THEME_FOREGROUND": THEME_FOREGROUND, "messagebox": messagebox, "ttk": ttk, "i": i, "X": X, "GLOBAL_VARS.APPS_LIST": GLOBAL_VARS.APPS_LIST})
     def addStartupApps(self):
         def _addApp(*args):
             appToAdd = combobox.get()
@@ -456,9 +459,9 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
         del RunningAppsList[1][pid]
     @staticmethod
     def currentTime(*args):
-        global USER_CONFIG
+        
         cr_time = None
-        if USER_CONFIG["CLOCK-WIDGET"] == 0:
+        if GLOBAL_VARS.USER_CONFIG["CLOCK-WIDGET"] == 0:
             def recurringClockFunction(e=None):
                 nonlocal cr_time
                 cr_time = time.strftime("%H:%M:%S %p")
@@ -466,7 +469,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                                         foreground=GLOBAL_VARS.THEME_FOREGROUND)
                 GLOBAL_VARS.CLOCK_LOOP_ID = GLOBAL_VARS.CLOCK_LABEL.after(1000, recurringClockFunction)
                 GLOBAL_VARS.CLOCK_LABEL.grid(row=0, column=2, sticky="ne")
-            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 1)
+            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 1)
             recurringClockFunction()
 
         else:
@@ -474,19 +477,19 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                cr_time = None
                GLOBAL_VARS.CLOCK_LABEL.after_cancel(GLOBAL_VARS.CLOCK_LOOP_ID)
                GLOBAL_VARS.CLOCK_LABEL.destroy()
-               USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
+               GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
             except Exception as E:
                 messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}")
     def pinApps(self, appToPin, writeto=True):
-        global USER_CONFIG
+        
         appName: str = appToPin
         appName = GUIButtonCommand.AppImportNameCheck(appToPin)
         self.TASKBAR_ICON_COUNT += 1
         
         if writeto:
-            apList = USER_CONFIG["PINNED"]
+            apList = GLOBAL_VARS.USER_CONFIG["PINNED"]
             apList[0].append(appName)
-            USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
+            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
         appIcon = giveIcon(appName, GLOBAL_VARS.ROOT_WINDOW, 2)
         appBtn = tkinter.Button(GLOBAL_VARS.APPS_FRAME, image=appIcon, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(appToPin) )
         appBtn.imgRef = appIcon
@@ -494,7 +497,6 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
     @staticmethod
     def taskbarselfGUI(e=None):
         # SHIT CODE, WILL PROBABLY CHANGE TO A COMBOBOX PRETTY SOON
-        global PINNED_APPS
         taskbarselfWindow = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW)
         taskbarselfWindow.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
         taskbarselfWindow.title("Taskbar app pinning")
@@ -508,7 +510,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                                         background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
         pinItems.grid(row=1, column=0)
         r = -1
-        PINNED_APPS = list(PINNED_APPS)
+        PINNED_APPS = list(GLOBAL_VARS.PINNED_APPS)
         NOT_PINNED_APPS = []
         for app in GLOBAL_VARS.APPS_LIST:
             if app not in PINNED_APPS:
@@ -540,7 +542,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                 GLOBAL_VARS.DESKTOP_CONTEXT_MENU.grab_release()
     def createAppIcon(self, appName: str, command: str, writeto=True, event=None):
         """ creates desktop icons!"""
-        global USER_CONFIG
+        
         if GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS > GLOBAL_VARS.MAX_ROW_DESKTOP:
             if GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS > GLOBAL_VARS.MAX_COLUMN_DESKTOP:
                 messagebox.showerror("Desktop pin", "Can't place the item! no more space left!", GLOBAL_VARS.ROOT_WINDOW)
@@ -548,9 +550,9 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                 GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS += 1
         if appName not in self.CurrentDesktopIconsList:
             if writeto:
-                apList = USER_CONFIG["PINNED"]
+                apList = GLOBAL_VARS.USER_CONFIG["PINNED"]
                 apList[1].append(appName)
-                USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
+                GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
             realAppName = GUIButtonCommand.AppImportNameCheck(app=appName)
             appFrame = tkinter.Frame(GLOBAL_VARS.DESKTOP_FRAME, background=GLOBAL_VARS.THEME_WINDOW_BG)
             appFrame.grid(row=GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS, column=GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS)
@@ -755,7 +757,7 @@ class StartMenu:
         pfpUsrnameFrame = tkinter.Frame(self.selectFolders, background=GLOBAL_VARS.THEME_WINDOW_BG)
         pfpUsrnameFrame.pack()
         self.selectFolders.update()
-        self.pfpImage = Image.open(fp=USER_CONFIG["PFP"])
+        self.pfpImage = Image.open(fp=GLOBAL_VARS.USER_CONFIG["PFP"])
         self.pfpImage = ImageTk.PhotoImage(self.pfpImage.resize(tuple([int(self.width/4.5), int(self.width/4.5)])))
         pfp = tkinter.Label(pfpUsrnameFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=self.pfpImage, justify="center")
         pfp.pfpimg = self.pfpImage
@@ -876,16 +878,14 @@ def main():
         ROOT_WINDOW.destroy()
         safeMode()
     global SYS_CONFIG
-    global USER_CONFIG
-    global PINNED_APPS
     global GuiInterfaceCommands
     FILE_SYSTEM.loadConfig(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", "USER_CONFIG")
-    USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
-    GLOBAL_VARS.APPS_LIST, GLOBAL_VARS.COMMAND_APPS_LIST = USER_CONFIG["APPS"]
-    GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = USER_CONFIG["THEME"]
-    PINNED_APPS, PINNED_APPS_DESKTOP = USER_CONFIG["PINNED"]
+    GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
+    GLOBAL_VARS.APPS_LIST, GLOBAL_VARS.COMMAND_APPS_LIST = GLOBAL_VARS.USER_CONFIG["APPS"]
+    GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = GLOBAL_VARS.USER_CONFIG["THEME"]
+    GLOBAL_VARS.PINNED_APPS, GLOBAL_VARS.PINNED_APPS_DESKTOP = GLOBAL_VARS.USER_CONFIG["PINNED"]
     print("Loaded apps and user settings!")
-    GuiInterfaceCommands = GUIButtonCommand(PINNED_APPS)
+    GuiInterfaceCommands = GUIButtonCommand(GLOBAL_VARS.PINNED_APPS)
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
     loadAllIcons(GLOBAL_VARS.APPS_LIST, ROOT_WINDOW)
@@ -895,8 +895,8 @@ def main():
     ROOT_WINDOW.identifier = "root_window"
     GLOBAL_VARS.ROOT_WINDOW = ROOT_WINDOW
     desktopFrame = tkinter.Frame(ROOT_WINDOW, background=GLOBAL_VARS.THEME_WINDOW_BG, border=15)
-    if (USER_CONFIG["WALLPAPER"]):
-        image = GUIButtonCommand.getWallpaperImageResized(USER_CONFIG["WALLPAPER"])
+    if (GLOBAL_VARS.USER_CONFIG["WALLPAPER"]):
+        image = GUIButtonCommand.getWallpaperImageResized(GLOBAL_VARS.USER_CONFIG["WALLPAPER"])
         ROOT_WINDOW.wallpaperImage = image
         GLOBAL_VARS.WALLPAPER = tkinter.Label(ROOT_WINDOW, image=image)
         GLOBAL_VARS.WALLPAPER.grid(row=1, column=0, sticky="EWSN")
@@ -929,7 +929,7 @@ def main():
             GLOBAL_VARS.CLOCK_LOOP_ID = GLOBAL_VARS.CLOCK_LABEL.after(1000, recurringClockFunc)
             GLOBAL_VARS.CLOCK_LABEL.grid(row=0, column=2, sticky="ne")
     try:
-        if USER_CONFIG["CLOCK-WIDGET"] == 1: recurringClockFunc()
+        if GLOBAL_VARS.USER_CONFIG["CLOCK-WIDGET"] == 1: recurringClockFunc()
     except: pass
     appsFrame = tkinter.Frame(taskbarFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, border=5)
     img = Image.open(os.path.join(CWD, "ProgramFiles/Icons/start.png"))
@@ -950,7 +950,7 @@ def main():
     GLOBAL_VARS.APPS_FRAME = appsFrame
     GLOBAL_VARS.RUNNING_APPS_FRAME = runningAppsFrame
     desktopContextMenu = tkinter.Menu(appsFrame, tearoff=False, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-    desktopContextMenu.add_command(label="Refresh", command=lambda: GuiInterfaceCommands.refreshDesktop(PINNED_APPS_DESKTOP))
+    desktopContextMenu.add_command(label="Refresh", command=lambda: GuiInterfaceCommands.refreshDesktop(GLOBAL_VARS.PINNED_APPS_DESKTOP))
     desktopContextMenu.add_command(label="Add new icon", command=GuiInterfaceCommands.addNewIcon)
     GLOBAL_VARS.DESKTOP_CONTEXT_MENU = desktopContextMenu
     GLOBAL_VARS.TASKBAR_CONTEXT_MENU = contextMenu
@@ -962,11 +962,11 @@ def main():
     
     ROOT_WINDOW.attributes('-fullscreen', True)
     ROOT_WINDOW.bind("<Escape>", safeModePREPTask)
-    GuiInterfaceCommands.refreshDesktop(PINNED_APPS_DESKTOP)
-    for app in PINNED_APPS:
+    GuiInterfaceCommands.refreshDesktop(GLOBAL_VARS.PINNED_APPS_DESKTOP)
+    for app in GLOBAL_VARS.PINNED_APPS:
         try: GuiInterfaceCommands.pinApps(f"{app}", False)
         except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"Error pinning {app} in the taskbar.\nPROB:{EXP}", root=ROOT_WINDOW)
-    startUpTasks(USER_CONFIG, ROOT_WINDOW)
+    startUpTasks(GLOBAL_VARS.USER_CONFIG, ROOT_WINDOW)
     FILE_SYSTEM.ROOT = ROOT_WINDOW
     ROOT_WINDOW.mainloop()
 import base64
@@ -1263,7 +1263,7 @@ if __name__ == "__main__":
                     print("User already exists, skipping user creation tasks...")
                 finally:
                     FILE_SYSTEM.loadConfig(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", "USER_CONFIG")
-                    USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
+                    GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
                 try: 
                     try: 
                         os.mkdir(f"Users")
@@ -1295,9 +1295,9 @@ if __name__ == "__main__":
                 else:
                     infoSysSelectSTR = "USER_CONFIG"
                     GLOBAL_VARS.USERNAME = input("Type in the GLOBAL_VARS.USERNAME whose settings are going to be changed!: ")
-                    USER_CONFIG = shelve.open(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", writeback=True)
+                    GLOBAL_VARS.USER_CONFIG = shelve.open(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", writeback=True)
                 print("The respective configuration module has been imported!\n"
-                        f"Now, type in '{infoSysSelectSTR}[<CONFIG_NAME>] = <CONFIG>;' and then press enter to finish\n"
+                        f"Now, type in 'GLOBAL_VARS.{infoSysSelectSTR}[<CONFIG_NAME>] = <CONFIG>;' and then press enter to finish\n"
                         "New code lines and line endings MUST BE represented by the ; character!")
                 code_to_execute = input("Start here>")
                 for i, code in enumerate(code_to_execute.split(";")):
