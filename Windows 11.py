@@ -296,25 +296,22 @@ class settings():
         addEntryBtn = tkinter.Button(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Add New Entry", command=__internals_AddNewEntry)
         addEntryBtn.grid(row=0, column=0)
         for X, i in enumerate(dict(GLOBAL_VARS.USER_CONFIG["DEFAULTAPPASSOCIATION"]).keys()):
-            exec(f""" 
-innerFrame{X} = tkinter.Frame(frame, background=GLOBAL_VARS.THEME_WINDOW_BG)
-innerFrame{X}.grid(row=X+1, column=0)
-label{X} = tkinter.Label(innerFrame{X}, text=i, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-label{X}.grid(row=0, column=0)
-def changeDefAppEvent{X}(e=None):
-    global comboBox{X}
-    app = comboBox{X}.get()
-    try: 
-        CurrentConfig: dict = USER_CONFIG["DEFAULTAPPASSOCIATION"]
-        CurrentConfig.update({"{i: app}"})
-        USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
-    except Exception as I:
-        messagebox.showerror('Error changing default app association', 'Error changing default app association.', root_wn )
-global comboBox{X}
-comboBox{X} = ttk.Combobox(innerFrame{X}, values=GLOBAL_VARS.APPS_LIST, state='readonly', background=USER_CONFIG["THEME"][0], foreground=USER_CONFIG["THEME"][1])
-comboBox{X}.bind("<<ComboboxSelected>>", changeDefAppEvent{X})
-comboBox{X}.grid(row=0, column=1)
-""", {"root_wn": self.settingsWindow, "frame": self.setting, "USER_CONFIG": GLOBAL_VARS.USER_CONFIG, "tkinter": tkinter, "GLOBAL_VARS.THEME_WINDOW_BG": GLOBAL_VARS.THEME_WINDOW_BG, "THEME_FOREGROUND": THEME_FOREGROUND, "messagebox": messagebox, "ttk": ttk, "i": i, "X": X, "GLOBAL_VARS.APPS_LIST": GLOBAL_VARS.APPS_LIST})
+            innerFrame = tkinter.Frame(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG)
+            innerFrame.grid(row=X+1, column=0)
+            label = tkinter.Label(innerFrame, text=i, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, )
+            label.grid(row=0, column=0)
+            def changeDefAppEvent(e=None):
+                nonlocal comboBox
+                app = comboBox.get()
+                try: 
+                    CurrentConfig: dict = USER_CONFIG["DEFAULTAPPASSOCIATION"]
+                    CurrentConfig.update({i: app})
+                    USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
+                except Exception as I:
+                    messagebox.showerror('Error changing default app association', 'Error changing default app association.', self.settingsWindow )
+            comboBox = ttk.Combobox(innerFrame, values=GLOBAL_VARS.APPS_LIST, state='readonly', background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+            comboBox.bind("<<ComboboxSelected>>", changeDefAppEvent)
+            comboBox.grid(row=0, column=1)
     def addStartupApps(self):
         def _addApp(*args):
             appToAdd = combobox.get()
