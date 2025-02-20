@@ -86,8 +86,8 @@ class PW11GlobalVars():
         self.APPS_LIST = []
         self.COMMAND_APPS_LIST = []
         self.USER_CONFIG = None
-        self.PINNED_APPS_DESKTOP = None
-        self.PINNED_APPS = None
+        self.PINNED_APPS_DESKTOP = []
+        self.PINNED_APPS = []
 
 GLOBAL_VARS = PW11GlobalVars()
 GLOBAL_VARS.RUNNING_APPS =  FILE_SYSTEM.RUNNING_APPS
@@ -351,7 +351,6 @@ comboBox{X}.grid(row=0, column=1)
 
 class GUIButtonCommand:
     def __init__(self, PINNED_APPS):
-        self.CurrentDesktopIconsList = []
         self.PINNED_APPS = PINNED_APPS
         self.TASKBAR_ICON_COUNT = 0
     @staticmethod
@@ -540,7 +539,8 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                 print(PROBLEM)
             finally:
                 GLOBAL_VARS.DESKTOP_CONTEXT_MENU.grab_release()
-    def createAppIcon(self, appName: str, command: str, writeto=True, event=None):
+    @staticmethod
+    def createAppIcon(appName: str, command: str, writeto=True, event=None):
         """ creates desktop icons!"""
         
         if GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS > GLOBAL_VARS.MAX_ROW_DESKTOP:
@@ -548,11 +548,12 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                 messagebox.showerror("Desktop pin", "Can't place the item! no more space left!", GLOBAL_VARS.ROOT_WINDOW)
             else:
                 GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS += 1
-        if appName not in self.CurrentDesktopIconsList:
+        if appName not in GLOBAL_VARS.PINNED_APPS_DESKTOP or GUIButtonCommand.AppImportNameCheck(appName) not in GLOBAL_VARS.PINNED_APPS_DESKTOP:
             if writeto:
                 apList = GLOBAL_VARS.USER_CONFIG["PINNED"]
                 apList[1].append(appName)
                 GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
+                GLOBAL_VARS.PINNED_APPS_DESKTOP.append(appName)
             realAppName = GUIButtonCommand.AppImportNameCheck(app=appName)
             appFrame = tkinter.Frame(GLOBAL_VARS.DESKTOP_FRAME, background=GLOBAL_VARS.THEME_WINDOW_BG)
             appFrame.grid(row=GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS, column=GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS)
@@ -563,7 +564,6 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
             appBtn.grid(row=0, column=0)
             appLbl = tkinter.Label(appFrame, text=appName, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
             appLbl.grid(row=1, column=0)
-            self.CurrentDesktopIconsList.append(command)
         else:
             messagebox.showerror(None, None, GLOBAL_VARS.ROOT_WINDOW, True, "APP_NOT_FOUND_ERROR")
     @staticmethod
@@ -572,15 +572,15 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
         resizedImage = image.resize((GLOBAL_VARS.ROOT_WINDOW.winfo_screenwidth(), GLOBAL_VARS.ROOT_WINDOW.winfo_screenheight()))
         actualImage= ImageTk.PhotoImage(resizedImage)
         return actualImage
-    def refreshDesktop(self, pinnedAppsDesktop):
-        self.CurrentDesktopIconsList = []
+    @staticmethod
+    def refreshDesktop():
         for frame in dict(GLOBAL_VARS.DESKTOP_FRAME.children).values():
             frame.destroy()
-        for app in pinnedAppsDesktop:
+        for app in GLOBAL_VARS.PINNED_APPS_DESKTOP:
             try:
-                GuiInterfaceCommands.createAppIcon(f"{app}", f"{app}", False)
+                GUIButtonCommand.createAppIcon(f"{app}", f"{app}", False)
             except Exception as EXP: messagebox.showerror("Error pinning app", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
-    def addNewIcon(self, *args):
+    def addNewIcon(*args):
         INDEX=0
         iconToAdd = None
         addNewIcon = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW, background=GLOBAL_VARS.THEME_WINDOW_BG)
@@ -593,7 +593,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
         #         pass
         CURRENT_LIST = list(GLOBAL_VARS.APPS_LIST)
         for app in GLOBAL_VARS.APPS_LIST:
-            if app in self.CurrentDesktopIconsList:
+            if app in GLOBAL_VARS.PINNED_APPS_DESKTOP:
                 try: CURRENT_LIST.pop(CURRENT_LIST.index(app))
                 except Exception: pass
         desktopAppsList['values'] = CURRENT_LIST
@@ -604,7 +604,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
         desktopAppsList.bind("<<ComboboxSelected>>", updateVariable)
         desktopAppsList['state'] = "readonly"
         desktopAppsList.grid(row=0, column=0, sticky="w")
-        addIconBtn = tkinter.Button(addNewIcon, text="Add Icon!", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=lambda: self.createAppIcon(iconToAdd, f"{iconToAdd}"))
+        addIconBtn = tkinter.Button(addNewIcon, text="Add Icon!", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=lambda: GUIButtonCommand.createAppIcon(iconToAdd, f"{iconToAdd}"))
         addIconBtn.grid(row=0, column=1) 
         addNewIcon.mainloop()
     @staticmethod
@@ -883,7 +883,8 @@ def main():
     GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
     GLOBAL_VARS.APPS_LIST, GLOBAL_VARS.COMMAND_APPS_LIST = GLOBAL_VARS.USER_CONFIG["APPS"]
     GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = GLOBAL_VARS.USER_CONFIG["THEME"]
-    GLOBAL_VARS.PINNED_APPS, GLOBAL_VARS.PINNED_APPS_DESKTOP = GLOBAL_VARS.USER_CONFIG["PINNED"]
+    GLOBAL_VARS.PINNED_APPS = GLOBAL_VARS.USER_CONFIG["PINNED"][0]
+    GLOBAL_VARS.PINNED_APPS_DESKTOP = GLOBAL_VARS.USER_CONFIG["PINNED"][1]
     print("Loaded apps and user settings!")
     GuiInterfaceCommands = GUIButtonCommand(GLOBAL_VARS.PINNED_APPS)
     ROOT_WINDOW = tkinter.Tk()
@@ -950,8 +951,8 @@ def main():
     GLOBAL_VARS.APPS_FRAME = appsFrame
     GLOBAL_VARS.RUNNING_APPS_FRAME = runningAppsFrame
     desktopContextMenu = tkinter.Menu(appsFrame, tearoff=False, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-    desktopContextMenu.add_command(label="Refresh", command=lambda: GuiInterfaceCommands.refreshDesktop(GLOBAL_VARS.PINNED_APPS_DESKTOP))
-    desktopContextMenu.add_command(label="Add new icon", command=GuiInterfaceCommands.addNewIcon)
+    desktopContextMenu.add_command(label="Refresh", command=GUIButtonCommand.refreshDesktop)
+    desktopContextMenu.add_command(label="Add new icon", command=GUIButtonCommand.addNewIcon)
     GLOBAL_VARS.DESKTOP_CONTEXT_MENU = desktopContextMenu
     GLOBAL_VARS.TASKBAR_CONTEXT_MENU = contextMenu
     ROOT_WINDOW.bind("<Button-3>", GUIButtonCommand.OSContextMenuPopup)
@@ -962,8 +963,9 @@ def main():
     
     ROOT_WINDOW.attributes('-fullscreen', True)
     ROOT_WINDOW.bind("<Escape>", safeModePREPTask)
-    GuiInterfaceCommands.refreshDesktop(GLOBAL_VARS.PINNED_APPS_DESKTOP)
+    GUIButtonCommand.refreshDesktop()
     for app in GLOBAL_VARS.PINNED_APPS:
+        print(app)
         try: GuiInterfaceCommands.pinApps(f"{app}", False)
         except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"Error pinning {app} in the taskbar.\nPROB:{EXP}", root=ROOT_WINDOW)
     startUpTasks(GLOBAL_VARS.USER_CONFIG, ROOT_WINDOW)
