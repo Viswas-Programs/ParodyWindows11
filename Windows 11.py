@@ -300,17 +300,17 @@ class settings():
             innerFrame.grid(row=X+1, column=0)
             label = tkinter.Label(innerFrame, text=i, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, )
             label.grid(row=0, column=0)
-            def changeDefAppEvent(e=None):
+            def changeDefAppEvent(app, e=None):
                 nonlocal comboBox
                 app = comboBox.get()
                 try: 
-                    CurrentConfig: dict = USER_CONFIG["DEFAULTAPPASSOCIATION"]
+                    CurrentConfig: dict = GLOBAL_VARS.USER_CONFIG["DEFAULTAPPASSOCIATION"]
                     CurrentConfig.update({i: app})
-                    USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
+                    GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
                 except Exception as I:
-                    messagebox.showerror('Error changing default app association', 'Error changing default app association.', self.settingsWindow )
+                    messagebox.showerror('Error changing default app association', f'Error changing default app association.\n{I}', self.settingsWindow )
             comboBox = ttk.Combobox(innerFrame, values=GLOBAL_VARS.APPS_LIST, state='readonly', background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-            comboBox.bind("<<ComboboxSelected>>", changeDefAppEvent)
+            comboBox.bind("<<ComboboxSelected>>", lambda e=None: changeDefAppEvent(comboBox.get()))
             comboBox.grid(row=0, column=1)
     def addStartupApps(self):
         def _addApp(*args):
