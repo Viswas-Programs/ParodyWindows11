@@ -28,10 +28,13 @@ class messagebox:
         INSTANCES[PID] = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
         dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "error", header, PID)
         callHost.addToRunningAppsList(PID, f"MessageBox Host - {root.title()}")
-        INSTANCES[PID].title(header)
         try:
-            if use_preset: import ProgramFiles.errorHandles as errorHandles; msg = errorHandles.find_item(type_preset); header = "Error!"
-        except Exception: msg = " "; header = " "
+            if use_preset: 
+                import ProgramFiles.errorHandles as errorHandles
+                msg = errorHandles.find_item(type_preset)
+                header = f"{type_preset} Error!"
+        except Exception: msg = header = " "
+        INSTANCES[PID].title(header)
         errorICON = tkinter.PhotoImage(file='ProgramFiles/Icons/error.png', master=INSTANCES[PID])
         MsgFrame = tkinter.Frame(INSTANCES[PID], background=THEME_WINDOW_BG)
         Msg = tkinter.Label(MsgFrame, text=str(msg), background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, image=errorICON, compound=tkinter.LEFT, width=(root.winfo_screenwidth()/2))

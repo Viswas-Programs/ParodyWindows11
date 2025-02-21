@@ -61,6 +61,9 @@ except Exception:
     THEME_FOREGROUND = "White"
 print("Starting OS...")
 class PW11GlobalVars():
+    """
+    Contains all the variables in use for the shell's functions. These act as replacement to global variables.
+    """
     def __init__(self):
         self.ROW_COUNT_NOTIFICATION_WINDOW = 0
         self.ROW_COUNT_DESKTOP_ICONS = 0
@@ -347,9 +350,6 @@ class settings():
 
 
 class GUIButtonCommand:
-    def __init__(self, PINNED_APPS):
-        self.PINNED_APPS = PINNED_APPS
-        self.TASKBAR_ICON_COUNT = 0
     @staticmethod
     def launchItem(application: str, params= None, e=None): 
         if GUIButtonCommand.AppImportNameCheck(application) == "controlpanel":
@@ -476,20 +476,21 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
             except Exception as E:
                 messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}")
-    def pinApps(self, appToPin, writeto=True):
+    @staticmethod
+    def pinApps(appToPin, writeto=True):
         
         appName: str = appToPin
         appName = GUIButtonCommand.AppImportNameCheck(appToPin)
-        self.TASKBAR_ICON_COUNT += 1
         
         if writeto:
             apList = GLOBAL_VARS.USER_CONFIG["PINNED"]
             apList[0].append(appName)
+            GLOBAL_VARS.PINNED_APPS.append(appName)
             GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
         appIcon = giveIcon(appName, GLOBAL_VARS.ROOT_WINDOW, 2)
-        appBtn = tkinter.Button(GLOBAL_VARS.APPS_FRAME, image=appIcon, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(appToPin) )
+        appBtn = tkinter.Button(GLOBAL_VARS.APPS_FRAME, image=appIcon, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=lambda: GUIButtonCommand.launchItem(appToPin) )
         appBtn.imgRef = appIcon
-        appBtn.grid(row=0, column=self.TASKBAR_ICON_COUNT)
+        appBtn.grid(row=0, column=GLOBAL_VARS.PINNED_APPS.index(appToPin))
     @staticmethod
     def taskbarselfGUI(e=None):
         # SHIT CODE, WILL PROBABLY CHANGE TO A COMBOBOX PRETTY SOON
@@ -513,7 +514,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
                 NOT_PINNED_APPS.append(app)
         combobox = ttk.Combobox(pinItems, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, values=NOT_PINNED_APPS, state='readonly')
         combobox.grid(row=0, column=0)
-        combobox.bind("<<ComboboxSelected>>", lambda e: GuiInterfaceCommands.pinApps(combobox.get()) )
+        combobox.bind("<<ComboboxSelected>>", lambda e: GUIButtonCommand.pinApps(combobox.get()) )
         taskbarselfWindow.mainloop()
     @staticmethod
     def standardisedContextMenuPopup(contextMenuObj: tkinter.Menu,  event=None, *args):
@@ -528,7 +529,6 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
     @staticmethod
     def OSContextMenuPopup(event: tkinter.Event=None, *args):
         if (GLOBAL_VARS.ROOT_WINDOW.winfo_containing(event.x_root, event.y_root)).identifier == "taskbar": 
-            #GuiInterfaceCommands.popup(event=event)
             GLOBAL_VARS.TASKBAR_CONTEXT_MENU.focus()
         else:
             try:
@@ -556,7 +556,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
             appFrame.grid(row=GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS, column=GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS)
             GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS += 1
             appIcon = giveIcon(realAppName, GLOBAL_VARS.ROOT_WINDOW)
-            appBtn = IconButton(appFrame, image=appIcon, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=lambda: GuiInterfaceCommands.launchItem(command))
+            appBtn = IconButton(appFrame, image=appIcon, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=lambda: GUIButtonCommand.launchItem(command))
             appBtn.ref = appIcon
             appBtn.grid(row=0, column=0)
             appLbl = tkinter.Label(appFrame, text=appName, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
@@ -577,6 +577,7 @@ taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID},
             try:
                 GUIButtonCommand.createAppIcon(f"{app}", f"{app}", False)
             except Exception as EXP: messagebox.showerror("Error pinning app", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
+    @staticmethod
     def addNewIcon(*args):
         INDEX=0
         iconToAdd = None
@@ -767,7 +768,7 @@ class StartMenu:
         _.grid(row=1, column=0)
         _.update()
         self.selectFolders.update()
-        def _lnchApp(app, prm=None): GuiInterfaceCommands.launchItem(GuiInterfaceCommands.AppImportNameCheck(app), prm)
+        def _lnchApp(app, prm=None): GUIButtonCommand.launchItem(GUIButtonCommand.AppImportNameCheck(app), prm)
         for x, i in enumerate(GLOBAL_VARS.APPS_LIST):
             img = GLOBAL_VARS.ICONS[GUIButtonCommand.AppImportNameCheck(i)]
             img = img.subsample(2, 2)
@@ -846,7 +847,7 @@ class TaskManager:
             try:
                 appToEnd = str(GLOBAL_VARS.RUNNING_APPS[int(application)])
                 appToEnd.replace(f"<<<PID: {application}>>>", "")
-                command = GLOBAL_VARS.COMMAND_APPS_LIST[GLOBAL_VARS.COMMAND_APPS_LIST.index(f"ProgramFiles.{ GuiInterfaceCommands.AppImportNameCheck(app=appToEnd)}")] 
+                command = GLOBAL_VARS.COMMAND_APPS_LIST[GLOBAL_VARS.COMMAND_APPS_LIST.index(f"ProgramFiles.{ GUIButtonCommand.AppImportNameCheck(app=appToEnd)}")] 
                 appImport = importlib.import_module(command)
                 appImport.endTask(int(application))
                 del GLOBAL_VARS.RUNNING_APPS[int(application)]
@@ -875,7 +876,6 @@ def main():
         ROOT_WINDOW.destroy()
         safeMode()
     global SYS_CONFIG
-    global GuiInterfaceCommands
     FILE_SYSTEM.loadConfig(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", "USER_CONFIG")
     GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
     GLOBAL_VARS.APPS_LIST, GLOBAL_VARS.COMMAND_APPS_LIST = GLOBAL_VARS.USER_CONFIG["APPS"]
@@ -883,7 +883,6 @@ def main():
     GLOBAL_VARS.PINNED_APPS = GLOBAL_VARS.USER_CONFIG["PINNED"][0]
     GLOBAL_VARS.PINNED_APPS_DESKTOP = GLOBAL_VARS.USER_CONFIG["PINNED"][1]
     print("Loaded apps and user settings!")
-    GuiInterfaceCommands = GUIButtonCommand(GLOBAL_VARS.PINNED_APPS)
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
     loadAllIcons(GLOBAL_VARS.APPS_LIST, ROOT_WINDOW)
@@ -902,7 +901,7 @@ def main():
     ROOT_WINDOW.grid_rowconfigure(1, weight=1)
     ROOT_WINDOW.grid_columnconfigure(0, weight=1)
     contextMenu = tkinter.Menu(taskbarFrame, tearoff=False, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-    contextMenu.add_command(label="Taskbar settings", command=GuiInterfaceCommands.taskbarselfGUI)
+    contextMenu.add_command(label="Taskbar settings", command=GUIButtonCommand.taskbarselfGUI)
     contextMenu.identifier = "taskbar"
     def runningTaskbarAppsLOOP():  
         ROOT_WINDOW.after(300, runningTaskbarAppsLOOP)
@@ -962,8 +961,7 @@ def main():
     ROOT_WINDOW.bind("<Escape>", safeModePREPTask)
     GUIButtonCommand.refreshDesktop()
     for app in GLOBAL_VARS.PINNED_APPS:
-        print(app)
-        try: GuiInterfaceCommands.pinApps(f"{app}", False)
+        try: GUIButtonCommand.pinApps(app, False)
         except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"Error pinning {app} in the taskbar.\nPROB:{EXP}", root=ROOT_WINDOW)
     startUpTasks(GLOBAL_VARS.USER_CONFIG, ROOT_WINDOW)
     FILE_SYSTEM.ROOT = ROOT_WINDOW
@@ -1182,10 +1180,8 @@ def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
             if forceNoARENV and forceNoBootRec: raise NotImplementedError("Skipping attempt to launch fullscreen command prompt")
             def sendCommand(e=None):
                 cmdInstance.showMsg(f"\n>{yourCommand.get()}")
-                if " " not in yourCommand.get():
-                    yourCommand.insert(tkinter.END, "  ")
-                if yourCommand.get().split(" ")[0] in cmdInstance.COMMAND_LIST and cmdInstance.ACCEPT_COMMANDS:
-                    exec(f"cmdInstance.{yourCommand.get().split(' ')[0]}()")
+                if " " not in yourCommand.get(): yourCommand.insert(tkinter.END, "  ")
+                if yourCommand.get().split(" ")[0] in cmdInstance.COMMAND_LIST and cmdInstance.ACCEPT_COMMANDS: exec(f"cmdInstance.{yourCommand.get().split(' ')[0]}()")
                 elif not cmdInstance.ACCEPT_COMMANDS: cmdInstance.clear()
                 else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND)
             import ProgramFiles.commandprompt as cmd
@@ -1209,27 +1205,16 @@ Or else, type in the command 'restart' and your system will reboot""")
             time.sleep(5)
             try:
                 import platform
-                if platform.system() == "Windows":
-                    os.system("cls")
-                else:
-                    os.system("clear")
+                if platform.system() == "Windows": os.system("cls")
+                else: os.system("clear")
             except Exception: pass
             finally:
                 while True:
                     print("Safe mode activated!\n=-=-=-=WELCOME=-=-=-=")
                     while True:
-                        userInput1 = int(input("""1. Reset your system\n
-2. Continue to boot to main\n
-3. Launch an app\n
-4. Shutdown the system\n
-5. Restart the system\n
-6. Enable networking\n
-7. Disable networking\n
-  Enter your option >_"""))
-                        if userInput1 in range(1, 8):
-                            exec(f"a{userInput1}()")
-    finally: 
-        SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
+                        userInput1 = int(input("""1. Reset your system\n2. Continue to boot to main\n3. Launch an app\n4. Shutdown the system\n5. Restart the system\n6. Enable networking\n7. Disable networking\nEnter your option >_"""))
+                        if userInput1 in range(1, 8): exec(f"a{userInput1}()")
+    finally: SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
 
 if __name__ == "__main__":
     arguements = sys.argv[1:]
@@ -1237,12 +1222,9 @@ if __name__ == "__main__":
     else:
         if not os.access("ProgramFiles/commandprompt.py", os.F_OK) or not os.access("ProgramFiles/errorHandler.py", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
         else:
-            if "-safemode" in arguements:
-                safeMode()
-            elif "-safemodecli" in arguements:
-                safeMode(True, True)
-            elif "-safemodefullcmd" in arguements:
-                safeMode(True)
+            if "-safemode" in arguements: safeMode()
+            elif "-safemodecli" in arguements: safeMode(True, True)
+            elif "-safemodefullcmd" in arguements: safeMode(True)
             elif "-config" in arguements:
                 GLOBAL_VARS.USERNAME = input("Enter the GLOBAL_VARS.USERNAME to create first run settings: ")
                 password = input("Enter your user's password: ")
@@ -1258,8 +1240,7 @@ if __name__ == "__main__":
                         Rpassword = base64.urlsafe_b64encode(password.encode("utf-8"))
                         WRITE.writelines([Rusername, "\n".encode("utf-8"),  Rpassword])
                     os.mkdir(f"ProgramFiles/{GLOBAL_VARS.USERNAME}")
-                except Exception:
-                    print("User already exists, skipping user creation tasks...")
+                except Exception: print("User already exists, skipping user creation tasks...")
                 finally:
                     FILE_SYSTEM.loadConfig(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", "USER_CONFIG")
                     GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
@@ -1270,10 +1251,8 @@ if __name__ == "__main__":
                     except: 
                         try: os.mkdir(f"Users/{GLOBAL_VARS.USERNAME}")
                         except: pass
-                    for i in USER_FOLDERS_LIST:
-                        os.mkdir(f"Users/{GLOBAL_VARS.USERNAME}/{i}")
-                except Exception: 
-                    print("User folders already exist, skipping...")
+                    for i in USER_FOLDERS_LIST: os.mkdir(f"Users/{GLOBAL_VARS.USERNAME}/{i}")
+                except Exception: print("User folders already exist, skipping...")
                 FILE_SYSTEM.editConfig("USER_CONFIG", "APPS", [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskManager"]])
                 FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", [["File Manager"], ["Notepad", "File Manager"]])
                 FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [background, foreground])
@@ -1310,22 +1289,17 @@ if __name__ == "__main__":
                     from ProgramFiles.errorHandler import messagebox
                     import requests
                     if SYS_CONFIG["CBSRESTARTATTEMPT"] > 3:
-                        try: 
-                            autoRecoveryEnv()
-                        except:
-                            safeMode()
+                        try: autoRecoveryEnv()
+                        except: safeMode()
                 except Exception as PROBLEM:
                     try:
                         import platform
-                        if platform.system() == "Windows":
-                            os.system("cls")
-                        else:
-                            os.system("clear")
+                        if platform.system() == "Windows": os.system("cls")
+                        else:  os.system("clear")
                     except Exception: pass
                     print(f"Safe mode activated due to one of the modules not present. \n DEBUG: {PROBLEM}")
                     time.sleep(5)
                     safeMode()
                 else:
-                    try:
-                        login()
+                    try: login()
                     except Exception as EXP: bsod(login, f"LOGIN_FAILURE('{EXP}')")
