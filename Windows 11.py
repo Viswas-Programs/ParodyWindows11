@@ -381,59 +381,64 @@ class GUIButtonCommand:
             else:
                 appImport.main(GLOBAL_VARS.USERNAME, notification, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appPID)
     @staticmethod
-    def createRunningAppTaskbarIcon(app: str, PID:int):
+    def FOCUS_focusApp(PID, realApp, E=None):
+        try:
+            dwm.focus(PID)
+        except:
+            try:
+                appImport = importlib.import_module(f"ProgramFiles.{realApp}")
+                if appImport.returnInformation(PID)["state"] == "normal": appImport.focusOut(PID)
+                else: appImport.focusIn(PID)
+            except Exception as EXCEPTION:
+                messagebox.showerror("Error in focus in/out", EXCEPTION, GLOBAL_VARS.ROOT_WINDOW)
+    @staticmethod
+    def FOCUS_scrShotPreview(PID, realApp, event: tkinter.Event):
+        oldFocus = None
+        try:
+            oldFocus = dwm.getFocus(PID)
+            dwm.focusIn(PID)
+            wnToFocus = dwm.returnWindow(PID)
+        except: 
+            appImport = importlib.import_module(f"ProgramFiles.{realApp}")
+            oldFocus = appImport.returnInformation(PID)["state"]
+            appImport.focusIn(PID)
+            wnToFocus = appImport.INSTANCES[{PID}]
+        x = wnToFocus.winfo_x()
+        y = wnToFocus.winfo_y()
+        width = wnToFocus.winfo_width()
+        height = wnToFocus.winfo_height()
+        if (str(platform.system()).lower() == "windows"):
+            x += (wnToFocus.winfo_x()/4)
+            y += (wnToFocus.winfo_y()/4)
+            width += (wnToFocus.winfo_width()/4)
+            height += (wnToFocus.winfo_height()/4)
+        image = ImageTk.PhotoImage(ImageGrab.grab(bbox=(x, y, x + width, y + height)).resize(tuple((350, 100))))
+        GLOBAL_VARS.ROOT_WINDOW.E_IMG = image
+        ttl = None
+        try:
+            dwm.setFocus(PID, oldFocus)
+            ttl = dwm.title(PID=PID)
+        except:
+            appImport = importlib.import_module(f"ProgramFiles.{realApp}")
+            appImport.INSTANCES[{PID}].update()
+            appImport.INSTANCES[{PID}].state(newstate=oldFocus)
+            appImport.INSTANCES[{PID}].update()
+            ttl = appImport.returnInformation(PID)["title"]
+        tooltips._createToolTipAtGivenPos({PID}, GLOBAL_VARS.ROOT_WINDOW, ttl+f'\\nPID: {PID}', GUIButtonCommand.FOCUS_focusApp, event, image=GLOBAL_VARS.ROOT_WINDOW.E_IMG, compound="top")
+    @staticmethod
+    def createRunningAppTaskbarIcon(app: str, PID:int, fromExternalAppsLauncher=False):
+        ROOT = GLOBAL_VARS.ROOT_WINDOW
+        THEME_WBG, THEME_FG = GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND
+        POS = len(GLOBAL_VARS.RUNNING_APPS)
         realApp = GUIButtonCommand.AppImportNameCheck(app=app)
-        exec(f"""
-def focus(e=None):
-    try:
-        dwm.focus({PID})
-    except:
-        print("DWM NOT EXISTING IN APP")
-        import ProgramFiles.{realApp}
-        if ProgramFiles.{realApp}.returnInformation({PID})["state"] == "normal": ProgramFiles.{realApp}.focusOut({PID})
-        else: ProgramFiles.{realApp}.focusIn({PID})
-def scrShotPreview(event):
-    oldFocus = None
-    try:
-        oldFocus = dwm.getFocus({PID})
-        dwm.focusIn({PID})
-        wnToFocus = dwm.returnWindow({PID})
-    except: 
-        import ProgramFiles.{realApp}
-        oldFocus = ProgramFiles.{realApp}.returnInformation({PID})["state"]
-        ProgramFiles.{realApp}.focusIn({PID})
-        wnToFocus = ProgramFiles.{realApp}.INSTANCES[{PID}]
-    x = wnToFocus.winfo_x()
-    y = wnToFocus.winfo_y()
-    width = wnToFocus.winfo_width()
-    height = wnToFocus.winfo_height()
-    if (str(platform.system).lower() == "windows"):
-        x += (wnToFocus.winfo_x()/4)
-        y += (wnToFocus.winfo_y()/4)
-        width += (wnToFocus.winfo_width()/4)
-        height += (wnToFocus.winfo_height()/4)
-    image = ImageTk.PhotoImage(ImageGrab.grab(bbox=(x, y, x + width, y + height)).resize(tuple((350, 100))))
-    ROOT_WINDOW.E_IMG = image
-    ttl = None
-    try:
-        dwm.setFocus({PID}, oldFocus)
-        ttl = dwm.title(PID={PID})
-    except:
-        import ProgramFiles.{realApp}
-        ProgramFiles.{realApp}.INSTANCES[{PID}].update()
-        ProgramFiles.{realApp}.INSTANCES[{PID}].state(newstate=oldFocus)
-        ProgramFiles.{realApp}.INSTANCES[{PID}].update()
-        ttl = ProgramFiles.{realApp}.returnInformation({PID})["title"]
-    tooltips._createToolTipAtGivenPos({PID}, ROOT_WINDOW, ttl+'\\nPID: {PID}', focus, event, image=ROOT_WINDOW.E_IMG, compound="top")
-
-{realApp}ICON = giveIcon('{realApp}', ROOT_WINDOW).subsample(2, 2)
-taskBar{realApp}RnAppBtn = tkinter.Button(ParWFS._instances["root"].RunAppsFrame, text='{app}', background='{GLOBAL_VARS.THEME_WINDOW_BG}', foreground='{THEME_FOREGROUND}', command=focus, image={realApp}ICON, compound='left')
-taskBar{realApp}RnAppBtn.grid(row=0, column={len(GLOBAL_VARS.RUNNING_APPS)})
-taskBar{realApp}RnAppBtn.processInfo = (PID, '{app}')
-taskBar{realApp}RnAppBtn.windowInfo = 'focusIn'
-taskBar{realApp}RnAppBtn.bind("<Enter>", scrShotPreview)
-taskBar{realApp}RnAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip({PID}, ROOT_WINDOW))
-""", {"tkinter": tkinter, "GUIButtonCommand": GUIButtonCommand, "random":random, "RUNNING_APPS": GLOBAL_VARS.RUNNING_APPS, "PID": PID, "ROOT_WINDOW": ParWFS._instances["root"].ROOT, "ICONS": ICONS, "dwm": dwm, "giveIcon": giveIcon, "tooltips": tooltips, "ImageGrab": ImageGrab, "ImageTk": ImageTk, "platform": platform, "ParWFS": ParWFS})
+        appIcon = giveIcon(realApp, ROOT, 2)
+        taskbarAppBtn = tkinter.Button(ParWFS._instances["root"].RunAppsFrame, text=app, background=THEME_WBG, foreground=THEME_FG, command=lambda e=realApp: GUIButtonCommand.FOCUS_focusApp(PID, realApp) , image=appIcon, compound='left')
+        taskbarAppBtn.grid(row=0, column=POS)
+        taskbarAppBtn.processInfo = (PID, app)
+        taskbarAppBtn.windowInfo = 'focusIn'
+        taskbarAppBtn.ICON = appIcon
+        taskbarAppBtn.bind("<Enter>", lambda E: GUIButtonCommand.FOCUS_scrShotPreview(PID, realApp, E))
+        taskbarAppBtn.bind("<Leave>", lambda E: tooltips.deleteToolTip(PID, ROOT))
     @staticmethod
     def AppImportNameCheck(app: str, dontLower=False):
         if "/" in app:
@@ -666,7 +671,7 @@ def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig
     PER_PROGRAM_COMMAND_APPS_LIST = ShelveRef["APPS"][1]
     appToLaunch = GUIButtonCommand.AppImportNameCheck(app=app)
     progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
-    GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID)
+    GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID, True)
     appImport = importlib.import_module(progAppImport)
     if appImport.NEEDS_FILESYSTEM_ACCESS:
         appImport.main(FILE_SYSTEM, userConfig, notifications, params, USER_CONFIG, PID)

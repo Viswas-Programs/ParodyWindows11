@@ -41,7 +41,7 @@ def setFocus(PID, newState):
     MANAGED_DWM_INSTANCES[PID][2].update()
     MANAGED_DWM_INSTANCES[PID][2].state(newstate=newState)
     MANAGED_DWM_INSTANCES[PID][2].update()
-def returnWindow(PID):
+def returnWindow(PID) -> tkinter.Tk:
     return MANAGED_DWM_INSTANCES[PID][2]
 def focus(PID, *args):
     print(MANAGED_DWM_INSTANCES[PID][2].state())
