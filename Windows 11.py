@@ -426,9 +426,12 @@ class GUIButtonCommand:
             ttl = appImport.returnInformation(PID)["title"]
         tooltips._createToolTipAtGivenPos({PID}, GLOBAL_VARS.ROOT_WINDOW, ttl+f'\\nPID: {PID}', GUIButtonCommand.FOCUS_focusApp, event, image=GLOBAL_VARS.ROOT_WINDOW.E_IMG, compound="top")
     @staticmethod
-    def createRunningAppTaskbarIcon(app: str, PID:int, fromExternalAppsLauncher=False):
+    def createRunningAppTaskbarIcon(app: str, PID:int, T_BG=None, T_FG=None):
         ROOT = GLOBAL_VARS.ROOT_WINDOW
-        THEME_WBG, THEME_FG = GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND
+        if T_BG and T_FG: 
+            THEME_WBG = T_BG
+            THEME_FG = T_FG
+        else: THEME_WBG, THEME_FG = GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND
         POS = len(GLOBAL_VARS.RUNNING_APPS)
         realApp = GUIButtonCommand.AppImportNameCheck(app=app)
         appIcon = giveIcon(realApp, ROOT, 2)
@@ -669,9 +672,10 @@ def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig
     ParWFS._instances["root"].RUNNING_APPS[PID] = app
     ShelveRef = USER_CONFIG
     PER_PROGRAM_COMMAND_APPS_LIST = ShelveRef["APPS"][1]
+    T_BG, T_FG = ShelveRef["THEME"]
     appToLaunch = GUIButtonCommand.AppImportNameCheck(app=app)
     progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
-    GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID, True)
+    GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID, T_BG, T_FG)
     appImport = importlib.import_module(progAppImport)
     if appImport.NEEDS_FILESYSTEM_ACCESS:
         appImport.main(FILE_SYSTEM, userConfig, notifications, params, USER_CONFIG, PID)
