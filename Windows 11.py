@@ -1148,7 +1148,7 @@ def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
         appName = input("Enter the file name path to load!")
         os.system(f"python {appName} ")
         print("=" * int(os.get_terminal_size()[0]))
-    def a4(): print("=" * int(os.get_terminal_size()[0])); print("Shutting down...") ; sys._exit(0)
+    def a4(): print("=" * int(os.get_terminal_size()[0])); print("Shutting down...") ; sys.exit(0)
     
     def a5():
         print("=" * int(os.get_terminal_size()[0]))
@@ -1179,6 +1179,7 @@ def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
         print("Disabled networking!")
         print("=" * int(os.get_terminal_size()[0]))
     NETWORKING = False
+    commandDict: dict[int, function] = { 1: a1, 2: a2, 3: a3, 4: a4, 5: a5, 6: a6, 7: a7,}
     try:
         if forceNoARENV: raise NotImplementedError("The program is forcing to use safe mode CLI... skipping Auto Recovery Environment...")
         autoRecoveryEnv()
@@ -1222,7 +1223,7 @@ Or else, type in the command 'restart' and your system will reboot""")
                     print("Safe mode activated!\n=-=-=-=WELCOME=-=-=-=")
                     while True:
                         userInput1 = int(input("""1. Reset your system\n2. Continue to boot to main\n3. Launch an app\n4. Shutdown the system\n5. Restart the system\n6. Enable networking\n7. Disable networking\nEnter your option >_"""))
-                        if userInput1 in range(1, 8): exec(f"a{userInput1}()")
+                        if userInput1 in range(1, 8): commandDict[userInput1]()
     finally: SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
 
 if __name__ == "__main__":
