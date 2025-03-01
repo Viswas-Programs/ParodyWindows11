@@ -181,6 +181,8 @@ class settings():
         appOpenerChangeBtn.grid(row=2, column=0)
         startupApps = tkinter.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Startup Apps", command=self.addStartupApps)
         startupApps.grid(row=3, column=0)
+        userManagementBtn = tkinter.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Users", command=self.addUserAccounts)
+        userManagementBtn.grid(row=4, column=0)
         self.setting = tkinter.Frame(self.settingsWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.setting.grid(row=1, column=1)
         self.homePage()
@@ -350,6 +352,11 @@ class settings():
         rmcombobox = ttk.Combobox(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, values=startupApps, state="readonly")
         rmcombobox.grid(row=1, column=2)
         rmcombobox.bind("<<ComboboxSelected>>", _removeApp)
+    def addUserAccounts(self):
+        self.setting.destroy()
+        self.setting =  tkinter.Frame(self.settingsWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
+        self.setting.grid(row=1, column=1)
+        PW11UserCreation(self.setting)
 
 
 class GUIButtonCommand:
@@ -890,15 +897,19 @@ class PW11UserCreation:
         for file in Path(os.path.join(CWD, "ProgramFiles")).glob("accConfiguration*.conf"):
             with open(file, "r") as reader:
                 usr, paswd = reader.readlines()
-                usr = base64.urlsafe_b64decode(usr)
+                usr = base64.urlsafe_b64decode(usr).decode("utf-8")
                 USER_CONFIGS.append([usr, paswd])
         for i, user in enumerate(USER_CONFIGS):
-            FILE_SYSTEM.loadConfig(os.path.join(CWD, "ProgramFiles", user[0]), user[0])
+            FILE_SYSTEM.loadConfig(os.path.join(CWD, "ProgramFiles", user[0], "USER_CONFIG"), user[0])
             config = FILE_SYSTEM.getConfig(user[0])
+            IMG = Image.open(fp=config["PFP"])
+            IMG = ImageTk.PhotoImage(IMG.resize(tuple((int(IMG.width/2), int(IMG.height/2)))))
             FILE_SYSTEM.unloadConfig(user[0])
-            btn = tkinter.Button(self.LSide_UserListFrame, text=user[0], background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+            btn = tkinter.Button(self.LSide_UserListFrame, text=user[0], background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=IMG, compound="left")
             btn.grid(row=i, column=0)
             btn.INFO = user
+            btn.IMG = IMG
+            self.USER_PFPs.append(IMG)
 
 
 
