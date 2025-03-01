@@ -26,7 +26,8 @@ def title(newTitle=None, PID=0):
     return MANAGED_DWM_INSTANCES[PID][0]
 def close(PID):
     MANAGED_DWM_INSTANCES[PID][2].destroy()
-    callHost.acknowledgeEndTask(PID)
+    try: callHost.acknowledgeEndTask(PID)
+    except Exception as exp: print(f"Cannot call host for end task acknowledgement!\n{exp}")
 def focusOut(PID):
     MANAGED_DWM_INSTANCES[PID][2].state(newstate="withdrawn")
 def focusIn(PID):
@@ -117,7 +118,7 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     lbl.bind("<B1-Motion>", _handleDrag)
     root.OLD_GEO = root.MAX_RETURN = root.geometry()
     root.QUIT_FUNC = root.quit
-    def _quit(): callHost.acknowledgeEndTask(PID); root.QUIT_FUNC()
+    def _quit(): root.QUIT_FUNC(); callHost.acknowledgeEndTask(PID); 
     root.quit = _quit
     # resizer()
     MANAGED_DWM_INSTANCES[PID] = [appName, lbl, root, closeBtn]

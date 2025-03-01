@@ -111,7 +111,7 @@ class cmdCommands(object):
                 self.showMsg("\nCurrent User List: ")
                 for file in Path(os.path.join(self.CWD, "ProgramFiles")).glob("accConfiguration*.conf"):
                     with open(file, "r") as showUsers:
-                        self.showMsg(f"\n-> {showUsers.readlines()[0]} ")
+                        self.showMsg(f"\n-> {base64.urlsafe_b64decode(showUsers.readlines()[0])} ")
     def administrator(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get()) 
         with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "r") as checkUser:

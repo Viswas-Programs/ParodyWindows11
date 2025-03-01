@@ -1,3 +1,4 @@
+from pathlib import Path
 import tkinter
 import importlib
 def bsod(obj, supportCode) -> None:
@@ -54,11 +55,6 @@ FILE_SYSTEM = ParWFS.ParWFS()
 FILE_SYSTEM.loadConfig("ProgramFiles/SYS_CONFIG", "SYS_CONFIG")
 SYS_CONFIG = FILE_SYSTEM.getConfig("SYS_CONFIG")
 USER_FOLDERS_LIST = ["My Documents", "My Pictures", "My Videos", "My Downloads"]
-try:
-    THEME_WINDOW_BG, THEME_FOREGROUND = SYS_CONFIG["THEME"]
-except Exception:
-    THEME_WINDOW_BG = "Black"
-    THEME_FOREGROUND = "White"
 print("Starting OS...")
 class PW11GlobalVars():
     """
@@ -83,8 +79,8 @@ class PW11GlobalVars():
         self.CLOCK_LOOP_ID = None
         self.RUNNING_APPS = {}
         self.ICONS = {}
-        self.THEME_WINDOW_BG = THEME_WINDOW_BG
-        self.THEME_FOREGROUND = THEME_FOREGROUND
+        self.THEME_WINDOW_BG = None
+        self.THEME_FOREGROUND = None
         self.USERNAME = None
         self.APPS_LIST = []
         self.COMMAND_APPS_LIST = []
@@ -93,6 +89,13 @@ class PW11GlobalVars():
         self.PINNED_APPS = []
 
 GLOBAL_VARS = PW11GlobalVars()
+
+try:
+    GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = SYS_CONFIG["THEME"]
+except Exception:
+    GLOBAL_VARS.THEME_WINDOW_BG = "Black"
+    GLOBAL_VARS.THEME_FOREGROUND = "White"
+
 GLOBAL_VARS.RUNNING_APPS =  FILE_SYSTEM.RUNNING_APPS
 ICONS = GLOBAL_VARS.ICONS
 PROCESS_IDS = (1000, 5000)
@@ -166,7 +169,7 @@ class settings():
         while PID in GLOBAL_VARS.RUNNING_APPS.keys():
             PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
         GLOBAL_VARS.RUNNING_APPS[PID] = "Control Panel"
-        dwm.createTopFrame(self.settingsWindow, THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "settings", "Control Panel", PID)
+        dwm.createTopFrame(self.settingsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "settings", "Control Panel", PID)
         GUIButtonCommand.createRunningAppTaskbarIcon("settings", PID)
         btnFrame = tkinter.Frame(self.settingsWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
         btnFrame.grid(row=1, column=0)
@@ -187,7 +190,7 @@ class settings():
         self.setting.grid(row=1, column=1)
         self.SHOWN_HOMEPAGE = True
         infoText = f""" Windows 11 v2.3.5\nSystem RAM: {self.total_memory}\nBackground={GLOBAL_VARS.THEME_WINDOW_BG}\n"""
-        f"""Foreground={THEME_FOREGROUND}\n\nFor more info, please visit the respective categories! Thank you :)"""
+        f"""Foreground={GLOBAL_VARS.THEME_FOREGROUND}\n\nFor more info, please visit the respective categories! Thank you :)"""
         a = tkinter.Label(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=infoText).grid(row=0, column=0)
     def personalization(self):
         self.SHOWN_PERSONALIZATION = True
@@ -819,7 +822,7 @@ class TaskManager:
         PID = random.randint(TASK_MANAGERS[0], TASK_MANAGERS[1])
         while PID in GLOBAL_VARS.RUNNING_APPS.keys():
             PID = random.randint(TASK_MANAGERS[0], TASK_MANAGERS[1])
-        dwm.createTopFrame(self.ROOT, THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "taskmanager", "Task Manager", PID)
+        dwm.createTopFrame(self.ROOT, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "taskmanager", "Task Manager", PID)
         GLOBAL_VARS.RUNNING_APPS[PID] = "Task Manager"
         GUIButtonCommand.createRunningAppTaskbarIcon("Task Manager", PID)
         self.ROOT.title("Task Manager")
@@ -867,6 +870,38 @@ class TaskManager:
                     del GLOBAL_VARS.RUNNING_APPS[int(application)]
                 except Exception as U:
                     messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {U}\nFrom\n{E}\nFrom\n{EXP}", self.ROOT)
+
+class PW11UserCreation:
+    """This can be used for accounts panel in settings menu AND as an OOBE agent"""
+    def __init__(self, root: tkinter.Frame):
+        self.root = root
+        self.LSideFrame = tkinter.Frame(self.root, background=GLOBAL_VARS.THEME_WINDOW_BG,)
+        self.LSideFrame.grid(row=0, column=0)
+        self.RSideFrame = tkinter.Frame(self.root, background=GLOBAL_VARS.THEME_WINDOW_BG)
+        self.LSide_UserListFrame = tkinter.Frame(self.LSideFrame, background=GLOBAL_VARS.THEME_WINDOW_BG)
+        self.LSide_UserListFrame.grid(row=0, column=0)
+        self.LSide_NewUserBtn = tkinter.Button(self.LSideFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, text="Create a new user!", foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        self.LSide_NewUserBtn.grid(row=1, column=0)
+        self.RSide_UserContentFrame = tkinter.Frame(self.RSideFrame, background=GLOBAL_VARS.THEME_WINDOW_BG)
+        self.RSide_UserContentFrame.grid(row=0, column=0)
+        self.USER_BUTTONS = []
+        self.USER_PFPs = []
+        USER_CONFIGS: list[list[str, str]] = []
+        for file in Path(os.path.join(CWD, "ProgramFiles")).glob("accConfiguration*.conf"):
+            with open(file, "r") as reader:
+                usr, paswd = reader.readlines()
+                usr = base64.urlsafe_b64decode(usr)
+                USER_CONFIGS.append([usr, paswd])
+        for i, user in enumerate(USER_CONFIGS):
+            FILE_SYSTEM.loadConfig(os.path.join(CWD, "ProgramFiles", user[0]), user[0])
+            config = FILE_SYSTEM.getConfig(user[0])
+            FILE_SYSTEM.unloadConfig(user[0])
+            btn = tkinter.Button(self.LSide_UserListFrame, text=user[0], background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+            btn.grid(row=i, column=0)
+            btn.INFO = user
+
+
+
 print("Loaded GUI Option Modules...")
 def startUpTasks(CONFIG, ROOT: tkinter.Tk):
     idx = 0
@@ -1031,19 +1066,19 @@ def login():
     userNameText = tkinter.Entry(loginWindow, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
     userNameText.grid(row=0, column=1)
     userNameText.focus()
-    userNameText.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
+    userNameText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
     msg2 = tkinter.Label(loginWindow, text="Enter your Password", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
     msg2.grid(row=1, column=0)
     passwordText = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG, show="*")
     passwordText.grid(row=1, column=1)
-    passwordText.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
+    passwordText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
     def passwordTextFocus(*e): passwordText.focus()
     userNameText.bind("<Tab>", passwordTextFocus)
     userNameText.bind("<Return>", lambda: passwordTextFocus)
     msg3 = tkinter.Label(loginWindow, text="Enter your user number", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
     userNum = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG)
     userNum.grid(row=2, column=1)
-    userNum.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
+    userNum.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
     msg3.grid(row=2, column=0)
     userNum.bind("<Return>", lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
     loginBtn = tkinter.Button(loginWindow, text="Login", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
@@ -1068,7 +1103,7 @@ def autoRecoveryEnv() -> None:
         text = tkinter.Text(ROOT, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, width=100)
         text.grid(row=0, column=0)
         yourCommand = tkinter.Entry(ROOT, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
+        yourCommand.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, width=110)
         yourCommand.grid(row=1, column=0)
         cmdInstance = ProgramFiles.commandprompt.cmdCommands(text, yourCommand, root=ROOT)
         yourCommand.focus()
@@ -1201,7 +1236,7 @@ def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
             text = tkinter.Text(root, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, width=100)
             text.grid(row=0, column=0)
             yourCommand = tkinter.Entry(root, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-            yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
+            yourCommand.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, width=110)
             yourCommand.grid(row=1, column=0)
             cmdInstance = cmd.cmdCommands(text, yourCommand, root)
             yourCommand.focus()

@@ -21,6 +21,11 @@ class ParWFS:
         if not self.currentLoadedConfigFiles: self.currentLoadedConfigFiles = {}
         with shelve.open(configFileName) as cuh:
             self.currentLoadedConfigFiles[configName] = [configFileName, dict(cuh)]
+    def unloadConfig(self, configName):
+        try:
+            del self.currentLoadedConfigFiles[configName]
+        except Exception as EXP:
+            print(f"Cannot unload config {configName}!\n{EXP}")
     def editConfig(self, configName: str, keyToChange: str, valueToAdd):
         if not self.currentLoadedConfigFiles: self.currentLoadedConfigFiles = {}
         with shelve.open(self.currentLoadedConfigFiles[configName][0], writeback=True) as writeBack:

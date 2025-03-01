@@ -19,7 +19,7 @@ class Menu():
         btn = tkinter.Button(self.fileMenuFrame, background=self.BACKGROUND, foreground=self.FOREGROUND, text=keyName, command=lambda: self.clickEvent(keyName))
         btn.IDENTIFIER = keyName
         btn.grid(row=0, column=self.NUM_KEY)
-        subBtnsFrame = tkinter.Frame(self.DWM, background=self.BACKGROUND, width=15, border=5)
+        subBtnsFrame = tkinter.Frame(self.DWM.ROOT, background=self.BACKGROUND, width=15, border=5)
         self.OPTIONS_TO_BUTTONS[keyName] = {"mainButton": btn, "subButtons": {}, "mainFrame": subBtnsFrame, "numKey": self.NUM_KEY}
         self.NUM_KEY += 1
     def addSubMenuOption(self, text, command, keyname=False):
@@ -33,7 +33,14 @@ class Menu():
         self.OPTIONS_TO_BUTTONS[keyname]["subButtons"][text] = btn
     def clickEvent(self, keyName, e=None):
         self.CURRENT_SHOWN_MENU = keyName
-        self.OPTIONS_TO_BUTTONS[keyName]["mainFrame"].grid(column=self.OPTIONS_TO_BUTTONS[keyName]["numKey"], row=2)
+        self.DWM.ROOT.update()
+        self.DWM.ROOT.update_idletasks()
+        self.OPTIONS_TO_BUTTONS[keyName]["mainButton"].update()
+        self.OPTIONS_TO_BUTTONS[keyName]["mainButton"].update_idletasks()
+        posX = self.OPTIONS_TO_BUTTONS[keyName]["mainButton"].winfo_x()
+        posY = self.OPTIONS_TO_BUTTONS[keyName]["mainButton"].winfo_y() + self.OPTIONS_TO_BUTTONS[keyName]["mainButton"].winfo_width()
+        #self.OPTIONS_TO_BUTTONS[keyName]["mainFrame"].grid(column=self.OPTIONS_TO_BUTTONS[keyName]["numKey"], row=2)
+        self.OPTIONS_TO_BUTTONS[keyName]["mainFrame"].place(x=posX, y=posY)
         self.OPTIONS_TO_BUTTONS[keyName]["mainFrame"].lift()
         self.CLICK_EVENT_BIND_VAL = self.DWM.ROOT.bind("<Button-1>", self.hideShownMenu)
         self.ALT_L_EVENT_BIND_VAL = self.DWM.ROOT.bind("<Alt_L>", self.hideShownMenu)
@@ -42,7 +49,7 @@ class Menu():
             subButton.IDENTIFIER = "MenuSubButton"
             subButton.grid(row=subButton.POS, column=0)
     def __hideShownMenu(self, e=None):
-        self.OPTIONS_TO_BUTTONS[self.CURRENT_SHOWN_MENU]["mainFrame"].grid_forget()
+        self.OPTIONS_TO_BUTTONS[self.CURRENT_SHOWN_MENU]["mainFrame"].place_forget()
         self.DWM.ROOT.unbind("<Button-1>", self.CLICK_EVENT_BIND_VAL)
         self.DWM.ROOT.unbind("<Alt_L>", self.ALT_L_EVENT_BIND_VAL)
         self.DWM.ROOT.unbind("<Alt_R>", self.ALT_R_EVENT_BIND_VAL)
