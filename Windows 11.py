@@ -48,6 +48,7 @@ try:
     from ProgramFiles.fileaskhandlers import askopenfilename
     from ProgramFiles.buttons import IconButton
     import platform
+    from ProgramFiles import entryWidget
 except Exception as E: 
     bsod(__name__, str(E) + "\nMODULE_NOT_FOUND_ERROR")
 CWD = os.getcwd()
@@ -89,7 +90,37 @@ class PW11GlobalVars():
         self.PINNED_APPS = []
 
 GLOBAL_VARS = PW11GlobalVars()
-
+def createUserAccount(username: str, password: str, userNumber: int, overwriteConfigs=True, THEME=["Black", "White"]):
+    try:
+        with open(f"ProgramFiles/accConfiguration{userNumber}.conf", "wb") as WRITE:
+            Rusername= base64.urlsafe_b64encode(username.encode("utf-8"))
+            Rpassword = base64.urlsafe_b64encode(password.encode("utf-8"))
+            WRITE.writelines([Rusername, "\n".encode("utf-8"),  Rpassword])
+        os.mkdir(f"ProgramFiles/{username}")
+    except Exception: print("User already exists, skipping user creation tasks...")
+    finally: 
+        FILE_SYSTEM.loadConfig(f"ProgramFiles/{username}/USER_CONFIG", "NEW_USER_CONFIG")
+    try: 
+        try: 
+            os.mkdir(f"Users")
+            os.mkdir(f"Users/{username}")
+        except: 
+            try: os.mkdir(f"Users/{username}")
+            except: pass
+        for i in USER_FOLDERS_LIST: os.mkdir(f"Users/{username}/{i}")
+    except Exception: print("User folders already exist, skipping...")
+    if not overwriteConfigs: return True
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "APPS", [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskManager"]])
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "PINNED", [["File Manager"], ["Notepad", "File Manager"]])
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "THEME", THEME)
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "CLOCK-WIDGET", 0)
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "DEFAULTAPPASSOCIATION", {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"})
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "WALLPAPER", None)
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "STARTUP_APPS", [])
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "PFP", os.path.join(CWD, "ProgramFiles/Icons/defaultpfp.png"))
+    FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", ["Black", "White"]) 
+    FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
+    return True
 try:
     GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = SYS_CONFIG["THEME"]
 except Exception:
@@ -356,7 +387,7 @@ class settings():
         self.setting.destroy()
         self.setting =  tkinter.Frame(self.settingsWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.setting.grid(row=1, column=1)
-        PW11UserCreation(self.setting)
+        PW11UserCreation(self.setting, self.addUserAccounts)
 
 
 class GUIButtonCommand:
@@ -880,39 +911,89 @@ class TaskManager:
 
 class PW11UserCreation:
     """This can be used for accounts panel in settings menu AND as an OOBE agent"""
-    def __init__(self, root: tkinter.Frame):
+    def __init__(self, root: tkinter.Frame, relaunchFunction):
         self.root = root
         self.LSideFrame = tkinter.Frame(self.root, background=GLOBAL_VARS.THEME_WINDOW_BG,)
         self.LSideFrame.grid(row=0, column=0)
         self.RSideFrame = tkinter.Frame(self.root, background=GLOBAL_VARS.THEME_WINDOW_BG)
+        self.RSideFrame.grid(row=0, column=1)
         self.LSide_UserListFrame = tkinter.Frame(self.LSideFrame, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.LSide_UserListFrame.grid(row=0, column=0)
-        self.LSide_NewUserBtn = tkinter.Button(self.LSideFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, text="Create a new user!", foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        self.LSide_NewUserBtn = tkinter.Button(self.LSideFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, text="Create a new user!", foreground=GLOBAL_VARS.THEME_FOREGROUND, command=self.createNewUserPanel)
         self.LSide_NewUserBtn.grid(row=1, column=0)
         self.RSide_UserContentFrame = tkinter.Frame(self.RSideFrame, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.RSide_UserContentFrame.grid(row=0, column=0)
         self.USER_BUTTONS = []
-        self.USER_PFPs = []
-        USER_CONFIGS: list[list[str, str]] = []
+        self.USER_PFPs = {}
+        self.relaunchFunction = relaunchFunction
+        USER_CONFIGS: list[list[str, list[str, int]]] = []
+        self.USRNAME_PASWD_STR: dict[str, str] = {}
         for file in Path(os.path.join(CWD, "ProgramFiles")).glob("accConfiguration*.conf"):
             with open(file, "r") as reader:
+                usrNo = "".join(char for char in reversed(str(file).split(".")[0]))
+                idxForLastN = usrNo.index("n")
+                usrNumber = usrNo[0:idxForLastN]
                 usr, paswd = reader.readlines()
                 usr = base64.urlsafe_b64decode(usr).decode("utf-8")
                 USER_CONFIGS.append([usr, paswd])
+                self.USRNAME_PASWD_STR[usr] = [paswd, usrNumber]
         for i, user in enumerate(USER_CONFIGS):
             FILE_SYSTEM.loadConfig(os.path.join(CWD, "ProgramFiles", user[0], "USER_CONFIG"), user[0])
             config = FILE_SYSTEM.getConfig(user[0])
             IMG = Image.open(fp=config["PFP"])
+            self.USER_PFPs[user[0]] = IMG
             IMG = ImageTk.PhotoImage(IMG.resize(tuple((int(IMG.width/2), int(IMG.height/2)))))
             FILE_SYSTEM.unloadConfig(user[0])
-            btn = tkinter.Button(self.LSide_UserListFrame, text=user[0], background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=IMG, compound="left")
+            btn = tkinter.Button(self.LSide_UserListFrame, text=user[0], background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=IMG, compound="left", command=lambda e=user[0]: self.showParticularUserPanel(e) )
             btn.grid(row=i, column=0)
             btn.INFO = user
             btn.IMG = IMG
-            self.USER_PFPs.append(IMG)
+    def _actualCreateUser(self, username, password, userNumber, overWrite=True):
+        createUserAccount(username, password, userNumber, overWrite)
+        text="created"
+        if not overWrite: text="over-written"
+        messagebox.showinfo("Created user!", f"Succesfully {text} user with username {username}", GLOBAL_VARS.ROOT_WINDOW)
+        self.relaunchFunction()
+    def showParticularUserPanel(self, username):
+        def editUserActions():
+            passwordFrame.entryBox.configure(state="normal")
+            editButton.configure(text="Save changes!", command=lambda: self._actualCreateUser(usrFrame.entryBox.get(), passwordFrame.entryBox.get(), int(usrNumBox.entryBox.get()), False))
+        FILE_SYSTEM.loadConfig(os.path.join(CWD, "ProgramFiles", username, "USER_CONFIG"), username)
+        config = FILE_SYSTEM.getConfig(username)
+        IMG = Image.open(fp=config["PFP"])
+        FILE_SYSTEM.unloadConfig(username)
+        IMG = ImageTk.PhotoImage(IMG)
+        usrPfp = tkinter.Label(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=IMG, justify="center")
+        usrPfp.IMG = IMG
+        usrPfp.grid(row=0, column=0)
+        usrFrame = entryWidget.LabelledEntryBox(self.RSide_UserContentFrame, "Username: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        usrFrame.grid(row=1, column=0)
+        usrFrame.entryBox.insert(tkinter.END, username)
+        passwordFrame = entryWidget.LabelledEntryBox(self.RSide_UserContentFrame, "Password: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        passwordFrame.grid(row=2, column=0)
+        if GLOBAL_VARS.USERNAME != username: passwordFrame.configureEntry(show="*")
+        passwordFrame.entryBox.insert(tkinter.END, base64.urlsafe_b64decode(self.USRNAME_PASWD_STR.get(username)[0]).decode())
+        passwordFrame.configureEntry(state="disabled")
 
+        usrNumBox = entryWidget.LabelledEntryBox(self.RSide_UserContentFrame, "User Number: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        usrNumBox.grid(row=3, column=0)
+        usrNumBox.entryBox.insert(tkinter.END, self.USRNAME_PASWD_STR.get(username)[1])
 
+        editButton = tkinter.Button(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Edit user!", command=editUserActions)
+        editButton.grid(row=4, column=0)
+    def createNewUserPanel(self,):
+        usrFrame = entryWidget.LabelledEntryBox(self.RSide_UserContentFrame, "Username: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        #usrLbl = tkinter.Label(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=username, justify="center")
+        usrFrame.grid(row=1, column=0)
+        #passwordTxt = entryWidget.Entry(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, show="*")
+        passwordFrame = entryWidget.LabelledEntryBox(self.RSide_UserContentFrame, "Password: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        passwordFrame.grid(row=2, column=0)
 
+        usrNumBox = entryWidget.LabelledEntryBox(self.RSide_UserContentFrame, "User Number: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        usrNumBox.grid(row=3, column=0)
+
+        saveButton = tkinter.Button(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Create the user!", command=lambda: self._actualCreateUser(usrFrame.entryBox.get(), passwordFrame.entryBox.get(), int(usrNumBox.entryBox.get()) ))
+        saveButton.grid(row=4, column=0)
 print("Loaded GUI Option Modules...")
 def startUpTasks(CONFIG, ROOT: tkinter.Tk):
     idx = 0
@@ -924,6 +1005,7 @@ def startUpTasks(CONFIG, ROOT: tkinter.Tk):
         if idx >= length: ROOT.after_cancel(afterCancelId); return 0
         idx += 1
         GUIButtonCommand.launchItem(CONFIG["STARTUP_APPS"][idx-1])
+    __startup()
     
 def main():
     print("Loaded operating system!")
@@ -1287,38 +1369,7 @@ if __name__ == "__main__":
                 foreground = input("Enter your user's preffered foreground colour: ")
                 background = input("Enter your user's preffered background colour: ")
                 userNumber = input("Enter your user's wanted user number (can be any number): ")
-                import shelve
-                FILE_SYSTEM.loadConfig("ProgramFiles/SYS_CONFIG", "SYS_CONFIG")
-                SYS_CONFIG = FILE_SYSTEM.getConfig("SYS_CONFIG")
-                try:
-                    with open(f"ProgramFiles/accConfiguration{userNumber}.conf", "wb") as WRITE:
-                        Rusername= base64.urlsafe_b64encode(GLOBAL_VARS.USERNAME.encode("utf-8"))
-                        Rpassword = base64.urlsafe_b64encode(password.encode("utf-8"))
-                        WRITE.writelines([Rusername, "\n".encode("utf-8"),  Rpassword])
-                    os.mkdir(f"ProgramFiles/{GLOBAL_VARS.USERNAME}")
-                except Exception: print("User already exists, skipping user creation tasks...")
-                finally:
-                    FILE_SYSTEM.loadConfig(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", "USER_CONFIG")
-                    GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
-                try: 
-                    try: 
-                        os.mkdir(f"Users")
-                        os.mkdir(f"Users/{GLOBAL_VARS.USERNAME}")
-                    except: 
-                        try: os.mkdir(f"Users/{GLOBAL_VARS.USERNAME}")
-                        except: pass
-                    for i in USER_FOLDERS_LIST: os.mkdir(f"Users/{GLOBAL_VARS.USERNAME}/{i}")
-                except Exception: print("User folders already exist, skipping...")
-                FILE_SYSTEM.editConfig("USER_CONFIG", "APPS", [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskManager"]])
-                FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", [["File Manager"], ["Notepad", "File Manager"]])
-                FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [background, foreground])
-                FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
-                FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"})
-                FILE_SYSTEM.editConfig("USER_CONFIG", "WALLPAPER", None)
-                FILE_SYSTEM.editConfig("USER_CONFIG", "STARTUP_APPS", [])
-                FILE_SYSTEM.editConfig("USER_CONFIG", "PFP", os.path.join(CWD, "ProgramFiles/Icons/defaultpfp.png"))
-                FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", ["Black", "White"]) 
-                FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
+                createUserAccount(GLOBAL_VARS.USERNAME, password, userNumber, True, [background, foreground])
                 print("Initialized new entries!")
             elif "-configchange" in arguements:
                 print("You have entered the configuration manager! Press CTRL+C anytime to exit!\n")
