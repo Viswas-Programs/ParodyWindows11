@@ -118,8 +118,14 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     lbl.bind("<B1-Motion>", _handleDrag)
     root.OLD_GEO = root.MAX_RETURN = root.geometry()
     root.QUIT_FUNC = root.quit
+    DWMFrame.ALL_BUTTONS = {
+        "close": closeBtn,
+        "minimize": minimizeBtn
+    }
     def _quit(): root.QUIT_FUNC(); callHost.acknowledgeEndTask(PID); 
     root.quit = _quit
+    root.update()
+    root.update_idletasks()
     # resizer()
     MANAGED_DWM_INSTANCES[PID] = [appName, lbl, root, closeBtn]
     return DWMFrame

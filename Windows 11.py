@@ -49,6 +49,7 @@ try:
     from ProgramFiles.buttons import IconButton
     import platform
     from ProgramFiles import entryWidget
+    from ProgramFiles.errorHandler import messagebox
 except Exception as E: 
     bsod(__name__, str(E) + "\nMODULE_NOT_FOUND_ERROR")
 CWD = os.getcwd()
@@ -120,6 +121,7 @@ def createUserAccount(username: str, password: str, userNumber: int, overwriteCo
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "PFP", os.path.join(CWD, "ProgramFiles/Icons/defaultpfp.png"))
     FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", ["Black", "White"]) 
     FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
+    FILE_SYSTEM.editConfig("SYS_CONFIG", "SETUP_IN_PROGRESS", 0)
     return True
 try:
     GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = SYS_CONFIG["THEME"]
@@ -188,14 +190,15 @@ class Notifications(object):
 notification = Notifications()
 print("Starting up Notification Services...")
 class settings():
-    def __init__(self):
+    def __init__(self, root: tkinter.Tk = GLOBAL_VARS.ROOT_WINDOW):
         self.SHOWN_HOMEPAGE = False
         self.SHOWN_PERSONALIZATION = False
         self.SHOWN_ADVANCED = False
         self.SHOWN_APPSLIST = False
         self.SHOWN_APPOPENERCHANGER = False
+        self.ROOT = root
         self.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
-        self.settingsWindow = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW, background=GLOBAL_VARS.THEME_WINDOW_BG)
+        self.settingsWindow = tkinter.Toplevel(self.ROOT, background=GLOBAL_VARS.THEME_WINDOW_BG)
         PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
         while PID in GLOBAL_VARS.RUNNING_APPS.keys():
             PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
@@ -406,8 +409,8 @@ class GUIButtonCommand:
                 appToLaunchPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
             GLOBAL_VARS.RUNNING_APPS[appToLaunchPID] = application
             GUIButtonCommand.createRunningAppTaskbarIcon(application, appToLaunchPID)
-            try: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, None, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID, [GLOBAL_VARS.RUNNING_APPS_FRAME, GLOBAL_VARS.RUNNING_APPS] )
-            except: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, None, dict({"THEME": ["Black", "White"]}), appToLaunchPID, [GLOBAL_VARS.RUNNING_APPS_FRAME, GLOBAL_VARS.RUNNING_APPS] )        
+            try: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, None, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID)
+            except: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, None, dict({"THEME": ["Black", "White"]}), appToLaunchPID)        
         else: 
             appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
             #progAppImport = f"{GLOBAL_VARS.COMMAND_APPS_LIST[GLOBAL_VARS.COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
@@ -498,10 +501,12 @@ class GUIButtonCommand:
         return appToLaunch
     @staticmethod
     def handleExits(pid: int, RunningAppsList):
-        for i in dict(RunningAppsList[0].children).values():
-            if i.processInfo[0] == pid:
-                i.destroy()
-        del RunningAppsList[1][pid]
+        try:
+            for i in dict(RunningAppsList[0].children).values():
+                if i.processInfo[0] == pid:
+                    i.destroy()
+            del RunningAppsList[1][pid]
+        except Exception as EXP: print(f"Error while handling exits for PID {pid}\nReason: {EXP}\nSkipping Exit Handles.")
     @staticmethod
     def currentTime(*args):
         
@@ -925,6 +930,7 @@ class PW11UserCreation:
         self.RSide_UserContentFrame.grid(row=0, column=0)
         self.USER_BUTTONS = []
         self.USER_PFPs = {}
+        self.USERS_CREATED = 0
         self.relaunchFunction = relaunchFunction
         USER_CONFIGS: list[list[str, list[str, int]]] = []
         self.USRNAME_PASWD_STR: dict[str, str] = {}
@@ -935,6 +941,7 @@ class PW11UserCreation:
                 usrNumber = usrNo[0:idxForLastN]
                 usr, paswd = reader.readlines()
                 usr = base64.urlsafe_b64decode(usr).decode("utf-8")
+                if usr == "defaultuser0": continue
                 USER_CONFIGS.append([usr, paswd])
                 self.USRNAME_PASWD_STR[usr] = [paswd, usrNumber]
         for i, user in enumerate(USER_CONFIGS):
@@ -950,6 +957,7 @@ class PW11UserCreation:
             btn.IMG = IMG
     def _actualCreateUser(self, username, password, userNumber, overWrite=True):
         createUserAccount(username, password, userNumber, overWrite)
+        self.USERS_CREATED += 1
         text="created"
         if not overWrite: text="over-written"
         messagebox.showinfo("Created user!", f"Succesfully {text} user with username {username}", GLOBAL_VARS.ROOT_WINDOW)
@@ -994,6 +1002,13 @@ class PW11UserCreation:
 
         saveButton = tkinter.Button(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Create the user!", command=lambda: self._actualCreateUser(usrFrame.entryBox.get(), passwordFrame.entryBox.get(), int(usrNumBox.entryBox.get()) ))
         saveButton.grid(row=4, column=0)
+
+        usrFrame.update()
+        usrFrame.update_idletasks()
+        passwordFrame.update()
+        passwordFrame.update_idletasks()
+        usrNumBox.update()
+        usrNumBox.update_idletasks()
 print("Loaded GUI Option Modules...")
 def startUpTasks(CONFIG, ROOT: tkinter.Tk):
     idx = 0
@@ -1150,37 +1165,48 @@ def login():
         shutdownBtn.destroy()
         loginWindow.destroy()
         safeMode()
+    numUsers = -1
+    for file in Path(os.path.join(CWD, "ProgramFiles")).glob("accConfiguration*.conf"): numUsers += 1
     loginWindow = tkinter.Tk()
     loginWindow.title("Login to Windows 11")
     loginWindow.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
-    loadAllIcons(["shutdown", "restart"], loginWindow)
-    msg = tkinter.Label(loginWindow, text="Enter your Username: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-    msg.grid(row=0, column=0)
-    userNameText = tkinter.Entry(loginWindow, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-    userNameText.grid(row=0, column=1)
-    userNameText.focus()
-    userNameText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
-    msg2 = tkinter.Label(loginWindow, text="Enter your Password", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-    msg2.grid(row=1, column=0)
-    passwordText = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG, show="*")
-    passwordText.grid(row=1, column=1)
-    passwordText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
-    def passwordTextFocus(*e): passwordText.focus()
-    userNameText.bind("<Tab>", passwordTextFocus)
-    userNameText.bind("<Return>", lambda: passwordTextFocus)
-    msg3 = tkinter.Label(loginWindow, text="Enter your user number", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-    userNum = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG)
-    userNum.grid(row=2, column=1)
-    userNum.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
-    msg3.grid(row=2, column=0)
-    userNum.bind("<Return>", lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
-    loginBtn = tkinter.Button(loginWindow, text="Login", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
-                                command=lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
-    loginBtn.grid(row=3, column=1)
-    shutdownBtn = tkinter.Button(loginWindow, text="Shutdown", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
-                                command=lambda: GUIButtonCommand.shutdownMenu(loginWindow))
-    shutdownBtn.grid(row=0, column=GLOBAL_VARS.MAX_COLUMN_DESKTOP)
     loginWindow.attributes('-fullscreen', True)
+    if numUsers < 1:
+        createUserAccount("defaultuser0", "SYSTEM", 0, True, ["Black", "White"])
+        GLOBAL_VARS.USERNAME="defaultuser0"
+        FILE_SYSTEM.loadConfig(os.path.join(CWD, "ProgramFiles/defaultuser0/USER_CONFIG"), "USER_CONFIG")
+        GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
+        tkinter.Label(loginWindow, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="It seems that you don't have an user account set up!\nPlease setup an account first to use the system!\nRedirecting to the OOBE in 10 seconds!").grid(row=0, column=0)
+        def launchOOBE(): loginWindow.destroy(); OOBE()
+        loginWindow.after(10000, launchOOBE)
+    else:
+        loadAllIcons(["shutdown", "restart"], loginWindow)
+        msg = tkinter.Label(loginWindow, text="Enter your Username: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        msg.grid(row=0, column=0)
+        userNameText = tkinter.Entry(loginWindow, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        userNameText.grid(row=0, column=1)
+        userNameText.focus()
+        userNameText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
+        msg2 = tkinter.Label(loginWindow, text="Enter your Password", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        msg2.grid(row=1, column=0)
+        passwordText = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG, show="*")
+        passwordText.grid(row=1, column=1)
+        passwordText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
+        def passwordTextFocus(*e): passwordText.focus()
+        userNameText.bind("<Tab>", passwordTextFocus)
+        userNameText.bind("<Return>", lambda: passwordTextFocus)
+        msg3 = tkinter.Label(loginWindow, text="Enter your user number", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        userNum = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG)
+        userNum.grid(row=2, column=1)
+        userNum.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
+        msg3.grid(row=2, column=0)
+        userNum.bind("<Return>", lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
+        loginBtn = tkinter.Button(loginWindow, text="Login", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
+                                    command=lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
+        loginBtn.grid(row=3, column=1)
+        shutdownBtn = tkinter.Button(loginWindow, text="Shutdown", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
+                                    command=lambda: GUIButtonCommand.shutdownMenu(loginWindow))
+        shutdownBtn.grid(row=0, column=GLOBAL_VARS.MAX_COLUMN_DESKTOP)
     loginWindow.bind("<Escape>", safeModePREPTask)
     loginWindow.mainloop()
 def autoRecoveryEnv() -> None:
@@ -1306,6 +1332,7 @@ def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
         NETWORKING = False
         print("Disabled networking!")
         print("=" * int(os.get_terminal_size()[0]))
+
     NETWORKING = False
     commandDict: dict[int, function] = { 1: a1, 2: a2, 3: a3, 4: a4, 5: a5, 6: a6, 7: a7,}
     try:
@@ -1354,13 +1381,59 @@ Or else, type in the command 'restart' and your system will reboot""")
                         if userInput1 in range(1, 8): commandDict[userInput1]()
     finally: SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
 
+class OOBE:
+    def __init__(self, welcomeMessage="Welcome to the Out-of-box Experience!\nPlease setup an user account to use the system efficiently\nBegin by creating a new user account with the button below!\n\nPress Shift-F10 to open a command prompt!"):
+        self.MAINROOT = tkinter.Tk()
+        self.MAINROOT.attributes("-fullscreen", True)
+        self.MAINROOT.config(background="Black")
+        self.welcomeMessage = welcomeMessage
+        self.WelcomeMessageLabel = tkinter.Label(self.MAINROOT, background="Black", foreground="White", text=self.welcomeMessage)
+        self.WelcomeMessageLabel.grid(row=0, column=0)
+        self.ROOT = tkinter.Toplevel(self.MAINROOT, background="Black")
+        dwmTopFrame = dwm.createTopFrame(self.ROOT, "White", "Black", "start", "Out-of-box Experience", 10001, self.destroy)
+        dwmTopFrame.ALL_BUTTONS["minimize"].configure(state="disabled")
+        self.FRAME = tkinter.Frame(self.ROOT, background="Black")
+        self.FRAME.grid(row=1, column=0)
+        self.ROOT.focus_force()
+        self.ROOT.focus()
+        self.ROOT.update()
+        self.ROOT.update_idletasks()
+        self.FRAME.focus_force()
+        self.FRAME.update()
+        self.FRAME.update_idletasks()
+        self.USER_ACCOUNTS_PANEL = PW11UserCreation(self.FRAME, self.destroy)
+        self.ROOT.bind("<Shift-F10>", lambda e=None: GUIButtonCommand.launchItem("Command Prompt"))
+        self.MAINROOT.bind_all("<Shift-F10>", lambda e=None: GUIButtonCommand.launchItem("Command Prompt"))
+        #self.USER_ACCOUNTS_PANEL.RSide_UserContentFrame.update()
+        #self.USER_ACCOUNTS_PANEL.RSide_UserContentFrame.update_idletasks()
+        self.ROOT.lift()
+        self.ROOT.mainloop()
+        self.MAINROOT.mainloop()
+    def destroy(self, *args):
+        if (self.USER_ACCOUNTS_PANEL.USERS_CREATED != 0):
+            print("Destroyed")
+            self.MAINROOT.destroy()
+            FILE_SYSTEM.editConfig("SYS_CONFIG", "SETUP_IN_PROGRESS", 0)
+            login()
+        else: 
+            choice = messagebox.askyesorno("Exit?", "You have not created a first time user yet! Do you like to quit pre-maturely?", self.ROOT)
+            if choice: self.MAINROOT.destroy()
+            return
+
+
 if __name__ == "__main__":
     arguements = sys.argv[1:]
     if not os.access("ProgramFiles", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
     else:
         if not os.access("ProgramFiles/commandprompt.py", os.F_OK) or not os.access("ProgramFiles/errorHandler.py", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
         else:
-            if "-safemode" in arguements: safeMode()
+            if SYS_CONFIG["SETUP_IN_PROGRESS"]:
+                createUserAccount("defaultuser0", "SYSTEM", 0, True, ["Black", "White"])
+                GLOBAL_VARS.USERNAME="defaultuser0"
+                FILE_SYSTEM.loadConfig(os.path.join(CWD, "ProgramFiles/defaultuser0/USER_CONFIG"), "USER_CONFIG")
+                GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
+                OOBE()
+            elif "-safemode" in arguements: safeMode()
             elif "-safemodecli" in arguements: safeMode(True, True)
             elif "-safemodefullcmd" in arguements: safeMode(True)
             elif "-config" in arguements:
@@ -1378,11 +1451,11 @@ if __name__ == "__main__":
                     infoSysSelectSTR = "SYS_CONFIG"
                     SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG", writeback=True)
                 else:
-                    infoSysSelectSTR = "USER_CONFIG"
-                    GLOBAL_VARS.USERNAME = input("Type in the GLOBAL_VARS.USERNAME whose settings are going to be changed!: ")
+                    infoSysSelectSTR = "GLOBAL_CONFIG.USER_CONFIG"
+                    GLOBAL_VARS.USERNAME = input("Type in the username whose settings are going to be changed!: ")
                     GLOBAL_VARS.USER_CONFIG = shelve.open(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", writeback=True)
                 print("The respective configuration module has been imported!\n"
-                        f"Now, type in 'GLOBAL_VARS.{infoSysSelectSTR}[<CONFIG_NAME>] = <CONFIG>;' and then press enter to finish\n"
+                        f"Now, type in '{infoSysSelectSTR}[<CONFIG_NAME>] = <CONFIG>;' and then press enter to finish\n"
                         "New code lines and line endings MUST BE represented by the ; character!")
                 code_to_execute = input("Start here>")
                 for i, code in enumerate(code_to_execute.split(";")):

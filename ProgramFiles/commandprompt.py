@@ -22,7 +22,7 @@ class RedirectOutput:
         self.cmdInstance.showMsg(text)
         
 class cmdCommands(object):
-    def __init__(self, stdout: tkinter.Text, stdin: Entry, root: tkinter.Tk, FS: ParWFS=None) -> None:
+    def __init__(self, stdout: tkinter.Text, stdin: Entry, root: tkinter.Tk, FS: ParWFS=None, username="NotDefined") -> None:
         with shelve.open("ProgramFiles/SYS_CONFIG") as SYS_CONFIG:
             self.VERSION = SYS_CONFIG["VERSION"]
         self.ROOT = root
@@ -33,6 +33,7 @@ class cmdCommands(object):
         self.stdout = stdout
         self.stdin = stdin
         self.LINE_COUNT = 0.0
+        self.username = username
         self.COMMAND_LIST = LIST_OF_CMDS = [attr for attr in dir(self) if inspect.ismethod(getattr(self,attr))]
         #self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator", "startFile", "mk", "rm", "cmd", "sendToRootTerminal"]
         self.INPUTTED_COMMANDS_LIST = []
@@ -70,6 +71,7 @@ class cmdCommands(object):
             self.clear()
             self.clearStdIn()
             self.showMsg(f"\nWelcome to ParodyWindows11 Command Interpreter (OS Version 2.2)\nCurrent Working Directory: {os.getcwd()}")
+    def whoami(self): self.clearStdIn(); self.showMsg(f"\nCurrent running user: {self.username}")
     def user(self):
             self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
             from pathlib import Path
@@ -342,7 +344,7 @@ def main(FILE_SYSTEM, *args):
     yourCommand = Entry(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
     yourCommand.grid(row=2, column=0)
-    cmdInstance = cmdCommands(text, yourCommand, root=INSTANCES[args[-1]], FS=FILE_SYSTEM)
+    cmdInstance = cmdCommands(text, yourCommand, root=INSTANCES[args[-1]], FS=FILE_SYSTEM, username=args[0])
     yourCommand.focus()
     yourCommand.bind("<Return>", sendCommand)
     if not ABLE_TO_USE_DWM:
