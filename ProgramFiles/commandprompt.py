@@ -6,12 +6,14 @@ import subprocess
 import threading
 import base64
 import inspect
-from ProgramFiles import callHost
-from ParWFS import ParWFS
+SHELL_MODULES_LOADED = False
 try:
+    from ProgramFiles import callHost
+    from ParWFS import ParWFS
     from  ProgramFiles.entryWidget import Entry
 except:
     from tkinter import Entry
+else: SHELL_MODULES_LOADED = True
 INSTANCES = {}
 USER_FOLDERS_LIST = ["My Documents", "My Pictures", "My Videos", "My Downloads"]
 NEEDS_FILESYSTEM_ACCESS = True
@@ -22,9 +24,17 @@ class RedirectOutput:
         self.cmdInstance.showMsg(text)
         
 class cmdCommands(object):
-    def __init__(self, stdout: tkinter.Text, stdin: Entry, root: tkinter.Tk, FS: ParWFS=None, username="NotDefined") -> None:
-        with shelve.open("ProgramFiles/SYS_CONFIG") as SYS_CONFIG:
-            self.VERSION = SYS_CONFIG["VERSION"]
+    def __init__(self, stdout: tkinter.Text, stdin: Entry, root: tkinter.Tk, FS=None, username="NotDefined", PID=99999) -> None:
+        try:
+            with shelve.open("ProgramFiles/SYS_CONFIG") as SYS_CONFIG: self.VERSION = SYS_CONFIG["VERSION"]
+        except Exception:
+            try: 
+                CurFS: ParWFS = None
+                if FS: CurFS = FS
+                else: raise NotImplementedError("No filesystem found for checking version strings!")
+                SYS_CONFIG = CurFS.getConfig("SYS_CONFIG")
+                self.VERSION = SYS_CONFIG["VERSION"]
+            except Exception: self.VERSION = "2.3.9"; self.showMsg("\nUNABLE TO LOAD VERSION STRING! USING HARDCODED VALUES\n")
         self.ROOT = root
         self.FILE_SYSTEM = FS
         self.ADMINISTRATOR = False
@@ -34,86 +44,115 @@ class cmdCommands(object):
         self.stdin = stdin
         self.LINE_COUNT = 0.0
         self.username = username
-        self.COMMAND_LIST = LIST_OF_CMDS = [attr for attr in dir(self) if inspect.ismethod(getattr(self,attr))]
-        #self.COMMAND_LIST = ["clear", "shutdown", "restart", "exit", "sfcRepair", "cd", "dir", "mkd", "rmd", "user", "administrator", "startFile", "mk", "rm", "cmd", "sendToRootTerminal"]
+        self.PID = PID
+        self.INTERNAL_COMMANDS = ["downArrowBind", "upArrowBind", "getParams", "launchCmd", "__init__", "clearStdIn"]
+        self.COMMAND_LIST = [attr for attr in dir(self) if (inspect.ismethod(getattr(self,attr)) and attr not in self.INTERNAL_COMMANDS)]
         self.INPUTTED_COMMANDS_LIST = []
         self.CWD = os.getcwd()
         self.COMMAND_NOT_FOUND = "\nThe following command doesn't exist!"
         self.showMsg(f"Welcome to ParodyWindows11 Command Interpreter (OS Version {self.VERSION})\nCurrent Working Directory: {os.getcwd()}\n>")
+        if not SHELL_MODULES_LOADED: self.showMsg("\nModules which are used to interact with the parent shell could NOT be imported! Some commands may NOT work correctly!\n>")
         try: self.ROOT.bind("<Up>", self.upArrowBind); self.ROOT.bind("<Down>", self.downArrowBind)
-        except Exception as exp: print(f' {exp}')
+        except Exception as exp: print(exp)
         return None
-    def cmd(self):
+    def help(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
-        if self.stdin.get().split(' ')[1].lstrip("-") == "restart":
-            self.ROOT.destroy()
-            def sendCommand(e=None):
-                self.showMsg(f"\n>{yourCommand.get()}")
-                if " " not in yourCommand.get():
-                    yourCommand.insert(tkinter.END, "  ")
-                if yourCommand.get().split(" ")[0] in self.COMMAND_LIST and self.ACCEPT_COMMANDS:
-                    self.launchCmd()
-                elif not self.ACCEPT_COMMANDS: self.showMsg("\nThe command prompt is busy"); self.clearStdIn()
-                else: self.showMsg(self.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
+        self.showMsg("\nHere's a list of all available commands:")
+        for command in self.COMMAND_LIST: self.showMsg(f"\n->{command}")
+        self.clearStdIn()
+    def cmd(self, directInvoke=False):
+        try: self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+        except: pass
+        if directInvoke or self.stdin.get().split(' ')[1].lstrip("-") == "restart":
+            if self.ROOT: self.ROOT.destroy()
             self.ROOT = tkinter.Tk()
             self.ROOT.configure(background=THEME_WINDOW_BG)
+            if SHELL_MODULES_LOADED:
+                try: from ProgramFiles import dwm
+                except: 
+                    try: import dwm
+                    except: pass
+                finally: 
+                    try: dwm.createTopFrame(self.ROOT, THEME_FOREGROUND, THEME_WINDOW_BG, "commandprompt", "Command Prompt", self.PID)
+                    except: pass
             self.ROOT.title("Command Interpreter")
-            text = tkinter.Text(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=120)
-            text.grid(row=0, column=0)
-            text.insert(tkinter.END, f"Welcome to ParodyWindows 11 Command Interpreter (OS Version 2.2)\nCurrent Working Directory: {os.getcwd()}")
-            yourCommand = Entry(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-            yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
-            yourCommand.grid(row=1, column=0)
-            yourCommand.focus()
-            yourCommand.bind("<Return>", sendCommand)
+            self.stdout = tkinter.Text(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=120)
+            self.stdout.grid(row=1, column=0)
+            self.stdout.insert(tkinter.END, f"Welcome to ParodyWindows 11 Command Interpreter (OS Version {self.VERSION})\nCurrent Working Directory: {os.getcwd()}")
+            self.stdin = Entry(self.ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+            self.stdin.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
+            self.stdin.grid(row=2, column=0)
+            self.stdin.focus()
+            self.stdin.bind("<Return>", self.launchCmd)
+            if not SHELL_MODULES_LOADED: self.showMsg("\nModules which are used to interact with the parent shell could NOT be imported! Some commands may NOT work correctly!\n>")
+            try: self.ROOT.bind("<Up>", self.upArrowBind); self.ROOT.bind("<Down>", self.downArrowBind)
+            except Exception as exp: print(exp)
             self.ROOT.mainloop()
         else:
             self.clear()
             self.clearStdIn()
-            self.showMsg(f"\nWelcome to ParodyWindows11 Command Interpreter (OS Version 2.2)\nCurrent Working Directory: {os.getcwd()}")
-    def whoami(self): self.clearStdIn(); self.showMsg(f"\nCurrent running user: {self.username}")
-    def user(self):
+            self.showMsg(f"\nWelcome to ParodyWindows11 Command Interpreter (OS Version {self.VERSION})\nCurrent Working Directory: {os.getcwd()}")
+    def whoami(self): self.INPUTTED_COMMANDS_LIST.append(self.stdin.get()); self.clearStdIn(); self.showMsg(f"\nCurrent running user: {self.username}")
+    def user(self, directInvoke=False):
             self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
             from pathlib import Path
             import base64
-            if self.getParams(1, " ").lstrip('-') != "list":
-                if self.ADMINISTRATOR:
+            if directInvoke: parameter = directInvoke
+            else:parameter = self.getParams(1, " ").lstrip('-')
+            if parameter == "create":
+                if not self.ADMINISTRATOR: self.showMsg("\nPlease enable administrator before editing or creating a new user!"); return
+                try: 
+                    usersFolder = os.path.join(self.CWD, f"Users")
+                    username = self.getParams(3, '-')
+                    userNum = self.getParams(2, '-')
+                    os.mkdir(os.path.join(os.path.join(self.CWD, "ProgramFiles"), username))
                     try: 
-                        usersFolder = os.path.join(self.CWD, f"Users")
-                        username = self.stdin.get().split(' ')[2].lstrip('-')
-                        userNum = self.getParams(1, ' ').lstrip('-')
-                        os.mkdir(os.path.join(os.path.join(self.CWD, "ProgramFiles"), username))
-                        try: 
-                            os.mkdir(usersFolder)
-                            os.mkdir(f"{usersFolder}/{username}")
-                        except: 
-                            try: os.mkdir(f"{usersFolder}/{username}")
-                            except: pass
-                        for i in USER_FOLDERS_LIST:
-                            os.mkdir(f"{usersFolder}/{username}/{i}") 
-                    except Exception: pass
-                    finally:
-                        with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{userNum}.conf"), "wb") as writeConfig:
-                            writeConfig.writelines([base64.urlsafe_b64encode(username.encode("utf-8")), "\n".encode("utf-8") , base64.urlsafe_b64encode((self.getParams(3, ' ').lstrip('-')).encode("utf-8"))])
-                        USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
-                        USER_CONFIG["APPS"] = [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel"]]
-                        USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
-                        USER_CONFIG["THEME"] = ["Black", "White"]
-                        USER_CONFIG["CLOCK-WIDGET"] = 0
-                        USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
-                        USER_CONFIG["WALLPAPER"] = None
-                        USER_CONFIG["STARTUP_APPS"] = []
-                        USER_CONFIG["PFP"] = os.path.join(self.CWD, "ProgramFiles/Icons/defaultpfp.png")
-                        USER_CONFIG.close()
-                        self.clearStdIn()
-                        self.showMsg("\nUser created successfully!")
-                else:
-                    self.showMsg("\nPlease enable administrator before editing or creating a new user!")
-            else:
+                        os.mkdir(usersFolder)
+                        os.mkdir(f"{usersFolder}/{username}")
+                    except: 
+                        try: os.mkdir(f"{usersFolder}/{username}")
+                        except: pass
+                    for i in USER_FOLDERS_LIST:
+                        os.mkdir(f"{usersFolder}/{username}/{i}") 
+                except Exception: pass
+                finally:
+                    with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{userNum}.conf"), "wb") as writeConfig:
+                        writeConfig.writelines([base64.urlsafe_b64encode(username.encode("utf-8")), "\n".encode("utf-8") , base64.urlsafe_b64encode((self.getParams(4, '-')).encode("utf-8"))])
+                    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
+                    USER_CONFIG["APPS"] = [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskmanager"]]
+                    USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
+                    USER_CONFIG["THEME"] = ["Black", "White"]
+                    USER_CONFIG["CLOCK-WIDGET"] = 0
+                    USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
+                    USER_CONFIG["WALLPAPER"] = None
+                    USER_CONFIG["STARTUP_APPS"] = []
+                    USER_CONFIG["PFP"] = os.path.join(self.CWD, "ProgramFiles/Icons/defaultpfp.png")
+                    USER_CONFIG.close()
+                    self.clearStdIn()
+                    self.showMsg("\nUser created successfully!")
+            elif parameter == "list":
                 self.showMsg("\nCurrent User List: ")
                 for file in Path(os.path.join(self.CWD, "ProgramFiles")).glob("accConfiguration*.conf"):
                     with open(file, "r") as showUsers:
-                        self.showMsg(f"\n-> {base64.urlsafe_b64decode(showUsers.readlines()[0])} ")
+                        self.showMsg(f"\n-> {base64.urlsafe_b64decode(showUsers.readlines()[0]).decode("utf-8")} ")
+            elif parameter == "delete":
+                if (not directInvoke): 
+                    if (not self.ADMINISTRATOR): self.showMsg("\nPlease enable administrator before deleting an user!"); return
+                if self.FILE_SYSTEM:
+                    FS: ParWFS = self.FILE_SYSTEM
+                    ROOT_DIR = self.CWD
+                    USER_NUM_TO_DELETE = self.getParams(2, " ").lstrip('-')
+                    USERNAME_TO_DELETE = ""
+                    USER_CONF_FILEPATH = os.path.join(ROOT_DIR, f"ProgramFiles/accConfiguration{USER_NUM_TO_DELETE}.conf")
+                    with open(USER_CONF_FILEPATH, "r") as reader: USERNAME_TO_DELETE = base64.urlsafe_b64decode(reader.readlines()[0]).decode("utf-8")
+                    FS.deleteFiles([[os.path.join(ROOT_DIR, "ProgramFiles", USERNAME_TO_DELETE), ROOT_DIR ], [os.path.join(ROOT_DIR, "Users", USERNAME_TO_DELETE), ROOT_DIR], [USER_CONF_FILEPATH, os.path.join(ROOT_DIR, "ProgramFiles")]])
+                    self.showMsg(f"\nSuccesfully deleted user {USERNAME_TO_DELETE}")
+                    if directInvoke: 
+                        self.showMsg("\nThis window will automatically close in 10 seconds!")
+                        self.ROOT.after(10000, self.ROOT.destroy)
+            else:
+                self.showMsg(f"\nUnknown Switch: {parameter} ")
+            self.clearStdIn()
     def administrator(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get()) 
         with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "r") as checkUser:
@@ -127,21 +166,30 @@ class cmdCommands(object):
             else:
                 self.showMsg("\nEither the username or the password is incorrect. So authentication failed!")
         self.clearStdIn()
-    def downArrowBind(self, e=None): self.clearStdIn(); self.stdin.insert(tkinter.END, self.INPUTTED_COMMANDS_LIST[-self.UP_ARROW_COUNT+1])
+    def downArrowBind(self, e=None):
+        if self.UP_ARROW_COUNT - 1 < 0: return
+        self.UP_ARROW_COUNT -= 1
+        self.clearStdIn()
+        self.stdin.insert(tkinter.END, self.INPUTTED_COMMANDS_LIST[-self.UP_ARROW_COUNT])
     def upArrowBind(self, e=None):
         self.UP_ARROW_COUNT += 1
         self.clearStdIn()
         self.stdin.insert(tkinter.END, self.INPUTTED_COMMANDS_LIST[-self.UP_ARROW_COUNT])
     def showMsg(self, msg: str):
-        self.stdout.configure(state="normal")
-        self.LINE_COUNT += 1.0
-        self.stdout.insert(f"{self.LINE_COUNT+1}", msg)
-        self.stdout.see(f"{self.LINE_COUNT+1}")
-        if "\n" in msg: self.LINE_COUNT += 1.0
-        self.stdout.configure(state="disabled")
-    def launchCmd(self, e=None):
+        try:
+            self.stdout.configure(state="normal")
+            self.LINE_COUNT += 1.0
+            self.stdout.insert(f"{self.LINE_COUNT+1}", msg)
+            self.stdout.see(f"{self.LINE_COUNT+1}")
+            if "\n" in msg: self.LINE_COUNT += 1.0
+            self.stdout.configure(state="disabled")
+        except Exception as EXP: print(EXP)
+    def launchCmd(self, directInvoke=False,  e=None):
         if " " not in self.stdin.get(): self.stdin.insert(tkinter.END, "  ")
-        if self.getParams(0, " ") in self.COMMAND_LIST and self.ACCEPT_COMMANDS: self.showMsg(f"\n>{self.stdin.get()}"); exec(f"self.{self.stdin.get().split(' ')[0]}()")
+        command = f"self.{self.getParams(0, ' ')}()"
+        if directInvoke == True: print("hi"); command = f"self.{self.stdin.get().split(' ')[0]}(self.getParams(1, ' ').lstrip('-'))"
+
+        if self.getParams(0, " ") in self.COMMAND_LIST and self.ACCEPT_COMMANDS: self.showMsg(f"\n>{self.stdin.get()}"); exec(command)
     def clearStdIn(self):
         self.stdin.delete(0, tkinter.END)
     def clear(self):
@@ -217,20 +265,20 @@ class cmdCommands(object):
     def exit(self): self.ROOT.destroy();  
     def cd(self):
         import platform
-        if self.getParams(1, " ") not in  ["..", "/", " ", "  ", ""]:
-            os.chdir(self.getParams(1, " "))
+        if self.getParams(1) not in  ["..", "/", " ", "  ", ""]:
+            os.chdir(self.getParams(1))
             self.showMsg(f"\nCurrent Working Directory: {os.getcwd()}")
-        elif self.getParams(1, " ") == "/":
+        elif self.getParams(1) == "/":
             os.chdir("/")
             self.showMsg(f"\nCurrent Working Directory: {os.getcwd()}")
-        elif self.getParams(1, " ") == "..":
+        elif self.getParams(1) == "..":
             if platform.system() == "Windows": character = "\\"
             else: character = "/"
             fullDirList = os.getcwd().split(character)
             modifiedPath = "".join(f"{item}/" for item in fullDirList[:-1])
             os.chdir(modifiedPath)
             self.showMsg(f"\nCurrent Working Directory: {os.getcwd()}")
-        elif self.getParams(1, " ") == "/":
+        elif self.getParams(1) == "/":
             os.chdir("/")
             self.showMsg(f"\nCurrent Working Directory: {os.getcwd()}")
         else:
@@ -251,35 +299,36 @@ class cmdCommands(object):
         self.clearStdIn()
         self.showMsg("\nFolder created succesfully!")
     def rmd(self):
-        import pathlib3x
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
-        Location = pathlib3x.Path(self.stdin.get().split(" ")[1])
-        Location.rmtree(ignore_errors=True)
-        self.clearStdIn()
-        self.showMsg("\nFolder removed succesfully!")
+        try:
+            CurFS: ParWFS = None
+            if self.FILE_SYSTEM: CurFS: ParWFS = self.FILE_SYSTEM
+            else: CurFS = ParWFS("commandprompt")
+            CurFS.deleteFiles([[self.getParams(1), os.getcwd()]])
+        except Exception: self.showMsg("\nCannot load a file system, so the folder was not deleted!")
+        else: self.showMsg("\nFolder removed succesfully!")
+        finally: self.clearStdIn()
     def startFile(self):
         import subprocess
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         try:
             self.showMsg("\nSuccesfully started file!")
-            subprocess.Popen(["python3", self.stdin.get().split(" ")[1]])
-        except Exception: self.showMsg(f"\nCannot start the specified file, due to a technical error. \nError at {str(self.startFile)}")
+            subprocess.Popen(["python3", " ".join(string for string in self.stdin.get().split(" ")[1:])])
+        except Exception as EXP: self.showMsg(f"\nCannot start the specified file, due to a technical error. \nError at {str(self.startFile)}\nError: {EXP} ")
     def mk(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
-        with open(self.stdin.get().split(" ")[2], "w") as CREATE_FILE: CREATE_FILE.writelines(self.stdin.get().split(" ")[1].replace("\\n", "\n"))
+        with open(self.getParams(2, '-'), "w") as CREATE_FILE: CREATE_FILE.writelines(self.getParams(1, ' ').replace("\\n", "\n"))
         self.clearStdIn()
         self.showMsg("\nCreated the file successfully!")
     def rm(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         if self.ADMINISTRATOR:
-            os.remove(self.stdin.get().split(" ")[1])
+            os.remove(self.getParams(1, ' '))
             self.showMsg("\nRemoved the file successfully!")
         else: self.showMsg("\nPlease enable administrator mode before removing a file")
         self.clearStdIn()
-    def getParams(self, paramToGet: int, includeParamSeparator: str) -> str:
+    def getParams(self, paramToGet: int, includeParamSeparator: str = " ") -> str:
         return self.stdin.get().split(' ')[paramToGet].lstrip(includeParamSeparator)
-    def _getLenOfParams(self):
-        return len(self.stdin.get().split(' '))
     def fsLoadConfig(self):
         if not self.FILE_SYSTEM:
             self.showMsg("\nCannot load the given config: File system hasn't been initialised into the command prompt!")
@@ -292,6 +341,7 @@ class cmdCommands(object):
         self.clearStdIn()
 
     def sendToRootTerminal(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         def run():
             def killer(*args):
                 pipe.kill()
@@ -313,19 +363,36 @@ class cmdCommands(object):
             #self.clearStdIn()
         else: 
             self.showMsg("\nYou don't have permissions to run this command! Enable Administrator Mode and try again.")
+    def disableDWM(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+        self.clearStdIn()
+        try:
+            try: from ProgramFiles import dwm
+            except: import dwm
+            if (self.getParams(1, '-') == "all"): dwm.dissociateAllDWMApps()
+            else: dwm.dissociateFrameFromDWM(self.PID)
+        except Exception as EXP: 
+            self.showMsg(f"\nThe command did not execute succesfully!\n{EXP}")
+        else:
+            self.showMsg(f"\nThe command completed succesfully!")
+    def enableDWM(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+        self.clearStdIn()            
+        try:
+            try: from ProgramFiles import dwm
+            except: import dwm
+            if (self.getParams(1, '-') == "all"): dwm.reRegisterAllDWMApps()
+            else: dwm.createTopFrame(self.ROOT, THEME_FOREGROUND, THEME_WINDOW_BG, "commandprompt", self.ROOT.title(), self.PID)
+        except Exception as EXP: 
+            self.showMsg(f"\nThe command did not execute succesfully!\n{EXP}")
+        else:
+            self.showMsg(f"\nThe command completed succesfully!")
+
+        
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
 def main(FILE_SYSTEM, *args): 
     ABLE_TO_USE_DWM = False
     EXP = None
-    def sendCommand(e=None):
-        cmdInstance.showMsg(f"\n>{yourCommand.get()}")
-        if " " not in yourCommand.get():
-            yourCommand.insert(tkinter.END, "  ")
-        if yourCommand.get().split(" ")[0] in cmdInstance.COMMAND_LIST and cmdInstance.ACCEPT_COMMANDS:
-            exec(f"cmdInstance.{yourCommand.get().split(' ')[0]}()")
-            cmdInstance.showMsg("\n\n>")
-        elif not cmdInstance.ACCEPT_COMMANDS: cmdInstance.clear()
-        else: cmdInstance.showMsg(cmdInstance.COMMAND_NOT_FOUND); print("COMMAND_NOT_FOUND!")
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     try:
@@ -334,19 +401,14 @@ def main(FILE_SYSTEM, *args):
         ABLE_TO_USE_DWM = True
     except Exception as erm: EXP = erm
     INSTANCES[args[-1]].title("Command Interpreter")
-    def destroy():
-        os.chdir(cmdInstance.CWD)
-        if args[0] != "AUTORECOVERYENV": callHost.acknowledgeEndTask(args[-1])
-        INSTANCES[args[-1]].destroy()
-        return True
     text = tkinter.Text(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, width=100)
     text.grid(row=1, column=0)
     yourCommand = Entry(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     yourCommand.configure(insertbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG, selectbackground=THEME_FOREGROUND, width=110)
     yourCommand.grid(row=2, column=0)
-    cmdInstance = cmdCommands(text, yourCommand, root=INSTANCES[args[-1]], FS=FILE_SYSTEM, username=args[0])
+    cmdInstance = cmdCommands(text, yourCommand, root=INSTANCES[args[-1]], FS=FILE_SYSTEM, username=args[0], PID=args[-1])
     yourCommand.focus()
-    yourCommand.bind("<Return>", sendCommand)
+    yourCommand.bind("<Return>", cmdInstance.launchCmd)
     if not ABLE_TO_USE_DWM:
         cmdInstance.showMsg(f"\nERROR Importing window manager libraries from ProgramFiles.dwm! Using OS-Default Window manager!\nProblem: {EXP}")
     else: 
@@ -358,13 +420,13 @@ def main(FILE_SYSTEM, *args):
         cmdInstance.ADMINISTRATOR = True
         cmdInstance.showMsg("\nDetected launch from recovery environment\nSuccesfully turned on administrator mode!")
         cmdInstance.ROOT.title("Administrator - Command Interpreter")
+    if args[2]: cmdInstance.stdin.insert(0, args[2]); cmdInstance.launchCmd(True)
     INSTANCES[args[-1]].mainloop()
-    INSTANCES[args[-1]].destroy()
     return args[-1]
 
 
 def focusIn(PID): INSTANCES[PID].state(newstate='normal'); return True
-def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); return True
+def focusOut(PID): INSTANCES[PID].state(newstate='withdrawn'); return True
 def endTask(PID):
     INSTANCES[PID].destroy()
     return True
@@ -375,4 +437,4 @@ def returnInformation(PID):
         # Would add more stuff here in the future, such as memory usage and shi. 
     }
 if __name__ == "__main__":
-    main()
+    main(None, "defaultuser0",  None, dict({"THEME": ["Black", "White"]}), 99999)

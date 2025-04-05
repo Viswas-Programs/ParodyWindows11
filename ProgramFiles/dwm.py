@@ -1,6 +1,12 @@
 import tkinter
-import ProgramFiles.callHost as callHost
-from ProgramFiles.entryWidget import Entry
+try:
+    import ProgramFiles.callHost as callHost
+    from ProgramFiles.entryWidget import Entry
+except Exception:
+    from tkinter import Entry
+    try: import callHost
+    except: print("No callhost for you")
+
 MANAGED_DWM_INSTANCES = {}
 
 def _changeThemeForAllApps(newBg, newFg, widget: tkinter.BaseWidget):
@@ -81,6 +87,7 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     def ttl(newTitle=None, *args):
         title(newTitle, PID)
     if not destroyFunc: destroyFunc = close
+    root.TITLE_FUNC = root.title
     root.title = ttl
     root.overrideredirect(True)
     root.update()
@@ -94,19 +101,28 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     DWMFrame.grid(row=0, column=0, sticky="EW", columnspan=root.winfo_screenwidth())
     DWMBtnFrame = tkinter.Frame(DWMFrame, background=T_BG)
     DWMBtnFrame.grid(row=0, column=root.winfo_screenwidth())
-    DWMFrame.BACKGROUND = T_BG
-    DWMFrame.FOREGROUND = T_FG
-    DWMFrame.PID = PID
-    DWMFrame.ROOT = root
-    img = callHost.getReqIcon(iconName, root)
+    DWMFrame.PARAMETER_CALL_INFORMATION = {
+        "root": root,
+        "foreground": T_FG,
+        "background": T_BG,
+        "iconName": iconName,
+        "appName": appName,
+        "PID": PID,
+        "destroyFunc": destroyFunc
+    }
     root.Entry = Entry
-    img = img.subsample(3, 3)
-    DWMFrame.img = img
-    lbl = tkinter.Label(DWMFrame, text=appName, background=T_BG, foreground=T_FG, image=img, compound='left')
+    lbl = tkinter.Label(DWMFrame, text=appName, background=T_BG, foreground=T_FG, compound='left')
+    lbl.img = img = callHost.getReqIcon(iconName, root).subsample(2)
+    try: 
+        lbl.configure(image=img, )
+        lbl.image = img
+        root.update_idletasks()
+        root.update()
+    except Exception as EXP: print(EXP)
     lbl.grid(row=0, column=0, sticky="W")
     minimizeBtn = tkinter.Button(DWMBtnFrame, text=" _ ", background=T_BG, foreground=T_FG, border=2, borderwidth=1, command=lambda: focus(PID))
     minimizeBtn.grid(row=0, column=1, sticky="E")
-    #maximizeBtn = tkinter.Button(DWMBtnFrame, text=" 🗖 ", background=T_BG, foreground=T_FG, border=2, borderwidth=1, command=lambda: focusMaximise(PID))
+    maximizeBtn = tkinter.Button(DWMBtnFrame, text=" 🗖 ", background=T_BG, foreground=T_FG, border=2, borderwidth=1, command=lambda: focusMaximise(PID))
     #maximizeBtn.grid(row=0, column=2, sticky="E")
     closeBtn = tkinter.Button(DWMBtnFrame, text=" X ", background="Red", foreground="White", border=2, borderwidth=1, command=lambda: destroyFunc(PID))
     closeBtn.grid(row=0, column=3, sticky="E")
@@ -120,13 +136,33 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     root.QUIT_FUNC = root.quit
     DWMFrame.ALL_BUTTONS = {
         "close": closeBtn,
-        "minimize": minimizeBtn
+        "minimize": minimizeBtn,
+        "maximize": maximizeBtn
     }
     def _quit(): root.QUIT_FUNC(); callHost.acknowledgeEndTask(PID); 
     root.quit = _quit
     root.update()
     root.update_idletasks()
     # resizer()
-    MANAGED_DWM_INSTANCES[PID] = [appName, lbl, root, closeBtn]
+    MANAGED_DWM_INSTANCES[PID] = [appName, lbl, root, closeBtn, DWMFrame]
     return DWMFrame
-    
+
+
+def dissociateFrameFromDWM(PID):
+    MANAGED_DWM_INSTANCES[PID][2].overrideredirect(False)
+    MANAGED_DWM_INSTANCES[PID][2].quit = MANAGED_DWM_INSTANCES[PID][2].QUIT_FUNC
+    MANAGED_DWM_INSTANCES[PID][2].title = MANAGED_DWM_INSTANCES[PID][2].TITLE_FUNC
+    MANAGED_DWM_INSTANCES[PID][4].destroy()
+
+def dissociateAllDWMApps():
+    for PIDs in dict(MANAGED_DWM_INSTANCES).keys(): print(PIDs); dissociateFrameFromDWM(PIDs)
+
+def reRegisterAllDWMApps():
+    for PIDs in MANAGED_DWM_INSTANCES.keys():
+        createTopFrame(MANAGED_DWM_INSTANCES[2], 
+                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["foreground"], 
+                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["background"], 
+                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["iconName"], 
+                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["appName"], 
+                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["PID"],
+                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["destroyFunc"])

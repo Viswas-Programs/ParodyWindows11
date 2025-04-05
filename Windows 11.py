@@ -409,8 +409,8 @@ class GUIButtonCommand:
                 appToLaunchPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
             GLOBAL_VARS.RUNNING_APPS[appToLaunchPID] = application
             GUIButtonCommand.createRunningAppTaskbarIcon(application, appToLaunchPID)
-            try: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, None, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID)
-            except: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, None, dict({"THEME": ["Black", "White"]}), appToLaunchPID)        
+            try: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID)
+            except: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, params, dict({"THEME": ["Black", "White"]}), appToLaunchPID)        
         else: 
             appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
             #progAppImport = f"{GLOBAL_VARS.COMMAND_APPS_LIST[GLOBAL_VARS.COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
@@ -989,6 +989,12 @@ class PW11UserCreation:
 
         editButton = tkinter.Button(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Edit user!", command=editUserActions)
         editButton.grid(row=4, column=0)
+        deleteButton = tkinter.Button(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Delete user!", command=lambda userNum=self.USRNAME_PASWD_STR.get(username)[1]: self.deleteUserAccount(userNum))
+        deleteButton.grid(row=5, column=0)
+    def deleteUserAccount(self, usernum):
+        print(usernum)
+        GUIButtonCommand.launchItem("Command Prompt", f"user -delete -{usernum}")
+        
     def createNewUserPanel(self,):
         usrFrame = entryWidget.LabelledEntryBox(self.RSide_UserContentFrame, "Username: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
         #usrLbl = tkinter.Label(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=username, justify="center")

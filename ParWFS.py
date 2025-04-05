@@ -19,8 +19,9 @@ class ParWFS:
         _instances[purpose] = self
     def loadConfig(self, configFileName: str, configName: str):
         if not self.currentLoadedConfigFiles: self.currentLoadedConfigFiles = {}
-        with shelve.open(configFileName) as cuh:
-            self.currentLoadedConfigFiles[configName] = [configFileName, dict(cuh)]
+        try: 
+            with shelve.open(configFileName) as cuh: self.currentLoadedConfigFiles[configName] = [configFileName, dict(cuh)]
+        except Exception as EXP: print(EXP)
     def unloadConfig(self, configName):
         try:
             del self.currentLoadedConfigFiles[configName]
@@ -74,7 +75,7 @@ class ParWFS:
                     with open(os.path.join(targetPath, baseName).replace("\\", "/"), "wb") as writer:
                         writer.write(reader.read())
         self.TASK_IN_PROGRESS=[0, 0]
-    def pasteFiles(self, targetPath: str, updaterFunc=lambda e: print("NONE")):
+    def pasteFiles(self, targetPath: str, updaterFunc=lambda e: print(end="")):
         self._pasteFiles(targetPath=targetPath, updaterFunc=updaterFunc)
         self.deleteFiles(fileToDelete=self.currentCutFiles)
     def deleteFiles(self, fileToDelete = None): 
