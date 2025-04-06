@@ -6,34 +6,18 @@ Easy setup (if github servers work): For linux only, run dos2unix command on the
 
 Manual Setup:
 
-Step1: Download the windows 11 file
+Step 1: Clone the github repository using `git clone https://github.com/Viswas-Programs/ParodyWindows11`
+Step 2: Switch to the desired branch (For most cases, dev branch should be stable enough), do `git checkout <branch-name>` 
+Step 3: 
+You can either setup a new user account but with limited configuration options with the new OOBE system (I'll update this when I include those settings in the OOBE too)
+In that case, run `python3 "Windows 11.py"`
+OR
+Run the file with the -config parameter to create a new user account with some more choice (Just themes for now)
+Run `python3 "Windows 11.py" -config` for that
 
-Step2: Download the ProgramFiles zip file and extract that thing into the environment.
+You can then change these settings, some of them through the Settings app in GUI, Or by running the -configchange parameter when starting the file (`python3 "Windows 11.py" -configchange`) and selecting the appropriate selections.
 
-Step3: make a new file "accConfiguration1.conf" (yes the file type is .conf) and give your username in first line and password in second line.
+SOME KNOWN BUGS: 
+When you're in Linux, make sure that when you're working on a window with textboxes, minimize all other windows, and work on that window only, and if there are multiple text boxes, click on all of them in sequential order, then drag the window around. Repeat this, then your desired text box will accept input. This is a bug that I don't know of a way to fix. It's due to Linux not giving text-bindings to rootoverrideredirect'ed windows so easily without a focus_force which breaks multi-tasking functionalities. (In Windows you don't need to worry about it, it works just fine there.)
 
-Now the directory structure should look similar to this
-
-YOURENV/
-
----------ProgramFiles/
-
-------------------Icons/
-
----------------------------ALLICONS
-
-------------------defaultuser0/<all files>
-
-------------------<YOUR_USER_NAME>/
-
----------------------------<YOUR_USER_FILES>
-
-------------------All Apps
-
-------------------accConfiguration1.conf
-
----------Windows 11.py
-
----------theme_config.txt
-
-If so, you're officially done with the manual setup! have a great time playing around!
+Have a great time playing around!
