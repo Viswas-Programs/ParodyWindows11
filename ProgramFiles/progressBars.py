@@ -4,7 +4,7 @@ import math
 from ProgramFiles import dwm
 from ProgramFiles import callHost
 class ProgressOutOfMaxValueBar:
-    def __init__(self, info: list, root: tkinter.Tk, headerText, T_BG, T_FG, autoQuitWhenCompletion = True):
+    def __init__(self, info: list, root: tkinter.Tk, headerText, T_BG, T_FG, autoQuitWhenCompletion = True, stopOperationFunc=None, resumeOperationFunc=None):
         self.info = info
         self.root = root
         self.currentVal = info[0]
@@ -31,14 +31,27 @@ class ProgressOutOfMaxValueBar:
         self.widgetFrame= tkinter.Frame(self.ProgressBarFRAME, background=T_BG)
         self.widgetFrame.grid(row=2, column=0)
         self.widgets = []
+        self.stopOperationFunc = stopOperationFunc
+        self.resumeOperationFunc = resumeOperationFunc
+        self.stopButton = tkinter.Button(self.progressBarWindow, background=T_BG, foreground=T_FG, text="Stop Operation", command=self.stopFunc)
+        self.stopButton.grid(row=2, column=0)
         self.function = None
         self.autoQuit = autoQuitWhenCompletion
         for i in range(0, 99):
             a = tkinter.Label(self.widgetFrame, text="|", background="Red", foreground="Red")
             a.grid(row=0, column=i)
             self.widgets.append(a)
+    def resumeFunc(self):
+        resumeFuncForThread =  lambda e=None:self.resumeOperationFunc("User-initiated operation resume", "ProgressBar")
+        self.resumeThread = Thread(target=resumeFuncForThread)
+        self.resumeThread.start()
+        self.stopButton.configure(command=self.stopFunc, text="Stop Operation")
+    def stopFunc(self):
+        self.stopOperationFunc("User-initiated operation stop", "ProgressBar")
+        self.stopButton.configure(command=self.resumeFunc, text="Resume Operation")
+
     def runFunc(self): 
-        self.copyThread = Thread(target=self.function, name="fileCopier")
+        self.copyThread = Thread(target=self.function)
         self.root.after(500, self.copyThread.start)
         self.progressBarWindow.mainloop()
     def cleanUp(self):

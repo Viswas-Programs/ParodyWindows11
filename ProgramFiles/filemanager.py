@@ -141,7 +141,7 @@ def main(FILESYSTEM: ParWFS, *args):
             absFilePath = os.path.join(filepath, selectedFile)
             FILESYSTEM.cutFiles([[absFilePath, filepath]])
         def pasteFiles(ev=None):
-            progressBar = ProgressOutOfMaxValueBar(FILESYSTEM.calculateProgressForPaste(filepath), INSTANCES[args[-1]], "Pasting Files!", THEME_WINDOW_BG, THEME_FOREGROUND, False )
+            progressBar = ProgressOutOfMaxValueBar(FILESYSTEM.calculateProgressForPaste(filepath), INSTANCES[args[-1]], "Pasting Files!", THEME_WINDOW_BG, THEME_FOREGROUND, False, FILESYSTEM.callStop, FILESYSTEM.callResume )
             func = lambda: FILESYSTEM.pasteFiles(filepath, lambda e: progressBar.incrementer(e[0]))
             progressBar.function = func
             progressBar.runFunc()

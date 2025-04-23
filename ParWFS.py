@@ -1,5 +1,6 @@
 import os
 import shelve
+import datetime
 _instances = {}
 class ParWFS: 
     """ A wrapper class around the existing file system installed, managing copy-pasting files and stuff. This is mainly made for my shell ParodyWindows11.
@@ -16,7 +17,38 @@ class ParWFS:
         self.RUNNING_APPS = {}
         self.RunAppsFrame = None
         self.ROOT = None
+        self.STOP_CALLED = {
+            "called": False,
+            "reason": "",
+            "time": "",
+            "stoppingPath_FILE": "",
+            "stoppingPath_DIR": "",
+            "callFrom": "",
+            "target": "",
+            "updaterFunc": None,
+            "stopped": False
+        }
+        self.RESUME_CALL = {
+            "called": False,
+            "reason": "",
+            "callFrom": "",
+            "time": "",
+            "resumed": False
+        }
         _instances[purpose] = self
+
+    def callStop(self, reason: str, callFrom: str):
+        self.STOP_CALLED["called"] = True
+        self.STOP_CALLED["reason"] = reason
+        self.STOP_CALLED["callFrom"] = callFrom
+        self.STOP_CALLED["time"] = datetime.datetime.now()
+    def callResume(self, reason: str, callFrom: str):
+        print("HERE")
+        self.RESUME_CALL["called"] = True
+        self.RESUME_CALL["reason"] = reason
+        self.RESUME_CALL["callFrom"] = callFrom
+        self.RESUME_CALL["time"] = datetime.datetime.now()
+        self._pasteFiles(self.STOP_CALLED["target"], updaterFunc=self.STOP_CALLED["updaterFunc"])
     def loadConfig(self, configFileName: str, configName: str):
         if not self.currentLoadedConfigFiles: self.currentLoadedConfigFiles = {}
         try: 
@@ -54,6 +86,8 @@ class ParWFS:
             else: self.TASK_IN_PROGRESS[1] += 1
         return self.TASK_IN_PROGRESS
     def _pasteFiles(self, targetPath: str, fileToCopy = None, updaterFunc=lambda e: None):
+        self.STOP_CALLED["updaterFunc"] = updaterFunc
+        if self.STOP_CALLED["stopped"] == True and self.RESUME_CALL["called"] == False: return
         if fileToCopy == None: fileToCopy = self.currentCopiedFiles + self.currentCutFiles
         for absFile in fileToCopy:
             if not os.path.isabs(absFile[0]): absFile[0] = os.path.join(absFile[1], absFile[0]).replace("\\", "/")
@@ -62,13 +96,22 @@ class ParWFS:
                 elif absFile[0][-1] == "\\": absFile[0].replace("\\", "")
                 baseDir = os.path.basename(absFile[0])
                 actualFullDir = os.path.join(targetPath, baseDir).replace("\\", "/")
-                os.mkdir(actualFullDir)
+                try: os.mkdir(actualFullDir)
+                except: pass
                 ls = []
                 for file in os.listdir(absFile[0]):
                     ls.append([os.path.join(absFile[0], file).replace("\\", "/"), absFile[0]])
                 self._pasteFiles(actualFullDir, ls, updaterFunc)
             else: 
                 baseName = os.path.basename(absFile[0])
+                if self.STOP_CALLED["called"] == True and self.STOP_CALLED["stopped"] == False:
+                    self.STOP_CALLED["stoppingPath_DIR"] = targetPath
+                    self.STOP_CALLED["stoppingPath_FILE"] = baseName
+                    self.STOP_CALLED["stopped"] = True
+                    return
+                if (self.RESUME_CALL["called"] == True) and (self.RESUME_CALL["resumed"] == False):
+                    if (self.STOP_CALLED["stoppingPath_FILE"] != baseName) and (absFile[1] != self.STOP_CALLED["stoppingPath_DIR"]): continue
+                    else: self.RESUME_CALL["resumed"] = True
                 self.TASK_IN_PROGRESS[0]  += 1
                 updaterFunc(self.TASK_IN_PROGRESS)
                 with open(absFile[0], "rb") as reader: 
@@ -76,6 +119,7 @@ class ParWFS:
                         writer.write(reader.read())
         self.TASK_IN_PROGRESS=[0, 0]
     def pasteFiles(self, targetPath: str, updaterFunc=lambda e: print(end="")):
+        self.STOP_CALLED["target"] = targetPath
         self._pasteFiles(targetPath=targetPath, updaterFunc=updaterFunc)
         self.deleteFiles(fileToDelete=self.currentCutFiles)
     def deleteFiles(self, fileToDelete = None): 
