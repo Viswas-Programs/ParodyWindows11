@@ -17,6 +17,9 @@ class ParWFS:
         self.RUNNING_APPS = {}
         self.RunAppsFrame = None
         self.ROOT = None
+        self._resetStopReumeCalls()
+        _instances[purpose] = self
+    def _resetStopReumeCalls(self):
         self.STOP_CALLED = {
             "called": False,
             "reason": "",
@@ -31,24 +34,24 @@ class ParWFS:
         self.RESUME_CALL = {
             "called": False,
             "reason": "",
+            "stoppingPath_FILE": "",
+            "stoppingPath_DIR": "",
             "callFrom": "",
+            "target": "",
             "time": "",
             "resumed": False
         }
-        _instances[purpose] = self
-
     def callStop(self, reason: str, callFrom: str):
         self.STOP_CALLED["called"] = True
         self.STOP_CALLED["reason"] = reason
         self.STOP_CALLED["callFrom"] = callFrom
         self.STOP_CALLED["time"] = datetime.datetime.now()
     def callResume(self, reason: str, callFrom: str):
-        print("HERE")
         self.RESUME_CALL["called"] = True
         self.RESUME_CALL["reason"] = reason
         self.RESUME_CALL["callFrom"] = callFrom
         self.RESUME_CALL["time"] = datetime.datetime.now()
-        self._pasteFiles(self.STOP_CALLED["target"], updaterFunc=self.STOP_CALLED["updaterFunc"])
+        self.pasteFiles(self.STOP_CALLED["target"], updaterFunc=self.STOP_CALLED["updaterFunc"])
     def loadConfig(self, configFileName: str, configName: str):
         if not self.currentLoadedConfigFiles: self.currentLoadedConfigFiles = {}
         try: 
@@ -105,13 +108,17 @@ class ParWFS:
             else: 
                 baseName = os.path.basename(absFile[0])
                 if self.STOP_CALLED["called"] == True and self.STOP_CALLED["stopped"] == False:
-                    self.STOP_CALLED["stoppingPath_DIR"] = targetPath
-                    self.STOP_CALLED["stoppingPath_FILE"] = baseName
+                    self.STOP_CALLED["stoppingPath_DIR"] = self.RESUME_CALL["stoppingPath_DIR"] = targetPath
+                    self.STOP_CALLED["stoppingPath_FILE"] = self.RESUME_CALL["stoppingPath_FILE"] =  baseName
                     self.STOP_CALLED["stopped"] = True
                     return
                 if (self.RESUME_CALL["called"] == True) and (self.RESUME_CALL["resumed"] == False):
-                    if (self.STOP_CALLED["stoppingPath_FILE"] != baseName) and (absFile[1] != self.STOP_CALLED["stoppingPath_DIR"]): continue
-                    else: self.RESUME_CALL["resumed"] = True
+                    if (self.RESUME_CALL["stoppingPath_FILE"] != baseName) and (absFile[1] != self.RESUME_CALL["stoppingPath_DIR"]): continue
+                    else: 
+                        self.RESUME_CALL["resumed"] = True
+                        oldTarget = self.STOP_CALLED["target"] 
+                        self._resetStopReumeCalls()
+                        self.STOP_CALLED["target"] = oldTarget
                 self.TASK_IN_PROGRESS[0]  += 1
                 updaterFunc(self.TASK_IN_PROGRESS)
                 with open(absFile[0], "rb") as reader: 
