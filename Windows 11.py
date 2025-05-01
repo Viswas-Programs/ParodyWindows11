@@ -875,7 +875,7 @@ class TaskManager:
         self.fileView.column("Applications", anchor=tkinter.W, width=600)
         self.fileView.heading("Applications", text="Applications", anchor=tkinter.CENTER)
         self.fileView.configure(style="Treeview")
-        self.endTaskButton = tkinter.Button(self.ROOT, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="End Application", command=self.endTask)
+        self.endTaskButton = tkinter.Button(self.ROOT, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="End Application", command=lambda e=None: self.endTask(self.fileView.focus()))
         self.endTaskButton.grid(row=2, column=0)
         self.ROOT.after(500, self.updateEach1000Ms)
         self.ROOT.mainloop()
@@ -891,9 +891,9 @@ class TaskManager:
             self.fileView.insert(parent='', iid=PID, text='', index='end', values=[appToIns],)
         self.fileView.focus(SELECTED_SMTH)
         self.fileView.selection_set([SELECTED_SMTH])
-        
-    def endTask(self):
-        application = self.fileView.focus()
+    @staticmethod    
+    def endTask(PID):
+        application = PID
         try:
             dwm.close(PID=int(application))
             

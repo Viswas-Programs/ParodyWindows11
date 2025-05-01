@@ -387,6 +387,38 @@ class cmdCommands(object):
             self.showMsg(f"\nThe command did not execute succesfully!\n{EXP}")
         else:
             self.showMsg(f"\nThe command completed succesfully!")
+    def taskkill(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+        print("hi?")
+        param = " ".join( char for char in self.stdin.get().split(" ")[1:])
+        print(param)
+        try:
+            charList = param.split(".")
+            print(charList)
+            if charList[-1] == "py":
+                if SHELL_MODULES_LOADED:
+                    try: callHost.endTaskByName(callHost.appImportNameCheck(" ".join(char for char in charList[0:-1])), self.showMsg)
+                    except Exception as EXP: self.showMsg(f"\nError Occured: {EXP}")
+                    else: self.showMsg("\nKilled all!")
+                else: self.showMsg("\nCould not end task by name, because shell modules are not loaded!")
+            else: raise Exception("PID-Based stuff")
+        except Exception:
+            if SHELL_MODULES_LOADED:
+                try: callHost.endTaskByPID(int(charList[0]))
+                except Exception as EXP: self.showMsg(f"\nError Occured: {EXP}")
+                else: self.showMsg(f"\nKilled process associated with {charList[0]}!")
+            else: self.showMsg("\nCould not end task by PID, because shell modules are not loaded!")
+        self.clearStdIn()
+    def tasklist(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+        if SHELL_MODULES_LOADED:
+            try:
+                self.showMsg("\nPID \t PROCESS NAME")
+                RUNNING_APPS = dict(callHost.returnRunningAppsList()[1])
+                for i, item in enumerate(list(RUNNING_APPS.values())): self.showMsg(f"\n{list(RUNNING_APPS.keys())[i]} \t {item}")
+            except Exception as EXP: self.showMsg(f"\nCouldn't list all tasks due to an error\nError: {EXP}")
+        else: self.showMsg("\nCould not list all tasks because the shell modules are not loaded!")
+        self.clearStdIn()
 
         
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
@@ -437,4 +469,4 @@ def returnInformation(PID):
         # Would add more stuff here in the future, such as memory usage and shi. 
     }
 if __name__ == "__main__":
-    main(None, "defaultuser0",  None, dict({"THEME": ["Black", "White"]}), 99999)
+    main(None, None, "defaultuser0",  None, dict({"THEME": ["Black", "White"]}), 99999)
