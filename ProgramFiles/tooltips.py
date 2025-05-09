@@ -1,5 +1,5 @@
 import tkinter
-TOOLTIPS_IN_USE = {}
+TOOLTIPS_IN_USE = dict()
 THEME_BG="Yellow"
 THEME_FG="Black"
 def _createToolTipAtGivenPos(id: str, root: tkinter.Tk, message: str, command, event: tkinter.Event, **kwargs):

@@ -30,6 +30,10 @@ def returnInformation(PID):
     }
 def main(FILESYSTEM: ParWFS, *args):
     try:
+        if FILESYSTEM.getConfig("SYS_CONFIG")["FS_STOP_PREMATURE"] == True:
+            print("HEREEE LES GOO!")
+            FILESYSTEM.loadFromPickle()
+            FILESYSTEM.editConfig("SYS_CONFIG", "FS_STOP_PREMATURE", False)
         print(args[-1])
         PROCESS_RUNNING = True
         global THEME_FOREGROUND

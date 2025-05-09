@@ -134,7 +134,8 @@ class cmdCommands(object):
                 self.showMsg("\nCurrent User List: ")
                 for file in Path(os.path.join(self.CWD, "ProgramFiles")).glob("accConfiguration*.conf"):
                     with open(file, "r") as showUsers:
-                        self.showMsg(f"\n-> {base64.urlsafe_b64decode(showUsers.readlines()[0]).decode("utf-8")} ")
+                        user = base64.urlsafe_b64decode(showUsers.readlines()[0]).decode("utf-8")
+                        self.showMsg(f"\n-> {user} ")
             elif parameter == "delete":
                 if (not directInvoke): 
                     if (not self.ADMINISTRATOR): self.showMsg("\nPlease enable administrator before deleting an user!"); return
@@ -200,10 +201,15 @@ class cmdCommands(object):
         except Exception as exp: self.showMsg(f"\nERROR OCCURED while clearing terminal: {exp}")
         finally: self.INPUTTED_COMMANDS_LIST.append("clear"); self.stdout.configure(state="disabled")
     def shutdown(self):
+        def actualShutdown(*args):
+            try:self.FILE_SYSTEM.__del__()
+            except: print("HIII")
+            finally: os._exit(0)
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()
         self.showMsg("\nShutting down...")
-        self.ROOT.after(5000, lambda: os._exit(0))
+        
+        self.ROOT.after(5000, actualShutdown)
     def restart(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.ROOT.destroy()

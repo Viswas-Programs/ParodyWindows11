@@ -446,16 +446,16 @@ class GUIButtonCommand:
             appImport = importlib.import_module(f"ProgramFiles.{realApp}")
             oldFocus = appImport.returnInformation(PID)["state"]
             appImport.focusIn(PID)
-            wnToFocus = appImport.INSTANCES[{PID}]
+            wnToFocus = appImport.INSTANCES[PID]
         x = wnToFocus.winfo_x()
         y = wnToFocus.winfo_y()
         width = wnToFocus.winfo_width()
         height = wnToFocus.winfo_height()
-        if (str(platform.system()).lower() == "windows"):
-            x += (wnToFocus.winfo_x()/4)
-            y += (wnToFocus.winfo_y()/4)
-            width += (wnToFocus.winfo_width()/4)
-            height += (wnToFocus.winfo_height()/4)
+        #if (str(platform.system()).lower() == "windows"):
+        #    x += (wnToFocus.winfo_x()/4)
+       #     y += (wnToFocus.winfo_y()/4)
+        #   width += (wnToFocus.winfo_width()/4)
+        #    height += (wnToFocus.winfo_height()/4)
         image = ImageTk.PhotoImage(ImageGrab.grab(bbox=(x, y, x + width, y + height)).resize(tuple((350, 100))))
         GLOBAL_VARS.ROOT_WINDOW.E_IMG = image
         ttl = None
@@ -464,11 +464,11 @@ class GUIButtonCommand:
             ttl = dwm.title(PID=PID)
         except:
             appImport = importlib.import_module(f"ProgramFiles.{realApp}")
-            appImport.INSTANCES[{PID}].update()
-            appImport.INSTANCES[{PID}].state(newstate=oldFocus)
-            appImport.INSTANCES[{PID}].update()
+            appImport.INSTANCES[PID].update()
+            appImport.INSTANCES[PID].state(newstate=oldFocus)
+            appImport.INSTANCES[PID].update()
             ttl = appImport.returnInformation(PID)["title"]
-        tooltips._createToolTipAtGivenPos({PID}, GLOBAL_VARS.ROOT_WINDOW, ttl+f'\\nPID: {PID}', GUIButtonCommand.FOCUS_focusApp, event, image=GLOBAL_VARS.ROOT_WINDOW.E_IMG, compound="top")
+        tooltips._createToolTipAtGivenPos(PID, GLOBAL_VARS.ROOT_WINDOW, ttl+f'\nPID: {PID}', GUIButtonCommand.FOCUS_focusApp, event, image=GLOBAL_VARS.ROOT_WINDOW.E_IMG, compound="top")
     @staticmethod
     def createRunningAppTaskbarIcon(app: str, PID:int, T_BG=None, T_FG=None):
         ROOT = GLOBAL_VARS.ROOT_WINDOW
@@ -912,7 +912,7 @@ class TaskManager:
                     dwm.MANAGED_DWM_INSTANCES[int(application)][2].destroy()
                     del GLOBAL_VARS.RUNNING_APPS[int(application)]
                 except Exception as U:
-                    messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {U}\nFrom\n{E}\nFrom\n{EXP}", self.ROOT)
+                    messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {U}\nFrom\n{E}\nFrom\n{EXP}", GLOBAL_VARS.ROOT_WINDOW)
 
 class PW11UserCreation:
     """This can be used for accounts panel in settings menu AND as an OOBE agent"""
@@ -1035,6 +1035,9 @@ def main():
         safeMode()
     global SYS_CONFIG
     FILE_SYSTEM.loadConfig(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", "USER_CONFIG")
+    if FILE_SYSTEM.getConfig("SYS_CONFIG")["FS_STOP_PREMATURE"] == True:
+        FILE_SYSTEM.loadFromPickle()
+        messagebox.showinfo("I/O operation interrupt while shutdown, recovered.", "We detected that the shell has exited by force while the shell was performing an I/O operation via the ParWFS Library.\nIt has automatically restored the point where it left.\nPlease go to the target directory again and restart your operation!.", GLOBAL_VARS.ROOT_WINDOW)
     GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
     GLOBAL_VARS.APPS_LIST, GLOBAL_VARS.COMMAND_APPS_LIST = GLOBAL_VARS.USER_CONFIG["APPS"]
     GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = GLOBAL_VARS.USER_CONFIG["THEME"]
@@ -1151,6 +1154,7 @@ def loginVerification(userNameText: tkinter.Entry, passwordText: tkinter.Entry, 
             try:
                 main()
             except Exception as EXP: bsod(main, f"DESKTOP_LAUNCH_ERROR('{EXP}')")
+            finally: FILE_SYSTEM.__del__()
     except Exception as EXP:
         messagebox.showerror("loginVerification Error!", EXP)
 
