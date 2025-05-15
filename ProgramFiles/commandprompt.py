@@ -425,6 +425,15 @@ class cmdCommands(object):
             except Exception as EXP: self.showMsg(f"\nCouldn't list all tasks due to an error\nError: {EXP}")
         else: self.showMsg("\nCould not list all tasks because the shell modules are not loaded!")
         self.clearStdIn()
+    def reloadAppCache(self):
+        if not SHELL_MODULES_LOADED:
+            self.showMsg("\nCommand did not run due to shell modules not present!")
+            return
+        from ProgramFiles import callHost
+        appToReload = self.getParams(1, " ")
+        try: callHost.LOADED_APPS.reloadAppCache(appToReload)
+        except Exception as EXP: self.showMsg(f"\nUnable to reload app cache!\n{EXP}")
+        else: self.showMsg(f"\nApp cache for {appToReload} has been updated!")
 
         
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]

@@ -10,6 +10,10 @@ PIDsToGen = {
     "PROGRESSBAR_IDS": W11.PROGRESSBAR_IDS,
     "FILEASK_IDS": W11.FILEASK_WINDOWS
 }
+LOADED_APPS = None
+def setLoadedApps(loadedAppInst):
+    global LOADED_APPS
+    LOADED_APPS = loadedAppInst
 def acknowledgeEndTask(PID: int):
     W11.GUIButtonCommand.handleExits(PID, returnRunningAppsList())
 def getHostDir():
