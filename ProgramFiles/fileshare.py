@@ -1,22 +1,17 @@
 import socket
 import tkinter
-from tkinter import filedialog, messagebox
+from ProgramFiles.errorHandler import messagebox
+from ProgramFiles import fileaskhandlers as filedialog
 import os
 from cryptography.fernet import Fernet
 
-from ProgramFiles import callHost
+from ProgramFiles import dwm
 from ProgramFiles.entryWidget import Entry
 
-if os.access("theme_config.txt", os.F_OK):
-    with open("theme_config.txt") as read_config:
-        config = read_config.read().splitlines()
-        THEME_WINDOW_BG, THEME_FOREGROUND = config
-else:
-    with open("theme_config.txt", "w") as FTR_write_config: #FirstTimeRun_Write_config, full form.
-        THEME_WINDOW_BG = "Black"
-        THEME_FOREGROUND = "White"
-        FTR_write_config.write(f"{THEME_WINDOW_BG}\n{THEME_FOREGROUND}")
+NEEDS_FILESYSTEM_ACCESS = False
 
+THEME_WINDOW_BG = "Black"
+THEME_FOREGROUND = "White"
 
 def _sendFiles(sender_ip, file_path, dest_port):
         """ send files over the same network
@@ -125,8 +120,7 @@ def send_file():
     def fileselector():
         """ file select"""
         global fileSelect
-        fileSelect = filedialog.askopenfilename(title="Select files to "
-                                                        "send over")
+        fileSelect = filedialog.askopenfilename(title="Select files to send over")
         return fileSelect
 
     select_files = tkinter.Button(send_file_gui,
@@ -180,42 +174,45 @@ def recieveFiles():
     submit.grid(row=3, column=0)
     recieve_files.mainloop()
 def main(*args):
-    global control_window
+    global control_window, THEME_FOREGROUND, THEME_WINDOW_BG
+    THEME_WINDOW_BG = args[-2]["THEME"][0]
+    THEME_FOREGROUND = args[-2]["THEME"][1]
+    # I dont know why I am having this app still, I wanna remake it into my own terms and not usse a cheap copypaste from geeksforgeeks :C
+    # Let it stay here for now ig, Just make it work with DWM now ig :\ 
+    # Probably this is going to be it's last update for this applet, or not - 23:28 IST 16/5/2025
     control_window = tkinter.Tk()
     control_window.configure(background=THEME_WINDOW_BG)
+    dwm.createTopFrame(control_window, THEME_FOREGROUND, THEME_WINDOW_BG, "fileshare", "File Sharing", args[-1] )
+    choice  = messagebox.askyesorno("Depreceated", "This app is very depreceated and it wont receive any updates at all! All features are broken. Do you want to quit now [Y] or no [N]?")
+    if choice == 1: dwm.close(args[-1])
     a = tkinter.Label(master=control_window,
                         text="Transfer Files",
                         background=THEME_WINDOW_BG,
                         foreground=THEME_FOREGROUND)
-    a.grid(row=0, column=0)
+    a.grid(row=1, column=0)
     send_files_btn = tkinter.Button(control_window,
                                 text="Send files over local network",
                                 background=THEME_WINDOW_BG,
                                 foreground=THEME_FOREGROUND,
                                 command=send_file)
-    send_files_btn.grid(row=0, column=1)
+    send_files_btn.grid(row=1, column=1)
     recieve_files_btn = tkinter.Button(control_window,
                                         text="Read the sent files in the "
                                             "network",
                                         background=THEME_WINDOW_BG,
                                         foreground=THEME_FOREGROUND,
                                         command=recieveFiles)
-    recieve_files_btn.grid(row=0, column=2)
-    def destroy():
-        callHost.acknowledgeEndTask(args[-2], args[-1])
-        control_window.destroy()
-        return True
-    control_window.protocol("WM_DELETE_WINDOW", destroy)
+    recieve_files_btn.grid(row=1, column=2)
     control_window.mainloop()
-    control_window.destroy()
     return args[-1]
-def focusIn(): control_window.state(newstate='normal'); return True
-def focusOut(): control_window.state(newstate='iconic'); return True
-def endTask():
+def focusIn(PID): control_window.state(newstate='normal'); return True
+def focusOut(PID): control_window.state(newstate='iconic'); return True
+def endTask(PID):
     control_window.destroy()
     return True
-def returnInformation():
+def returnInformation(PID):
     return {
         "title": control_window.title(),
+        "state": control_window.state()
         # Would add more stuff here in the future, such as memory usage and shi. 
     }

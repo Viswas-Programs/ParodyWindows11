@@ -250,7 +250,9 @@ class cmdCommands(object):
                         except UnicodeEncodeError as UER:
                             self.showMsg(f"\nUnicodeDecodeError occured while repairing 'Windows 11.py'\n--MSG:{UER}")
                     if os.access("ProgramFiles", os.F_OK) and os.path.isdir("ProgramFiles"):
-                        import pathlib3x
+                        try: import pathlib3x
+                        except: self.sendToRootTerminal("pip3 install pathlib3x")
+                        finally: import pathlib3x
                         Location = pathlib3x.Path("ProgramFiles")
                         Location.rmtree(ignore_errors=True)
                     PrograFile = zipfile.ZipFile(BytesIO(ProgramFilesMainDownload.content))
@@ -346,13 +348,14 @@ class cmdCommands(object):
         else: self.showMsg("\nConfig loaded succesfully!")
         self.clearStdIn()
 
-    def sendToRootTerminal(self):
+    def sendToRootTerminal(self, command = None):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         def run():
             def killer(*args):
                 pipe.kill()
                 self.showMsg("\nCommand killed with Ctrl-C!")
-            pipe = subprocess.Popen(self.stdin.get().replace("sendToRootTerminal -", "").split(" "), stdout=subprocess.PIPE, bufsize=1, text=True, stderr=subprocess.PIPE)
+            if not command: command=self.stdin.get().replace("sendToRootTerminal -", "").split(" ")
+            pipe = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, text=True, stderr=subprocess.PIPE)
             Unbinder= self.ROOT.bind("<Control-c>", killer)
             while pipe.poll() is None:
                 msg = pipe.stdout.readline().strip() # read a line from the process output

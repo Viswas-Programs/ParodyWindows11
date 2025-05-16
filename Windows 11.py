@@ -1101,7 +1101,7 @@ def main():
                     widget.configure(text=appImport.returnInformation(widget.processInfo[0])['title'])
             except Exception as EXP: 
                 print("ERROR!!!", EXP)
-                if widget.RETRIES > 10: 
+                if widget.RETRIES == 10: 
                     currentTitle = widget.cget("text")
                     widget.configure(text=f"{currentTitle} (Not Responding)")
                 if widget.RETRIES > 20:

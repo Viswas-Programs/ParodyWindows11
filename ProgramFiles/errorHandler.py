@@ -48,7 +48,7 @@ class messagebox:
         except: pass
         finally: return RETURNVAL
     @staticmethod
-    def showinfo(header, msg, root, use_preset=False, type_preset=None, quitOnResponse=False):
+    def showinfo(header, msg, root=None, use_preset=False, type_preset=None, quitOnResponse=False):
         RETURNVAL = 0
         PID = callHost.getRangeToGenPID(callHost.MSGBOX)
         def returnOk(PID): 
@@ -86,7 +86,7 @@ class messagebox:
         except: pass
         finally: return RETURNVAL
     @staticmethod
-    def showwarning(header, msg, root, use_preset=False, type_preset=None, quitOnResponse=False):
+    def showwarning(header, msg, root=None, use_preset=False, type_preset=None, quitOnResponse=False):
         RETURNVAL = 0
         PID = callHost.getRangeToGenPID(callHost.MSGBOX)
         def returnOk(PID): 
@@ -123,7 +123,7 @@ class messagebox:
         except: pass
         finally: return RETURNVAL
     @staticmethod
-    def askyesorno(header, msg, root,):
+    def askyesorno(header, msg, root=None,):
         PID = callHost.getRangeToGenPID(callHost.MSGBOX)
         RETURNVAL = 0
         def returnOk(PID): 
@@ -183,7 +183,6 @@ class messagebox:
             root.configure(background=THEME_WINDOW_BG)
             root.state("withdrawn")
             root.title("DEBUG WINDOW")
-        print("starting")
         INSTANCES[PID] = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
         INSTANCES[PID].configure(background=THEME_WINDOW_BG)
         dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "question", header, PID)
