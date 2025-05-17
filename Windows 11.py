@@ -104,14 +104,14 @@ class PW11GlobalVars():
         self.TASKBAR_CONTEXT_MENU: tkinter.Menu = None
         self.CLOCK_LABEL: tkinter.Label = None
         self.CLOCK_LOOP_ID = None
-        self.RUNNING_APPS = {}
-        self.ICONS = {}
-        self.THEME_WINDOW_BG = None
-        self.THEME_FOREGROUND = None
-        self.USERNAME = None
-        self.APPS_LIST = []
-        self.COMMAND_APPS_LIST = []
-        self.USER_CONFIG = None
+        self.RUNNING_APPS: dict[int, str] = {}
+        self.ICONS: dict[str, tkinter.PhotoImage] = {}
+        self.THEME_WINDOW_BG: str = None
+        self.THEME_FOREGROUND: str = None
+        self.USERNAME: str = None
+        self.APPS_LIST: list[str] = []
+        self.COMMAND_APPS_LIST: list[str] = []
+        self.USER_CONFIG: shelve.Shelf = None
         self.PINNED_APPS_DESKTOP = []
         self.PINNED_APPS = []
         self.APP_INSTANCE = LoadedApps()
@@ -167,6 +167,13 @@ FILEASK_WINDOWS = (400, 600)
 TASK_MANAGERS = (600, 650)
 CONTROL_PANELS = (650, 700)
 DIALOGUE_BOXES = (700, 850)
+
+def generatePID(LIB_TO_USE: tuple[int, int]):
+    PID = random.randint(LIB_TO_USE[0], LIB_TO_USE[1])
+    while PID in dict(GLOBAL_VARS.RUNNING_APPS).keys():
+        PID = random.randint(LIB_TO_USE[0], LIB_TO_USE[1])
+    return PID
+
 def returnRunningApps():
     return FILE_SYSTEM.RUNNING_APPS
 def giveIcon(appName: str, root, subsample=False, relaunch=False):
@@ -207,13 +214,16 @@ class Notifications(object):
         messagebox.showinfo(title, msg, GLOBAL_VARS.ROOT_WINDOW)
     def showNotificationsList(self, event=None):
         notificationsWindow = tkinter.Toplevel(background=GLOBAL_VARS.THEME_WINDOW_BG)
+        PID = generatePID(DIALOGUE_BOXES)
+        GLOBAL_VARS.RUNNING_APPS[PID] = "notification window"
+        dwm.createTopFrame(notificationsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "info", "Notification Center", PID)
         GLOBAL_VARS.NOTIFICATION_BUTTON.configure(text="Notifications (0)")
         if len(self.NotificationsList) == 0:
             a = tkinter.Label(notificationsWindow, text="No notifications (yet)", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-            a.grid(row=0, column=0)
+            a.grid(row=1, column=0)
         for index, notif in enumerate(self.NotificationsList):
             lbl = tkinter.Label(notificationsWindow, text=f"{notif}\t: {self.TimeofNotification[index]}", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-            lbl.grid(row=index, column=0)
+            lbl.grid(row=index+1, column=0)
             lbl.bind('<Button-1>', self.actions[index])
         notificationsWindow.mainloop()
         self.NotificationsList, self.actions, self.TimeofNotification = [], [], []
@@ -229,9 +239,7 @@ class settings():
         self.ROOT = root
         self.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
         self.settingsWindow = tkinter.Toplevel(self.ROOT, background=GLOBAL_VARS.THEME_WINDOW_BG)
-        PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
-        while PID in GLOBAL_VARS.RUNNING_APPS.keys():
-            PID = random.randint(CONTROL_PANELS[0], CONTROL_PANELS[1])
+        PID = generatePID(CONTROL_PANELS)
         GLOBAL_VARS.RUNNING_APPS[PID] = "Control Panel"
         dwm.createTopFrame(self.settingsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "settings", "Control Panel", PID)
         GUIButtonCommand.createRunningAppTaskbarIcon("settings", PID)
@@ -352,8 +360,11 @@ class settings():
                 except Exception as I:
                     messagebox.showerror('Error changing default app association', f'Error changing default app association.\nProb: {I}', addNewEntryWn )
             addNewEntryWn = tkinter.Toplevel(self.settingsWindow)
+            PID = generatePID(DIALOGUE_BOXES)
+            dwm.createTopFrame(addNewEntryWn, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "settings", "Add new app association wizard", PID )
+            GLOBAL_VARS.RUNNING_APPS[PID] = "Control Panel - New App Association Wizard"
             nEntFrm = tkinter.Frame(addNewEntryWn, background=GLOBAL_VARS.THEME_WINDOW_BG)
-            nEntFrm.grid(row=0, column=0)
+            nEntFrm.grid(row=1, column=0)
             textAssociationEntry = tkinter.Entry(nEntFrm, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
             textAssociationEntry.grid(row=0, column=0)
             comboBox = ttk.Combobox(nEntFrm)
@@ -434,9 +445,7 @@ class GUIButtonCommand:
             return
         if application == "Command Prompt":
             import ProgramFiles.commandprompt as CMD
-            appToLaunchPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
-            while appToLaunchPID in GLOBAL_VARS.RUNNING_APPS.keys():
-                appToLaunchPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
+            appToLaunchPID = generatePID(PROCESS_IDS)
             GLOBAL_VARS.RUNNING_APPS[appToLaunchPID] = application
             GUIButtonCommand.createRunningAppTaskbarIcon(application, appToLaunchPID)
             try: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID)
@@ -445,9 +454,7 @@ class GUIButtonCommand:
             appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
             #progAppImport = f"{GLOBAL_VARS.COMMAND_APPS_LIST[GLOBAL_VARS.COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
             appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{appToLaunch}")
-            appPID = random.randint(PROCESS_IDS[0], PROCESS_IDS[1])
-            while appPID in GLOBAL_VARS.RUNNING_APPS.keys():
-                appPID = random.randint(a=PROCESS_IDS[0], b=PROCESS_IDS[1])
+            appPID = generatePID(PROCESS_IDS)
             GLOBAL_VARS.RUNNING_APPS[appPID] = application
             GUIButtonCommand.createRunningAppTaskbarIcon(application, appPID) 
             if appImport.NEEDS_FILESYSTEM_ACCESS:
@@ -587,23 +594,26 @@ class GUIButtonCommand:
         # SHIT CODE, WILL PROBABLY CHANGE TO A COMBOBOX PRETTY SOON
         taskbarselfWindow = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW)
         taskbarselfWindow.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
-        taskbarselfWindow.title("Taskbar app pinning")
+        PID = generatePID(DIALOGUE_BOXES)
+        frame = dwm.createTopFrame(taskbarselfWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "info", "Taskbar App Pinning Wizard", PID)
+        frame.ALL_BUTTONS["minimize"].grid_forget()
+        GLOBAL_VARS.RUNNING_APPS[PID] = "TaskbarAppPinWizard"
         addWidgetsFrame = tkinter.LabelFrame(taskbarselfWindow, text="Add widgets", 
                                             background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        addWidgetsFrame.grid(row=0, column=0)
+        addWidgetsFrame.grid(row=1, column=0)
         addClock = tkinter.Button(addWidgetsFrame, text="Clock", foreground=GLOBAL_VARS.THEME_FOREGROUND,
                                     background=GLOBAL_VARS.THEME_WINDOW_BG, command=GUIButtonCommand.currentTime)
-        addClock.grid(row=0, column=0)
+        addClock.grid(row=1, column=0)
         pinItems = tkinter.LabelFrame(taskbarselfWindow, text="Pin items",
                                         background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        pinItems.grid(row=1, column=0)
+        pinItems.grid(row=2, column=0)
         r = -1
         PINNED_APPS = list(GLOBAL_VARS.PINNED_APPS)
         NOT_PINNED_APPS = []
         for app in GLOBAL_VARS.APPS_LIST:
             if app not in PINNED_APPS: NOT_PINNED_APPS.append(app)
         combobox = ttk.Combobox(pinItems, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, values=NOT_PINNED_APPS, state='readonly')
-        combobox.grid(row=0, column=0)
+        combobox.grid(row=1, column=0)
         combobox.bind("<<ComboboxSelected>>", lambda e: GUIButtonCommand.pinApps(combobox.get()) )
         taskbarselfWindow.mainloop()
     @staticmethod
@@ -664,6 +674,10 @@ class GUIButtonCommand:
         INDEX=0
         iconToAdd = None
         addNewIcon = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW, background=GLOBAL_VARS.THEME_WINDOW_BG)
+        PID = generatePID(DIALOGUE_BOXES)
+        frame  = dwm.createTopFrame(addNewIcon, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "info", "Desktop App Pinning Wizard", PID)
+        GLOBAL_VARS.RUNNING_APPS[PID] = "DesktopAppPinningWizard"
+        frame.ALL_BUTTONS["minimize"].grid_forget()
         desktopAppsList = ttk.Combobox(addNewIcon)
         # for z in self.CurrentDesktopIconsList:
         #     CURRENT_LIST = GLOBAL_VARS.APPS_LIST
@@ -683,9 +697,9 @@ class GUIButtonCommand:
             iconToAdd = str(desktopAppsList.get())
         desktopAppsList.bind("<<ComboboxSelected>>", updateVariable)
         desktopAppsList['state'] = "readonly"
-        desktopAppsList.grid(row=0, column=0, sticky="w")
+        desktopAppsList.grid(row=1, column=0, sticky="w")
         addIconBtn = tkinter.Button(addNewIcon, text="Add Icon!", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=lambda: GUIButtonCommand.createAppIcon(iconToAdd, f"{iconToAdd}"))
-        addIconBtn.grid(row=0, column=1) 
+        addIconBtn.grid(row=1, column=1) 
         addNewIcon.mainloop()
     @staticmethod
     def shutdownMenu(root: tkinter.Tk, e=None):
@@ -713,24 +727,29 @@ class GUIButtonCommand:
                     os.system(f"""{PYTHON_COMMAND_ARG} "Windows 11.py" """)
 
         shutdownWindow = tkinter.Toplevel(root, background=GLOBAL_VARS.THEME_WINDOW_BG)
+        PID = generatePID(DIALOGUE_BOXES)
+        GLOBAL_VARS.RUNNING_APPS[PID] = "shutdownmenu"
+        frame = dwm.createTopFrame(shutdownWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "shutdown", "Shutdown Menu", PID)
+        frame.ALL_BUTTONS["minimize"].grid_forget()
         shutdownWindow.title("Shutdown/Restart the shell")
         a = tkinter.Label(shutdownWindow, text="What you want to do now?", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        a.grid(row=0, column=0)
+        a.grid(row=1, column=0)
         ShutdownICON = GLOBAL_VARS.ICONS["shutdown"].subsample(2, 2)
         ShutdownBTN = tkinter.Button(shutdownWindow, image=ShutdownICON, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=shutdown)
         ShutdownBTN.IMGREF = ShutdownICON
         tooltips.createToolTipAtGivenPos(ShutdownBTN, 2, root, "Shuts down the shell")
-        ShutdownBTN.grid(row=1, column=0)
+        ShutdownBTN.grid(row=2, column=0)
         RestartICON = GLOBAL_VARS.ICONS["restart"].subsample(2, 2)
         RestartBTN = tkinter.Button(shutdownWindow, image=RestartICON, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=restart)
         RestartBTN.IMGREF = RestartICON
-        RestartBTN.grid(row=1, column=1)
+        RestartBTN.grid(row=2, column=1)
+        tooltips.createToolTipAtGivenPos(RestartBTN, 2, root, "Restarts the shell")
         safeModeRestartVar = tkinter.IntVar()
         ttk.Style().configure("TCheckbutton", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
         safeModeRestartChk = ttk.Checkbutton(shutdownWindow, text="Restart in safe mode", variable=safeModeRestartVar, style="TCheckbutton")
-        safeModeRestartChk.grid(row=1, column=2, padx=10)
-        tkinter.Label(shutdownWindow, text="Shutdown", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND).grid(row=2, column=0)
-        tkinter.Label(shutdownWindow, text="Restart", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND).grid(row=2, column=1)
+        safeModeRestartChk.grid(row=2, column=2, padx=10)
+        tkinter.Label(shutdownWindow, text="Shutdown", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND).grid(row=3, column=0)
+        tkinter.Label(shutdownWindow, text="Restart", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND).grid(row=3, column=1)
         shutdownWindow.mainloop()
 
 def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig= None, notifications=None,):
@@ -880,8 +899,7 @@ class TaskManager:
     def __init__(self, root):
         self.ROOT = tkinter.Toplevel(root, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.fileView = ttk.Treeview(self.ROOT, style="Treeview")
-        PID = random.randint(TASK_MANAGERS[0], TASK_MANAGERS[1])
-        while PID in GLOBAL_VARS.RUNNING_APPS.keys(): PID = random.randint(TASK_MANAGERS[0], TASK_MANAGERS[1])
+        PID = generatePID(TASK_MANAGERS)
         dwm.createTopFrame(self.ROOT, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "taskmanager", "Task Manager", PID)
         GLOBAL_VARS.RUNNING_APPS[PID] = "Task Manager"
         GUIButtonCommand.createRunningAppTaskbarIcon("Task Manager", PID)
