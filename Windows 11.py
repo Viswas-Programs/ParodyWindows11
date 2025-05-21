@@ -239,10 +239,10 @@ class settings():
         self.ROOT = root
         self.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
         self.settingsWindow = tkinter.Toplevel(self.ROOT, background=GLOBAL_VARS.THEME_WINDOW_BG)
-        PID = generatePID(CONTROL_PANELS)
-        GLOBAL_VARS.RUNNING_APPS[PID] = "Control Panel"
-        dwm.createTopFrame(self.settingsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "settings", "Control Panel", PID)
-        GUIButtonCommand.createRunningAppTaskbarIcon("settings", PID)
+        self.PID = generatePID(CONTROL_PANELS)
+        GLOBAL_VARS.RUNNING_APPS[self.PID] = "Control Panel"
+        dwm.createTopFrame(self.settingsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "settings", "Control Panel", self.PID)
+        GUIButtonCommand.createRunningAppTaskbarIcon("settings", self.PID)
         btnFrame = tkinter.Frame(self.settingsWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
         btnFrame.grid(row=1, column=0)
         homeBtn = tkinter.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Home", command=self.homePage)
@@ -358,10 +358,10 @@ class settings():
                     GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
                     self.changeFileOpeners(True)
                 except Exception as I:
-                    messagebox.showerror('Error changing default app association', f'Error changing default app association.\nProb: {I}', addNewEntryWn )
+                    messagebox.showerror('Error changing default app association', f'Error changing default app association.\nProb: {I}', addNewEntryWn, MainPID=PID )
             addNewEntryWn = tkinter.Toplevel(self.settingsWindow)
             PID = generatePID(DIALOGUE_BOXES)
-            dwm.createTopFrame(addNewEntryWn, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "settings", "Add new app association wizard", PID )
+            dwm.createTopFrame(addNewEntryWn, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "settings", "Add new app association wizard", PID , associatePIDProcess=self.PID)
             GLOBAL_VARS.RUNNING_APPS[PID] = "Control Panel - New App Association Wizard"
             nEntFrm = tkinter.Frame(addNewEntryWn, background=GLOBAL_VARS.THEME_WINDOW_BG)
             nEntFrm.grid(row=1, column=0)
@@ -391,7 +391,7 @@ class settings():
                     CurrentConfig.update({i: app})
                     GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
                 except Exception as I:
-                    messagebox.showerror('Error changing default app association', f'Error changing default app association.\n{I}', self.settingsWindow )
+                    messagebox.showerror('Error changing default app association', f'Error changing default app association.\n{I}', self.settingsWindow, MainPID=self.PID )
             comboBox = ttk.Combobox(innerFrame, values=GLOBAL_VARS.APPS_LIST, state='readonly', background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
             comboBox.bind("<<ComboboxSelected>>", lambda e=None: changeDefAppEvent(comboBox.get()))
             comboBox.grid(row=0, column=1)
@@ -465,7 +465,8 @@ class GUIButtonCommand:
     def FOCUS_focusApp(PID, realApp, E=None):
         try:
             dwm.focus(PID)
-        except:
+        except Exception as EXP:
+            print(EXP)
             try:
                 appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{realApp}")
                 if appImport.returnInformation(PID)["state"] == "normal": appImport.focusOut(PID)
@@ -573,7 +574,7 @@ class GUIButtonCommand:
                GLOBAL_VARS.CLOCK_LABEL.after_cancel(GLOBAL_VARS.CLOCK_LOOP_ID)
                GLOBAL_VARS.CLOCK_LABEL.destroy()
                GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
-            except Exception as E: messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}")
+            except Exception as E: messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}", GLOBAL_VARS.ROOT_WINDOW)
     @staticmethod
     def pinApps(appToPin, writeto=True):
         
@@ -704,7 +705,7 @@ class GUIButtonCommand:
     @staticmethod
     def shutdownMenu(root: tkinter.Tk, e=None):
         def waitUntillTaskFinishes(func):
-            if FILE_SYSTEM.TASK_IN_PROGRESS != [0, 0]: messagebox.showinfo("IO Operations pending!", "Please wait untill the file IO operations are completed. The system will automatically shutdown after.", root=root)
+            if FILE_SYSTEM.TASK_IN_PROGRESS != [0, 0]: messagebox.showinfo("IO Operations pending!", "Please wait untill the file IO operations are completed. The system will automatically shutdown after.", root=root, MainPID=PID)
             def e():
                 if FILE_SYSTEM.TASK_IN_PROGRESS == [0, 0]: func()
                 root.after(100, e)

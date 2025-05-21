@@ -10,7 +10,7 @@ THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEM
 INSTANCES = {}
 class messagebox:
     @staticmethod
-    def showerror(header=None, msg=None, root=None, use_preset=False, type_preset=None, quitOnResponse=False):
+    def showerror(header=None, msg=None, root=None, use_preset=False, type_preset=None, quitOnResponse=False, MainPID=None):
         RETURNVAL = 0
         def returnOk(PID): 
             nonlocal RETURNVAL
@@ -26,7 +26,7 @@ class messagebox:
             root.title("DEBUG WINDOW")
         PID = callHost.getRangeToGenPID(callHost.MSGBOX)
         INSTANCES[PID] = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
-        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "error", header, PID)
+        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "error", header, PID, associatePIDProcess=MainPID)
         callHost.addToRunningAppsList(PID, f"MessageBox Host - {root.title()}")
         try:
             if use_preset: 
@@ -48,7 +48,7 @@ class messagebox:
         except: pass
         finally: return RETURNVAL
     @staticmethod
-    def showinfo(header, msg, root=None, use_preset=False, type_preset=None, quitOnResponse=False):
+    def showinfo(header, msg, root=None, use_preset=False, type_preset=None, quitOnResponse=False, MainPID=None):
         RETURNVAL = 0
         PID = callHost.getRangeToGenPID(callHost.MSGBOX)
         def returnOk(PID): 
@@ -66,7 +66,7 @@ class messagebox:
         PID = callHost.getRangeToGenPID(callHost.MSGBOX)
         INSTANCES[PID] = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
         INSTANCES[PID].configure(background=THEME_WINDOW_BG)
-        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "info", header, PID)
+        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "info", header, PID, associatePIDProcess=MainPID)
         callHost.addToRunningAppsList(PID, f"MessageBox Host - {root.title()}")
         INSTANCES[PID].title(header)
         MsgFrame = tkinter.Frame(INSTANCES[PID], background=THEME_WINDOW_BG)
@@ -86,7 +86,7 @@ class messagebox:
         except: pass
         finally: return RETURNVAL
     @staticmethod
-    def showwarning(header, msg, root=None, use_preset=False, type_preset=None, quitOnResponse=False):
+    def showwarning(header, msg, root=None, use_preset=False, type_preset=None, quitOnResponse=False, MainPID=None):
         RETURNVAL = 0
         PID = callHost.getRangeToGenPID(callHost.MSGBOX)
         def returnOk(PID): 
@@ -103,7 +103,7 @@ class messagebox:
             root.title("DEBUG WINDOW")
         INSTANCES[PID] = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
         INSTANCES[PID].configure(background=THEME_WINDOW_BG)
-        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "warning", header, PID)
+        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "warning", header, PID, associatePIDProcess=MainPID)
         callHost.addToRunningAppsList(PID, f"MessageBox Host - {root.title()}")
         INSTANCES[PID].title(header)
         if use_preset: 
@@ -123,7 +123,7 @@ class messagebox:
         except: pass
         finally: return RETURNVAL
     @staticmethod
-    def askyesorno(header, msg, root=None,):
+    def askyesorno(header, msg, root=None, MainPID=None):
         PID = callHost.getRangeToGenPID(callHost.MSGBOX)
         RETURNVAL = 0
         def returnOk(PID): 
@@ -139,7 +139,7 @@ class messagebox:
             root.title("DEBUG WINDOW")
         INSTANCES[PID] = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
         INSTANCES[PID].configure(background=THEME_WINDOW_BG)
-        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "question", header, PID)
+        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "question", header, PID, associatePIDProcess=MainPID)
         callHost.addToRunningAppsList(PID, f"MessageBox Host - {root.title()}")
         INSTANCES[PID].title(header)
         errorICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/question.png', master=root)
@@ -157,7 +157,7 @@ class messagebox:
         except: pass
         finally: return RETURNVAL
     @staticmethod
-    def askyesnocancel(header, msg, root=None, quitOnResponse=False):
+    def askyesnocancel(header, msg, root=None, quitOnResponse=False, MainPID=None):
         PID = callHost.getRangeToGenPID(callHost.MSGBOX)
         RETURNVAL = 0
         def returnFalse():
@@ -185,7 +185,7 @@ class messagebox:
             root.title("DEBUG WINDOW")
         INSTANCES[PID] = tkinter.Toplevel(root, background=THEME_WINDOW_BG)
         INSTANCES[PID].configure(background=THEME_WINDOW_BG)
-        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "question", header, PID)
+        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "question", header, PID, associatePIDProcess=MainPID)
         callHost.addToRunningAppsList(PID, f"MessageBox Host - {root.title()}")
         INSTANCES[PID].title(header)
         errorICON = tkinter.PhotoImage(file=f'ProgramFiles/Icons/question.png', master=root)

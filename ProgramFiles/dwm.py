@@ -18,23 +18,22 @@ def _changeThemeForAllApps(newBg, newFg, widget: tkinter.BaseWidget):
     except Exception: pass
 def changeThemeForAllApps(newBg, newFg):
     roots = []
-    for appLists in MANAGED_DWM_INSTANCES.values():
-        roots.append(appLists[2])
-    for root in roots:
-        _changeThemeForAllApps(newBg, newFg, root)
+    for appLists in MANAGED_DWM_INSTANCES.values(): roots.append(appLists[2])
+    for root in roots: _changeThemeForAllApps(newBg, newFg, root)
     closeBtns = []
-    for closeBtn in MANAGED_DWM_INSTANCES.values():
-        closeBtns.append(closeBtn[3])
-    for closeBn in closeBtns:
-        closeBn.configure(background="red", foreground="white")
+    for closeBtn in MANAGED_DWM_INSTANCES.values(): closeBtns.append(closeBtn[3])
+    for closeBn in closeBtns: closeBn.configure(background="red", foreground="white")
 def title(newTitle=None, PID=0):
     if newTitle: MANAGED_DWM_INSTANCES[PID][1].configure(text=newTitle); MANAGED_DWM_INSTANCES[PID][0] = newTitle
     return MANAGED_DWM_INSTANCES[PID][0]
 def close(PID):
     MANAGED_DWM_INSTANCES[PID][2].destroy()
+    for instance in MANAGED_DWM_INSTANCES[PID][5]: close(instance)
+    if MANAGED_DWM_INSTANCES[PID][4].SUBPROCESS == True: MANAGED_DWM_INSTANCES[MANAGED_DWM_INSTANCES[PID][4].PARAMETER_CALL_INFORMATION["ParentPID"]][5].remove(PID)
     try: callHost.acknowledgeEndTask(PID)
     except Exception as exp: print(f"Cannot call host for end task acknowledgement!\n{exp}")
 def focusOut(PID):
+    MANAGED_DWM_INSTANCES[PID][2].update()
     MANAGED_DWM_INSTANCES[PID][2].state(newstate="withdrawn")
 def focusIn(PID):
     MANAGED_DWM_INSTANCES[PID][2].update()
@@ -50,16 +49,23 @@ def setFocus(PID, newState):
     MANAGED_DWM_INSTANCES[PID][2].update()
 def returnWindow(PID) -> tkinter.Tk:
     return MANAGED_DWM_INSTANCES[PID][2]
-def focus(PID, *args):
-    print(MANAGED_DWM_INSTANCES[PID][2].state())
-    MANAGED_DWM_INSTANCES[PID][2].update()
-    if MANAGED_DWM_INSTANCES[PID][2].state() == "normal":
-        MANAGED_DWM_INSTANCES[PID][2].state(newstate="withdrawn")
+def focus(PID, focusFrom=None, *args):
+    instance = MANAGED_DWM_INSTANCES[PID]
+    instance[2].update()
+    if instance[2].state() == "normal":
+        if focusFrom in ("button", "taskmanager") and instance[4].SUBPROCESS: instance[4].MINIMIZE_CALL = 0
+        instance[2].state(newstate="withdrawn")
+        for instances in instance[5]: setFocus(instances, "withdrawn")
     else:
-        MANAGED_DWM_INSTANCES[PID][2].state(newstate="normal")
-        MANAGED_DWM_INSTANCES[PID][2].lift()
-    MANAGED_DWM_INSTANCES[PID][2].update()
-    return (MANAGED_DWM_INSTANCES[PID][2].state())
+        instance[4].MINIMIZE_CALL = 1
+        instance[2].update()
+        instance[2].state(newstate="normal")
+        instance[2].lift()
+        for instances in instance[5]: 
+            if MANAGED_DWM_INSTANCES[instances][4].MINIMIZE_CALL != 0: setFocus(instances, "normal")
+
+    instance[2].update()
+    return (instance[2].state())
 def focusMaximise(PID):
     # Force maximise ig, after you downsize you wont be able to extend the app with dynamic widgets sadly, so use this like a one-time F11 or smth man. 
     if f"{MANAGED_DWM_INSTANCES[PID][2].winfo_screenwidth()}x{MANAGED_DWM_INSTANCES[PID][2].winfo_screenheight()}" in MANAGED_DWM_INSTANCES[PID][2].geometry():
@@ -70,7 +76,7 @@ def focusMaximise(PID):
         MANAGED_DWM_INSTANCES[PID][2].OLD_GEO = MANAGED_DWM_INSTANCES[PID][2].geometry()
     MANAGED_DWM_INSTANCES[PID][2].update()
     MANAGED_DWM_INSTANCES[PID][2].lift()
-def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroyFunc=None):
+def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroyFunc=None, associatePIDProcess=None):
     root.geometry("+200+200")
     def start_move(event):
         root.x = event.x
@@ -108,7 +114,8 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
         "iconName": iconName,
         "appName": appName,
         "PID": PID,
-        "destroyFunc": destroyFunc
+        "destroyFunc": destroyFunc,
+        "ParentPID": associatePIDProcess
     }
     root.Entry = Entry
     lbl = tkinter.Label(DWMFrame, text=appName, background=T_BG, foreground=T_FG, compound='left')
@@ -120,7 +127,7 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
         root.update()
     except Exception as EXP: print(EXP)
     lbl.grid(row=0, column=0, sticky="W")
-    minimizeBtn = tkinter.Button(DWMBtnFrame, text=" _ ", background=T_BG, foreground=T_FG, border=2, borderwidth=1, command=lambda: focus(PID))
+    minimizeBtn = tkinter.Button(DWMBtnFrame, text=" _ ", background=T_BG, foreground=T_FG, border=2, borderwidth=1, command=lambda: focus(PID, "button"))
     minimizeBtn.grid(row=0, column=1, sticky="E")
     maximizeBtn = tkinter.Button(DWMBtnFrame, text=" 🗖 ", background=T_BG, foreground=T_FG, border=2, borderwidth=1, command=lambda: focusMaximise(PID))
     #maximizeBtn.grid(row=0, column=2, sticky="E")
@@ -134,6 +141,8 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     lbl.bind("<B1-Motion>", _handleDrag)
     root.OLD_GEO = root.MAX_RETURN = root.geometry()
     root.QUIT_FUNC = root.quit
+    DWMFrame.MINIMIZE_CALL = 1 #0 to not focus in/out automatically if parent is focused in/out, 1 is to focus in/out when parent is focused in/out.
+    DWMFrame.SUBPROCESS = False
     DWMFrame.ALL_BUTTONS = {
         "close": closeBtn,
         "minimize": minimizeBtn,
@@ -144,9 +153,15 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     root.update()
     root.update_idletasks()
     # resizer()
-    MANAGED_DWM_INSTANCES[PID] = [appName, lbl, root, closeBtn, DWMFrame]
+    if associatePIDProcess != None: 
+        DWMFrame.SUBPROCESS = True
+        MANAGED_DWM_INSTANCES[associatePIDProcess][5].append(PID)
+    MANAGED_DWM_INSTANCES[PID] = [appName, lbl, root, closeBtn, DWMFrame, []]
     return DWMFrame
 
+def dissociateSubProcess(MainPID, SubPID):
+    try: MANAGED_DWM_INSTANCES[MainPID][5].remove(SubPID)
+    except Exception as EXP: print(EXP)
 
 def dissociateFrameFromDWM(PID):
     MANAGED_DWM_INSTANCES[PID][2].overrideredirect(False)
@@ -159,10 +174,13 @@ def dissociateAllDWMApps():
 
 def reRegisterAllDWMApps():
     for PIDs in MANAGED_DWM_INSTANCES.keys():
-        createTopFrame(MANAGED_DWM_INSTANCES[2], 
-                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["foreground"], 
-                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["background"], 
-                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["iconName"], 
-                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["appName"], 
-                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["PID"],
-                       MANAGED_DWM_INSTANCES[4].PARAMETER_CALL_INFORMATION["destroyFunc"])
+        INSTANCE = MANAGED_DWM_INSTANCES[PIDs]
+        PARAMTER_CALL_INFO = INSTANCE[4].PARAMETER_CALL_INFORMATION
+        createTopFrame(INSTANCE, 
+                       PARAMTER_CALL_INFO["foreground"], 
+                       PARAMTER_CALL_INFO["background"], 
+                       PARAMTER_CALL_INFO["iconName"], 
+                       PARAMTER_CALL_INFO["appName"], 
+                       PARAMTER_CALL_INFO["PID"],
+                       PARAMTER_CALL_INFO["destroyFunc"],
+                       PARAMTER_CALL_INFO["ParentPID"])

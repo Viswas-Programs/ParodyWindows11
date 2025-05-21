@@ -35,11 +35,9 @@ def appImportNameCheck(appName):
 def endTaskByName(importName: str, externalPrintMsg=print):
     RUNNING_APPS: dict[int, str] = ParWFS._instances["root"].RUNNING_APPS
     PIDS = []
-    print(RUNNING_APPS.keys(), RUNNING_APPS.values(), importName)
     for i, appName in enumerate(list(dict(RUNNING_APPS).values())):
         print(W11.GUIButtonCommand.AppImportNameCheck(appName), importName)
         if appImportNameCheck(appName) == importName: PIDS.append(list(dict(RUNNING_APPS).keys())[i])
-    print(PIDS)
     for PID in PIDS:
         W11.TaskManager.endTask(PID)
         externalPrintMsg(f"\nKilled process {PID} associated with process {importName}")
