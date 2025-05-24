@@ -39,7 +39,7 @@ def openFile(prevOrNext, PID):
     else:
         FOLDER_MODE = False
         nextBtn.configure(state="disabled"); backBtn.configure(state='disabled')
-        file1 = askopenfilename(title="Open an image file", filetypes=(("PNG Images", "*.png"), ("JPG Images", "*.jpg"), ("JPEG Images", "*.jpeg")))
+        file1 = askopenfilename(title="Open an image file", filetypes=(("PNG Images", "*.png"), ("JPG Images", "*.jpg"), ("JPEG Images", "*.jpeg")), MainPID=PID)
         INSTANCES[PID].lift()
         INSTANCES[PID].focus_force()
     photo = tkinter.PhotoImage(file=file1, master=INSTANCES[PID])
@@ -57,7 +57,7 @@ def forceOpenFile(fileName: str, PID):
 
 def openFolder(PID):
     global CURRENT_INDEX, IMAGES, folder, FOLDER_MODE
-    folder = askdirectory(title="Open a folder")
+    folder = askdirectory(title="Open a folder", MainPID=PID)
     print(folder)
     INSTANCES[PID].lift()
     INSTANCES[PID].focus_force()
@@ -78,7 +78,7 @@ def aboutThis(PID):
     theContent = tkinter.Label(aboutWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, 
                                text="""This is a basic photo viewer program created for an app in "ParodyWindows11"\n
 That's the creator's desktop shell / desktop UI like interface in Python. \n
-LAST UPDATED: 04/03/2024. Made by HeheBoi420 (discord aswell)""")
+LAST UPDATED: 24/05/2025. Made by HeheBoi420 (same username in discord)""")
     theContent.grid(row=0, column=0)
     aboutWindow.title("About Photo Viewer")
     aboutWindow.mainloop()
@@ -95,15 +95,17 @@ def changeMsSlideShow(PID):
             if int(ms.get()) > 0:
                 SET_MS = int(ms.get())
                 print(SET_MS, SLIDESHOW_MODE)
-                ERH.messagebox.showinfo("Success", "Succesfully changed slideshow delay time. ", editWindow, quitOnResponse=True)
+                ERH.messagebox.showinfo("Success", "Succesfully changed slideshow delay time. ", editWindow, quitOnResponse=True, MainPID=SubPID)
             else:
-                ERH.messagebox.showerror("Error!", "The provided delay is less than or equal to 0!", editWindow)
+                ERH.messagebox.showerror("Error!", "The provided delay is less than or equal to 0!", editWindow, MainPID=SubPID)
         except Exception as EXP:
-            ERH.messagebox.showerror("Error!", f"Error occured while setting delay! \n Problem: \n{EXP}")
+            ERH.messagebox.showerror("Error!", f"Error occured while setting delay! \n Problem: \n{EXP}", editWindow, MainPID=SubPID)
 
     editWindow = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
+    SubPID = callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES)
+    createTopFrame(editWindow, THEME_FOREGROUND, THEME_WINDOW_BG, "photoviewer", "Slideshow Settings", SubPID, associatePIDProcess=PID)
     status = tkinter.Label(editWindow, text=f"Status: {SLIDESHOW_MODE}", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    status.grid(row=0, column=0)
+    status.grid(row=1, column=0)
     lblText = ""
     def labelText():
         nonlocal lblText
@@ -111,11 +113,11 @@ def changeMsSlideShow(PID):
         else: lblText = "Enable slide show mode"
         return lblText
     changeStatus = tkinter.Button(editWindow, text=labelText(), background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=setSlideshowMode)
-    changeStatus.grid(row=0, column=1)
+    changeStatus.grid(row=1, column=1)
     ms = tkinter.Entry(editWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
-    ms.grid(row=1, column=0)
+    ms.grid(row=2, column=0)
     setMs = tkinter.Button(editWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Set ms!", command=setSlideshowMS)
-    setMs.grid(row=1, column=1)
+    setMs.grid(row=2, column=1)
     editWindow.mainloop()
 def main(username, notification, fileopenHandle, *args):
     def destroy(PID):

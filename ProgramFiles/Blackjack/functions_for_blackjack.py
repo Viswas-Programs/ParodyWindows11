@@ -15,11 +15,11 @@ def loadImages(cards, root):
     # Suit cards loading
     for suit in suits:
         for card in range(1, 11):
-            fileName = f"ProgramFiles/BlackJack/Cards/{str(card)}_{suit}.png"
+            fileName = f"ProgramFiles/Blackjack/Cards/{str(card)}_{suit}.png"
             image = tkinter.PhotoImage(file=fileName, master=root)
             cards.append((card, image,))
         for card in faceCards:
-            fileNames = f"ProgramFiles/BlackJack/Cards/{str(card)}_{suit}.png"
+            fileNames = f"ProgramFiles/Blackjack/Cards/{str(card)}_{suit}.png"
             images = tkinter.PhotoImage(file=fileNames, master=root)
             cards.append((10, images,))
 

@@ -10,6 +10,7 @@ except ModuleNotFoundError:
 import shelve
 from datetime import datetime
 from ProgramFiles.dwm import createTopFrame
+from ProgramFiles import callHost
 PROCESS_RUNNING = True
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
@@ -53,7 +54,7 @@ def optionsWindow(PID, e=None):
         if SHOWN_ABOUT: aboutFrame.destroy()
         if SHOWN_PERSONALIZATION: perFrame.destroy()
         historyFrame = tkinter.Frame(optionsWn, background=THEME_WINDOW_BG, width=90, height=120)
-        historyFrame.grid(row=0, column=1)
+        historyFrame.grid(row=1, column=1)
         for i, (time, search) in enumerate(searchHistory.items()):
             exec(f"a{i} = tkinter.Label(historyFrame, text='{search}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)")
             exec(f"a{i}.grid(row=i, column=0)")
@@ -66,7 +67,7 @@ def optionsWindow(PID, e=None):
         if SHOWN_HISTORY: historyFrame.destroy()
         if SHOWN_PERSONALIZATION: perFrame.destroy()
         aboutFrame = tkinter.Frame(optionsWn, background=THEME_WINDOW_BG)
-        aboutFrame.grid(row=0, column=1)
+        aboutFrame.grid(row=1, column=1)
         about = tkinter.Label(aboutFrame, text=
         "Python Web browser v2.0\nThis doesn't use modern javascript, so JS has no support, period.",
         background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
@@ -76,17 +77,20 @@ def optionsWindow(PID, e=None):
         global SHOWN_PERSONALIZATION
         global perFrame
         global DARK_THEME
+        if SHOWN_HISTORY: historyFrame.destroy()
+        if SHOWN_ABOUT: aboutFrame.destroy()
         perFrame = tkinter.Frame(optionsWn, background=THEME_WINDOW_BG)
-        perFrame.grid(row=0, column=1)
-        def changeTheme(e=None): frame.enable_dark_theme(True, True); DARK_THEME = True
-        def revChanges(e=None): frame.enable_dark_theme(False, False); DARK_THEME = False
+        perFrame.grid(row=1, column=1)
+        def changeTheme(e=None): global DARK_THEME;  frame.enable_dark_theme(True, True); DARK_THEME = True
+        def revChanges(e=None): global DARK_THEME;  frame.enable_dark_theme(False, False); DARK_THEME = False
         change = tkinter.Button(perFrame, text="Experimental dark theme! (on)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=changeTheme)
         change.grid(row=0, column=0)
         revchange = tkinter.Button(perFrame, text="Experimental dark theme! (off)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=revChanges)
         revchange.grid(row=1, column=0)
     optionsWn = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
+    createTopFrame(optionsWn, THEME_FOREGROUND, THEME_WINDOW_BG, "webbrowser", "Browser Settings", callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES), associatePIDProcess=PID)
     btnFrame = tkinter.Frame(optionsWn, background=THEME_WINDOW_BG)
-    btnFrame.grid(row=0, column=0)
+    btnFrame.grid(row=1, column=0)
     historyBtn = tkinter.Button(btnFrame, text="History", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=showHistory)
     historyBtn.grid(row=0, column=0)
     aboutBtn = tkinter.Button(btnFrame, text="About", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=showAbout)

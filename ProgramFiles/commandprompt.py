@@ -437,6 +437,10 @@ class cmdCommands(object):
         try: callHost.LOADED_APPS.reloadAppCache(appToReload)
         except Exception as EXP: self.showMsg(f"\nUnable to reload app cache!\n{EXP}")
         else: self.showMsg(f"\nApp cache for {appToReload} has been updated!")
+    def ver(self):
+        self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
+        self.clearStdIn()
+        self.showMsg(f"\nParodyWindows11 Version {self.VERSION}")
 
         
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]

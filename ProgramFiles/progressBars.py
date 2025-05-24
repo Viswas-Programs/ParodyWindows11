@@ -4,7 +4,7 @@ import math
 from ProgramFiles import dwm
 from ProgramFiles import callHost
 class ProgressOutOfMaxValueBar:
-    def __init__(self, info: list, root: tkinter.Tk, headerText, T_BG, T_FG, autoQuitWhenCompletion = True, stopOperationFunc=None, resumeOperationFunc=None):
+    def __init__(self, info: list, root: tkinter.Tk, headerText, T_BG, T_FG, autoQuitWhenCompletion = True, stopOperationFunc=None, resumeOperationFunc=None, destroyFunc=None, parentPID=None):
         self.info = info
         self.root = root
         self.currentVal = info[0]
@@ -19,7 +19,7 @@ class ProgressOutOfMaxValueBar:
         self.headerText = headerText
         self.PID = callHost.getRangeToGenPID(callHost.PRG_ID)
         callHost.addToRunningAppsList(self.PID, f"ProgressBarHost - {root.title()}")
-        dwm.createTopFrame(self.progressBarWindow, T_FG, T_BG, "continue", self.headerText, self.PID)
+        dwm.createTopFrame(self.progressBarWindow, T_FG, T_BG, "continue", self.headerText, self.PID, destroyFunc=destroyFunc, associatePIDProcess=parentPID )
         self.progressBarWindow.title(self.headerText)
         self.ProgressBarFRAME = tkinter.Frame(self.progressBarWindow, background=T_BG)
         self.ProgressBarFRAME.grid(row=1, column=0)

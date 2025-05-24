@@ -58,8 +58,8 @@ def show(PID, e=None):
     externalAppsList.bind("<<TreeviewSelect>>", a)
     externalAppsList.configure(style="Treeview")
     refresh()
-def loadCustomApp():
-    fileToOpen = fileaskhandlers.askopenfilename(title="Select app to run!", filetypes=(("Windows 11 Apps", "*.py"), ("All Files", "*.*")))
+def loadCustomApp(PID):
+    fileToOpen = fileaskhandlers.askopenfilename(title="Select app to run!", filetypes=(("Windows 11 Apps", "*.py"), ("All Files", "*.*")), MainPID=PID)
     load(file=fileToOpen)
 def main(*args):
     global externalAppsName
@@ -75,7 +75,7 @@ def main(*args):
     buttonText = "Look for external apps!"
     showRefreshBtn = tkinter.Button(INSTANCES[args[-1]], text=buttonText, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: show(args[-1]))
     showRefreshBtn.grid(row=1, column=0)
-    loadCusttomBtn = tkinter.Button(INSTANCES[args[-1]], text="Load Custom App!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=loadCustomApp)
+    loadCusttomBtn = tkinter.Button(INSTANCES[args[-1]], text="Load Custom App!", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=lambda: loadCustomApp(args[-1]))
     loadCusttomBtn.grid(row=1, column=1)
     INSTANCES[args[-1]].mainloop()
     INSTANCES[args[-1]].destroy()

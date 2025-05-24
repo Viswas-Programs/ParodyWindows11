@@ -9,23 +9,27 @@ INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
 def showTimer(PID, e=None):
     def updateTime(e=None):
+        currentCounter= 0
+        def _UPDATE_TIME_(ID, *args):
+            nonlocal currentCounter
+            timerFrame.after_cancel(ID)
+            if (timerTime-currentCounter == 0): 
+                messagebox.showinfo("Timer finished", "Timer ran out!!!", root=INSTANCES[PID], MainPID=PID)
+                return
+            timerLabel.configure(text=f"{timerTime-currentCounter}")
+            E = timerFrame.after(1000, lambda e=None: _UPDATE_TIME_(E))
+            currentCounter += 1
         timerTime = int(timerEntry.get())
         timerLabel = tkinter.Label(timerFrame, text=f"{timerTime}", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         timerLabel.grid(row=0, column=0)
-        for t in range(0, timerTime):
-            if t == timerTime:
-                timerLabel.configure(text='0')
-            timerLabel.configure(text=f"{timerTime-t}")
-            timerFrame.update()
-            INSTANCES[PID].update()
-            time.sleep(1)
-        # while timerTime > 0:
-        #     timerFrame.after(1000, updateLabel)
-        #     if timerTime == 0:
-        #         timerLabel.configure(text="0")
-        #         break
-        else:
-            messagebox.showinfo("Timer finished", "Timer ran out!!!", root=INSTANCES[PID])
+        #for t in range(0, timerTime):
+        #    if t == timerTime:
+        #        timerLabel.configure(text='0')
+        #    timerLabel.configure(text=f"{timerTime-t}")
+        ##    timerFrame.update()
+         #   INSTANCES[PID].update()
+         #  time.sleep(1)
+        ID = timerFrame.after(1000, lambda e=None:_UPDATE_TIME_(ID))
 
             
     global SHOWN_ALARMS

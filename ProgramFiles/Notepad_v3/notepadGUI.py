@@ -7,20 +7,21 @@ import os
 import platform
 import shelve
 import tkinter
-from tkinter import filedialog, ttk, font, colorchooser
+from tkinter import ttk, font, colorchooser
 
 from ProgramFiles import callHost, dwm
 try:
     from ProgramFiles.errorHandler import messagebox
     import ProgramFiles.Notepad_v3.syntax_checker as syntax_checker
     from ProgramFiles.entryWidget import Text, Entry
+    from ProgramFiles import fileaskhandlers as filedialog
 except ModuleNotFoundError:
     import tkinter.messagebox as messagebox
     try: 
         import Notepad_v3.syntax_checker as syntax_checker
     except: 
         import syntax_checker
-    from tkinter import Text, Entry
+    from tkinter import Text, Entry, filedialog
 import typing
 import socket
 try:
@@ -161,7 +162,7 @@ class NotepadRun(object):
             version, branch, a = str(self.UPDATER_FILE.content.decode(encoding='utf-8')).split("\n")
         except Exception: version = 3.3; branch = "STABLE"; 
         if float(version) > float(self.CURRENT_VERSION):
-            messagebox.showinfo("Update available!", f"Version {version} of Notepad is available to download! kindly download this update.\n", self.root)
+            messagebox.showinfo("Update available!", f"Version {version} of Notepad is available to download! kindly download this update.\n", self.root, MainPID=self.PID)
             self.update = tkinter.Label(self.root,
                                         text="An update is available!",
                                         background=self.THEME_WINDOW_BG,
@@ -217,8 +218,7 @@ class NotepadRun(object):
             subprocess.Popen(["python3", str(fullpath)])
             exit()
 
-        check = messagebox.askyesnocancel('Reboot required!', 'Do you want to restart the program now, or '
-                                                        'later manually?', self.root)
+        check = messagebox.askyesnocancel('Reboot required!', 'Do you want to restart the program now, or later manually?', self.root, MainPID=self.PID)
         if check == 1:
             restart()
 
@@ -498,8 +498,8 @@ Never gonna run around and desert you""")
         self.root.title("Notepad GUI v3.3")
         self.saved = True
         if file is None:
-            filePath = filedialog.askopenfilename(title="Open file to read",
-                                                filetypes=filetype)
+            try: filePath = filedialog.askopenfilename(title="Open file to read", filetypes=filetype, MainPID=self.PID)
+            except: filePath = filedialog.askopenfilename(title="Open file to read", filetypes=filetype)
         else:
             filePath = file
         try:
@@ -524,9 +524,9 @@ Never gonna run around and desert you""")
                             self.text.tag_configure('hide', elide=True)
                             self.saveTo.insert(1.0, filePath)
                         else:
-                            messagebox.showerror("Access denied", "The password is incorrect!", self.root)
+                            messagebox.showerror("Access denied", "The password is incorrect!", self.root, MainPID=SubPID)
                     else:
-                        messagebox.showerror("Access denied", "The username is incorrect!", self.root)
+                        messagebox.showerror("Access denied", "The username is incorrect!", self.root, MainPID=SubPID)
 
                 check.split()
                 index_no_usrname = check.find("usrname=")
@@ -538,29 +538,27 @@ Never gonna run around and desert you""")
                 password = str(check[index_no_passwrd + 9:
                                      semicolon2]).rstrip(";2")
                 gui = tkinter.Toplevel(self.root, background=self.THEME_WINDOW_BG)
-                tkinter.Label(gui, text="This is a protected file, please enter"
-                                        " the credentials",
+                SubPID = callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES)
+                dwm.createTopFrame(gui, self.THEME_FOREGROUND, self.THEME_WINDOW_BG, "notepad", "Password Protected File!", SubPID, associatePIDProcess=self.PID)
+                tkinter.Label(gui, text="This is a protected file, please enter the credentials",
                               background=self.THEME_WINDOW_BG,
-                              foreground=self.THEME_FOREGROUND).grid(row=0,
-                                                                     column=0)
+                              foreground=self.THEME_FOREGROUND).grid(row=1, column=0)
                 tkinter.Label(gui, text="Enter username -> ",
                               background=self.THEME_WINDOW_BG,
-                              foreground=self.THEME_FOREGROUND).grid(row=1,
-                                                                     column=0)
+                              foreground=self.THEME_FOREGROUND).grid(row=2, column=0)
                 usrname_check = Entry(gui, background=self.THEME_TYPING_WIDGETS_BG, foreground=self.THEME_FOREGROUND)
                 usrname_check.configure(insertbackground=self.THEME_FOREGROUND, selectbackground=self.THEME_FOREGROUND, selectforeground=self.THEME_WINDOW_BG)
-                usrname_check.grid(row=1, column=1)
+                usrname_check.grid(row=2, column=1)
                 tkinter.Label(gui, text='Enter password -> ',
                               background=self.THEME_WINDOW_BG,
-                              foreground=self.THEME_FOREGROUND).grid(row=2,
-                                                                     column=0)
+                              foreground=self.THEME_FOREGROUND).grid(row=3, column=0)
                 password_check = Entry(gui, background=self.THEME_TYPING_WIDGETS_BG, foreground=self.THEME_FOREGROUND)
                 password_check.configure(insertbackground=self.THEME_FOREGROUND, selectbackground=self.THEME_FOREGROUND, selectforeground=self.THEME_WINDOW_BG)
-                password_check.grid(row=2, column=1)
+                password_check.grid(row=3, column=1)
                 submit = tkinter.Button(gui, text="Check!", command=proceed,
                                         background=self.THEME_WINDOW_BG,
                                         foreground=self.THEME_FOREGROUND,
-                                        borderwidth=2
+                                        borderwidth=3
                                         )
                 submit.grid(row=3, column=1)
                 gui.mainloop()
@@ -571,18 +569,11 @@ Never gonna run around and desert you""")
                 self.text.insert(1.0, returnReader)
                 self.saveTo.insert(1.0, filePath)
                 self.root.title(f"{filePath} - Notepad")
-            if self.PROGRAMMER_MODE:
-                self.programmerMode()
+            if self.PROGRAMMER_MODE: self.programmerMode()
         except FileNotFoundError or TypeError:
-            if filePath == '' or isinstance(filePath, tuple):
-                print("No file selected")
-            else:
-                messagebox.showerror("File not found!", "The selected file doesn't exist! so, we "
-                                                        "can't open it. reverted changes", self.root)
-        except UnicodeDecodeError:
-            messagebox.showerror("Cannot Open File",
-                                 "This editor doesn't support this format! file"
-                                 "cannot be opened! No changes made!", self.root)
+            if filePath == '' or isinstance(filePath, tuple): print("No file selected")
+            else: messagebox.showerror("File not found!", "The selected file doesn't exist! so, we can't open it. reverted changes", self.root, MainPID=self.PID)
+        except UnicodeDecodeError: messagebox.showerror("Cannot Open File", "This editor doesn't support this format! file cannot be opened! No changes made!", self.root, MainPID=self.PID)
 
     def addDoubleQuotes(self, event=None):
         """ add double quotes"""
@@ -605,8 +596,7 @@ Never gonna run around and desert you""")
             self.saveTo.delete(1.0, tkinter.END)
             self.root.title("Notepad GUI v3.3")
         else:
-            messagebox.showerror("File doesn't exist",
-                                 "The file you are trying to delete doesn't exist!", self.root)
+            messagebox.showerror("File doesn't exist", "The file you are trying to delete doesn't exist!", self.root, MainPID=self.PID)
 
     def clear(self, event=None):
         """ clear text """
@@ -640,7 +630,7 @@ Never gonna run around and desert you""")
         finally:
             self.contextMenu.grab_release()
             if problem:
-                messagebox.showerror("Error", str(problem), self.root)
+                messagebox.showerror("Error", str(problem), self.root, MainPID=self.PID)
 
     def zoom_in(self, event=None):
         """ zoom in to the text!"""
@@ -875,8 +865,8 @@ Never gonna run around and desert you""")
             def fileselector():
                 """ file select"""
                 global fileSelect
-                fileSelect = filedialog.askopenfilename(title="Select files to "
-                                                              "send over")
+                try: fileSelect = filedialog.askopenfilename(title="Select files to send over", filetypes=tuple(("Text Files", "*.txt"), ("All Files", "*.*")), MainPID=self.PID)
+                except: fileSelect = filedialog.askopenfilename(title="Select files to send over", filetypes=tuple(("Text Files", "*.txt"), ("All Files", "*.*")))
                 return fileSelect
 
             select_files = tkinter.Button(send_file_gui,
@@ -962,7 +952,7 @@ Never gonna run around and desert you""")
                 alert = messagebox.askyesnocancel(
                 "Save the file?",
                 "This is an unsaved document. so do you wanna save em and, "
-                "close this?", self.root)
+                "close this?", self.root, MainPID=self.PID)
             except: 
                 alert = messagebox.askyesnocancel(
                 "Save the file?",
@@ -981,33 +971,6 @@ Never gonna run around and desert you""")
             callHost.acknowledgeEndTask(self.PID)
             self.root.destroy()
         return True
-
-    def _title_bar(self, window, mode_val:
-    typing.Literal[20, 0]):
-        """
-        MORE INFO:
-        https://docs.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
-        """
-        global MSG_SHOWN
-        if platform.system() == "Windows":
-            window.update()
-            DWMWA_USE_IMMERSIVE_DARK_MODE = mode_val
-            set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute
-            get_parent = ct.windll.user32.GetParent
-            hwnd = get_parent(window.winfo_id())
-            rendering_policy = DWMWA_USE_IMMERSIVE_DARK_MODE
-            value = 0
-            value = ct.c_int(value)
-            set_window_attribute(hwnd, rendering_policy, ct.byref(value),
-                                 ct.sizeof(value))
-            return True
-        else:
-            if not MSG_SHOWN:
-                e = messagebox.showinfo(f"Function not supported for "
-                                     f"{platform.system()}!", "The Title-Bar changer function is not "
-                                     f"supported for {platform.system()}, the program will continue", self.root)
-                MSG_SHOWN = True
-            return False
 
     def _sendFiles(self, sender_ip, port, file_path):
         global encryption
@@ -1037,7 +1000,7 @@ Never gonna run around and desert you""")
                 # we use sendall to assure transimission in busy networks
                 file_to_send = encryption.encrypt(bytes_read)
                 s.sendall(file_to_send)
-        messagebox.showinfo("Success", f"Connected and sent to {sender_ip}", self.root)
+        messagebox.showinfo("Success", f"Connected and sent to {sender_ip}", self.root, MainPID=self.PID)
 
         # close the socket
         s.close()
@@ -1057,7 +1020,7 @@ Never gonna run around and desert you""")
         client_socket, address = s.accept()
         # if below code is executed, that means the sender is connected
         print(f"[+] {address} is connected.")
-        messagebox.showinfo("Connection successful", f"{address} is connected to your computer", self.root)
+        messagebox.showinfo("Connection successful", f"{address} is connected to your computer", self.root, MainPID=self.PID)
         received = client_socket.recv(BUFFER_SIZE).decode()
         filename, filesize = received.split(SEPARATOR)
         # remove absolute path if there is

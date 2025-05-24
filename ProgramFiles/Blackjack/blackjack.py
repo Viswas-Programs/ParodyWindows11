@@ -3,7 +3,6 @@ Black jack game made possible with tkinter code
 """
 import tkinter
 from tkinter import ttk
-from ProgramFiles import callHost
 import ProgramFiles.Blackjack.functions_for_blackjack as functions_for_blackjack
 import ProgramFiles.dwm
 
@@ -50,29 +49,33 @@ def newGame():
     global pC1F2
     global player1CardFrame
     global player2CardFrame
-    dealerCardFrame.destroy()
-    dCF.destroy()
-    dealerCardFrame = ttk.Frame(cardFrame, style="TFrame")
-    dealerCardFrame.grid(row=0, column=1, sticky="ew", rowspan=2)
-    dCF = ttk.Frame(cardFrame2, style="TFrame")
-    dCF.grid(row=0, column=1, sticky="ew", rowspan=2)
-    player1CardFrame.destroy()
-    pC1F2.destroy()
-    pC1F2 = ttk.Frame(cardFrame2, style="TFrame")
-    pC1F2.grid(row=2, column=1, sticky="ew", rowspan=2)
-    player1CardFrame = ttk.Frame(cardFrame, style="TFrame")
-    player1CardFrame.grid(row=2, column=1, sticky="ew", rowspan=2)
-    player2CardFrame.destroy()
-    player2CardFrame = ttk.Frame(cardFrame2, style="TFrame")
-    player2CardFrame.grid(row=4, column=1, sticky="ew", rowspan=2)
-    resultVar.set("None")
-    resultVarT2.set("None")
-    dealerHand = []
-    dealerHandT2 = []
-    player1Hand = []
-    player1HandT2 = []
-    player2Hand = []
-    initialDeal()
+    try:
+        dealerCardFrame.destroy()
+        dCF.destroy()
+        pC1F2.destroy()
+        player1CardFrame.destroy()
+        player2CardFrame.destroy()
+    finally:
+        dealerCardFrame = ttk.Frame(cardFrame, style="TFrame")
+        dealerCardFrame.grid(row=0, column=1, sticky="ew", rowspan=2)
+        dCF = ttk.Frame(cardFrame2, style="TFrame")
+        dCF.grid(row=0, column=1, sticky="ew", rowspan=2)
+        
+        pC1F2 = ttk.Frame(cardFrame2, style="TFrame")
+        pC1F2.grid(row=2, column=1, sticky="ew", rowspan=2)
+        player1CardFrame = ttk.Frame(cardFrame, style="TFrame")
+        player1CardFrame.grid(row=2, column=1, sticky="ew", rowspan=2)
+        
+        player2CardFrame = ttk.Frame(cardFrame2, style="TFrame")
+        player2CardFrame.grid(row=4, column=1, sticky="ew", rowspan=2)
+        resultVar.set("None")
+        resultVarT2.set("None")
+        dealerHand = []
+        dealerHandT2 = []
+        player1Hand = []
+        player1HandT2 = []
+        player2Hand = []
+        initialDeal()
 
 
 def shuffle():
@@ -91,8 +94,8 @@ def exitter(PID):
     """
     from ProgramFiles.errorHandler import messagebox
     text = ("Are you sure you want to corrupt the runtime of this game?\n"
-           "Note that the code of the game won't be changed at all!", INSTANCES[PID])
-    warning = messagebox.askyesnocancel("CAUTION!", text)
+           "Note that the code of the game won't be changed at all!")
+    warning = messagebox.askyesnocancel("CAUTION!", text, INSTANCES[PID], MainPID=PID)
     if warning:
         import random
         destroyer = ["function", "frame"]
@@ -111,7 +114,7 @@ def exitter(PID):
             destroy_this.destroy()
     else:
         from ProgramFiles.errorHandler import messagebox
-        messagebox.showinfo("You saved your day", "Aborted the operation! have a great day playing blackjack.", INSTANCES[PID])
+        messagebox.showinfo("You saved your day", "Aborted the operation! have a great day playing blackjack.", INSTANCES[PID], MainPID=PID)
 
 
 def fullscreen(PID, event=None):

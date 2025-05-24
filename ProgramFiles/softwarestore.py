@@ -23,13 +23,13 @@ def showDescription(PID, e=None):
             uninstaller = requests.get(appsList[item][2]).content.decode(encoding='utf-8')
             exec(uninstaller)
         except Exception as PRB:
-            messagebox.showerror("Error", f"Error occured while uninstalling '{item}': {PRB}", INSTANCES[PID])
+            messagebox.showerror("Error", f"Error occured while uninstalling '{item}': {PRB}", INSTANCES[PID], MainPID=PID)
     def installProgram(e=None):
         try:
             installProgram = requests.get(appsList[item][1], timeout=10)
             exec(installProgram.content.decode(encoding='utf-8'))
         except Exception as PRB:
-            messagebox.showerror("ERROR! While installing app....", f"Can't install app '{item}'! Retry Again.\n DEBUG:<< {PRB} >> ", INSTANCES[PID])
+            messagebox.showerror("ERROR! While installing app....", f"Can't install app '{item}'! Retry Again.\n DEBUG:<< {PRB} >> ", INSTANCES[PID], MainPID=PID)
     global externalAppsList
     wn = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
     item = str(externalAppsList.item(externalAppsList.focus(), 'values')[0])
@@ -54,13 +54,13 @@ def main(username, notification, *args):
         appsList = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/softwareStoreApps.json", timeout=10)
         appsList = appsList.json()
     except Exception as PROB:
-        messagebox.showerror("ERROR!", f"Can't load apps list from internet! using locals\nERR: {PROB}", INSTANCES[args[-1]])
+        messagebox.showerror("ERROR!", f"Can't load apps list from internet! using locals\nERR: {PROB}", INSTANCES[args[-1]], MainPID=args[-1])
         try:
             print(os.getcwd())
             with open("ProgramFiles/localAppsList.json", "r") as applistLocal:
                 appsList = json.load(applistLocal)
         except Exception as PRB:
-            messagebox.showerror("Can't load local apps list!", f"Error: {PRB}", INSTANCES[args[-1]])
+            messagebox.showerror("Can't load local apps list!", f"Error: {PRB}", INSTANCES[args[-1]], MainPID=args[-1])
         INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     INSTANCES[args[-1]].title("Software Store")
     externalAppsList = ttk.Treeview(INSTANCES[args[-1]], style="Treeview")

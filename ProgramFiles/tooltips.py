@@ -4,8 +4,8 @@ THEME_BG="Yellow"
 THEME_FG="Black"
 def _createToolTipAtGivenPos(id: str, root: tkinter.Tk, message: str, command, event: tkinter.Event, **kwargs):
     global TOOLTIPS_IN_USE
-    if id in TOOLTIPS_IN_USE.keys(): deleteToolTip(id, root)
-    for ids in TOOLTIPS_IN_USE.keys():
+    if id in dict(TOOLTIPS_IN_USE).keys(): deleteToolTip(id, root)
+    for ids in dict(TOOLTIPS_IN_USE).keys():
         if ids >= 1000: deleteToolTip(ids, TOOLTIPS_IN_USE[ids][2])
     TOOLTIPS_IN_USE[id] = [None, None, None]
     def __actualCreateToolTip():

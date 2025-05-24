@@ -183,7 +183,7 @@ def main(*args):
     control_window = tkinter.Tk()
     control_window.configure(background=THEME_WINDOW_BG)
     dwm.createTopFrame(control_window, THEME_FOREGROUND, THEME_WINDOW_BG, "fileshare", "File Sharing", args[-1] )
-    choice  = messagebox.askyesorno("Depreceated", "This app is very depreceated and it wont receive any updates at all! All features are broken. Do you want to quit now [Y] or no [N]?")
+    choice  = messagebox.askyesorno("Depreceated", "This app is very depreceated and it wont receive any updates at all! All features are broken. Do you want to quit now [Y] or no [N]?", control_window, MainPID=args[-1])
     if choice == 1: dwm.close(args[-1])
     a = tkinter.Label(master=control_window,
                         text="Transfer Files",

@@ -46,7 +46,7 @@ def main(FILESYSTEM: ParWFS, *args):
                 try:
                     os.mkdir(os.path.join(filepath, newFolderEntry.get()))
                     lookUpFiles(os.path.join(filepath, newFolderEntry.get()))
-                except Exception as EXCEPTION: messagebox.showerror("ERROR!", EXCEPTION)
+                except Exception as EXCEPTION: messagebox.showerror("ERROR!", EXCEPTION, INSTANCES[PID], MainPID=PID)
             tkinter.Label(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Folder Name!").grid(row=0, column=0)
             newFolderEntry = Entry(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
             newFolderEntry.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
@@ -131,7 +131,7 @@ def main(FILESYSTEM: ParWFS, *args):
             try:
                 files.tk_popup(event.x_root, event.y_root, 0)
             except Exception as PROBLEM:
-                messagebox.showerror("Error in right click menu", f"Error in right click menu. \nPROB:{PROBLEM}")
+                messagebox.showerror("Error in right click menu", f"Error in right click menu. \nPROB:{PROBLEM}", INSTANCES[args[-1]], MainPID=args[-1])
             finally:
                 files.grab_release()
         def copyFiles(ev=None):
@@ -145,7 +145,7 @@ def main(FILESYSTEM: ParWFS, *args):
             absFilePath = os.path.join(filepath, selectedFile)
             FILESYSTEM.cutFiles([[absFilePath, filepath]])
         def pasteFiles(ev=None):
-            progressBar = ProgressOutOfMaxValueBar(FILESYSTEM.calculateProgressForPaste(filepath), INSTANCES[args[-1]], "Pasting Files!", THEME_WINDOW_BG, THEME_FOREGROUND, False, FILESYSTEM.callStop, FILESYSTEM.callResume )
+            progressBar = ProgressOutOfMaxValueBar(FILESYSTEM.calculateProgressForPaste(filepath), INSTANCES[args[-1]], "Pasting Files!", THEME_WINDOW_BG, THEME_FOREGROUND, False, FILESYSTEM.callStop, FILESYSTEM.callResume, parentPID=args[-1] )
             func = lambda: FILESYSTEM.pasteFiles(filepath, lambda e: progressBar.incrementer(e[0]))
             progressBar.function = func
             progressBar.runFunc()

@@ -8,6 +8,7 @@ from ProgramFiles.errorHandler import messagebox as msgbox
 import datetime
 import time
 from ProgramFiles.dwm import createTopFrame
+import shelve
 from ProgramFiles.entryWidget import Text
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
@@ -19,7 +20,7 @@ def FTRConfigSettings(path, data=None) -> tuple:
             if config != "\n":
                 return config
             else:
-                msgbox.showerror("DEBUG!", "The data hasn't been loaded yet, because the data doesn't exist in the load!")
+                msgbox.showerror("DEBUG!", "The data hasn't been loaded yet, because the data doesn't exist in the load!") #? When the frick did I do this shit
     else:
         with open(path, "w") as FTR_write_config: #FirstTimeRun_Write_config, full form.
             FTR_write_config.write(data)
@@ -33,15 +34,15 @@ try:
     version, branch = NEW_VERSION[0], NEW_VERSION[1]
     fileList = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/FILE_CHANGES.txt").content.decode(encoding='utf-8').splitlines()
 except requests.exceptions.ConnectTimeout:
-    msgbox.showerror("Erorr while connecting to server", """Error occured while trying to connect to
-our servers.\n(DEBUG: the program encountered requests.exception.ConnectTimeout error!)""")
+    msgbox.showerror("Erorr while connecting to server", """Error occured while trying to connect to our servers.\n(DEBUG: the program encountered requests.exception.ConnectTimeout error!)""")
     changelogText = "ERROR: Cannot access the server for the required files and newest updates! Try again later!"
     version = 1.0
     fileList = ["NONE"]
 def main(username, notification, *args):
     LAST_UPDATE = open("ProgramFiles/update_config/LAST_UPDATE.txt", "w+")
     UPDATE_CHGLOG = LAST_UPDATE.read()
-    CURRENT_VERSION = FTRConfigSettings("ProgramFiles/update_config/VERSION.txt", "0.1")[0]
+    CURRENT_VERSION = "2.3.9"
+    with shelve.open("ProgramFiles/SYS_CONFIG") as read: CURRENT_VERSION = read["VERSION"] 
     THEME_WINDOW_BG, THEME_FOREGROUND = args[1]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].title("Update manager")
@@ -71,11 +72,11 @@ def main(username, notification, *args):
             del fileList[-1]
         for file in fileList:
             if file != "NONE":
-                exec(f"{file}DWN = requests.get('https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/{file}').content.decode(encoding='utf-8')")
+                fileDWN = requests.get(f'https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/{file}').content.decode(encoding='utf-8')
                 with open(file, "w") as writeUpdatedProgramHANDLE:
-                    exec(f"writeUpdatedProgramHANDLE.write({file}DWN)")
+                    writeUpdatedProgramHANDLE.write(fileDWN)
             else:
-                msgbox.showerror("Cannot access the file list!", "Due to errors, we are not able to get the file list!")
+                msgbox.showerror("Cannot access the file list!", "Due to errors, we are not able to get the file list!", INSTANCES[args[-1]], MainPID=args[-1])
         # My code again
         # updateZip = requests.get("https://github.com/Viswas-Programs/ParodyWindows11/raw/update/updatedProgram.zip")
         # ExtractFiles = zipfile.ZipFile(BytesIO(updateZip.content))
@@ -87,14 +88,13 @@ def main(username, notification, *args):
         if version.split(".")[2]: subversion += version.split(".")[2]
         totalVersion = float(f"{mainVersion}.{subversion}")
         if float(totalVersion) > float(CURRENT_VERSION):
-            notification.showNotification("Update available!", f"Windows 11 v{version} is ready to be installed!   {CURRENT_VERSION} => {version}", time.strftime("%H:%M:%S %p"), checkForUpdates)
-            msgbox.showinfo("Update available", f"Windows 11 v{version} is ready to be installed!"
-                            f"\n({CURRENT_VERSION} -> {version})")
+            notification.showNotification("Update available!", f"ParW11 v{version} is ready to be installed!   {CURRENT_VERSION} => {version}", time.strftime("%H:%M:%S %p"), checkForUpdates)
+            msgbox.showinfo("Update available", f"ParW11 11 v{version} is ready to be installed!\n({CURRENT_VERSION} -> {version})", INSTANCES[args[-1]], MainPID=args[-1])
             updateButton = tkinter.Button(INSTANCES[args[-1]], text="Update to latest version!", command=updateToNew,
                                             background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
             updateButton.grid(row=3, column=1)
         else:
-            msgbox.showinfo("All caught up!", "You're all set, no updates (yet)")
+            msgbox.showinfo("All caught up!", "You're all set, no updates (yet)", INSTANCES[args[-1]], MainPID=args[-1])
     updateHistory = tkinter.Label(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text=UPDATE_CHGLOG)
     updateHistory.grid(row=1, column=1)
     tkinter.Label(INSTANCES[args[-1]], text=f"Check for updates down below! your current version = {CURRENT_VERSION}",

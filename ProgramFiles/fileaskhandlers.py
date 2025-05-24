@@ -14,7 +14,7 @@ THEME_WINDOW_BG, THEME_FOREGROUND = ["Black", "white"]
 RETURN_VALUE = None
 PROCESS_RUNNING = False
 INSTANCES = {}
-def main(*args):
+def main(MainPID=None, *args):
     PID = callHost.getRangeToGenPID(callHost.FILEASK)
     callHost.addToRunningAppsList(PID, f"FileAskDialogueHost - {args[0]}")
     global PROCESS_RUNNING
@@ -118,7 +118,7 @@ def main(*args):
             return True
         INSTANCES[PID] = tkinter.Tk()
         INSTANCES[PID].configure(background=THEME_WINDOW_BG)
-        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "info", args[1], PID)
+        dwm.createTopFrame(INSTANCES[PID], THEME_FOREGROUND, THEME_WINDOW_BG, "info", args[1], PID, associatePIDProcess=MainPID)
         INSTANCES[PID].title(args[1])
         ttk.Style(INSTANCES[PID]).configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         mainFrame = tkinter.Frame(INSTANCES[PID], background=THEME_WINDOW_BG)
@@ -185,9 +185,9 @@ def main(*args):
         messagebox.showerror("Can't load app!", f"App can't run! please re-install the app!\nPROB:{exp}")
 def focusIn(PID): INSTANCES[PID].state(newstate='normal'); 
 def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); 
-def askdirectory(title="Open a Folder"):
-    return main("folder-mode", title)
-def askopenfilename(title="Open a File", filetypes: tuple = (("All files", "*.*"))):
-    return main("file-mode", title, filetypes)
+def askdirectory(title="Open a Folder", MainPID=None):
+    return main(MainPID, "folder-mode", title)
+def askopenfilename(title="Open a File", filetypes: tuple = (("All files", "*.*")), MainPID=None):
+    return main(MainPID, "file-mode", title, filetypes)
 if __name__ == "__main__":
     main()

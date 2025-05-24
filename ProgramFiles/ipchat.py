@@ -36,7 +36,7 @@ def on_closing(PID, event=None):
         send(PID)
         client_socket.close()
     except Exception as PROBLEM:
-        messagebox.showerror("Program Can't Close!", f"<<DEBUG: {PROBLEM}>>\nThe chatter app cannot close the normal way (ie, saying 'leaving chat' automatically) due to error\nSo, program is force quitting... ", INSTANCES[PID], quitOnResponse=True)
+        messagebox.showerror("Program Can't Close!", f"<<DEBUG: {PROBLEM}>>\nThe chatter app cannot close the normal way (ie, saying 'leaving chat' automatically) due to error\nSo, program is force quitting... ", INSTANCES[PID], quitOnResponse=True, MainPID=PID)
     finally:
         close(PID)
 
@@ -76,13 +76,13 @@ def configureServer(event=None):
     submitButton = tkinter.Button(serverConfWn, text="Submit", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=configureS)
     submitButton.grid(row=2, column=1)
     serverConfWn.mainloop()
-def getServerList(e=None):
+def getServerList(PID, e=None):
     def connect(e=None):
         try:
             global client_socket
             client_socket.close()
         except Exception:
-            messagebox.showerror("Can't connect", f"Cannot connect to {serverListLB.get(tkinter.ANCHOR)} at port {servers[serverListLB.get(tkinter.ANCHOR)]} due to error!")
+            messagebox.showerror("Can't connect", f"Cannot connect to {serverListLB.get(tkinter.ANCHOR)} at port {servers[serverListLB.get(tkinter.ANCHOR)]} due to error!", INSTANCES[PID], MainPID=PID)
         else:
             ADDR = (serverListLB.get(tkinter.ANCHOR), servers[serverListLB.get(tkinter.ANCHOR)])
             client_socket = socket(AF_INET, SOCK_STREAM)
@@ -113,7 +113,7 @@ def main(*args):
     INSTANCES[args[-1]].configure(menu=altMenu)
     fileMenu = tkinter.Menu(altMenu, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
     fileMenu.add_command(label="Configure Server", command=configureServer)
-    fileMenu.add_command(label="Previously connected servers", command=getServerList)
+    fileMenu.add_command(label="Previously connected servers", command=lambda: getServerList(args[-1]))
     altMenu.add_cascade(label="File", menu=fileMenu)
     createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "ipchat", "IP Chat", args[-1], on_closing)
     mainFrame = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
@@ -148,7 +148,7 @@ def main(*args):
         client_socket.connect(ADDR)
     except Exception as problem:
         messagebox.showerror("Error connecting to server", f"Error connecting to server '{HOST}' at port '{PORT}'\n"
-        "This may be due to a configuration error, or the failure to add a server. Please reconfigure!")
+        "This may be due to a configuration error, or the failure to add a server. Please reconfigure!", INSTANCES[args[-1]], MainPID=args[-1])
 
     receive_thread = Thread(target=receive)
     receive_thread.start()
