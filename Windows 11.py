@@ -118,15 +118,6 @@ class PW11GlobalVars():
 
 GLOBAL_VARS = PW11GlobalVars()
 def createUserAccount(username: str, password: str, userNumber: int, overwriteConfigs=True, THEME=["Black", "White"]):
-    try:
-        with open(f"ProgramFiles/accConfiguration{userNumber}.conf", "wb") as WRITE:
-            Rusername= base64.urlsafe_b64encode(username.encode("utf-8"))
-            Rpassword = base64.urlsafe_b64encode(password.encode("utf-8"))
-            WRITE.writelines([Rusername, "\n".encode("utf-8"),  Rpassword])
-        os.mkdir(f"ProgramFiles/{username}")
-    except Exception: print("User already exists, skipping user creation tasks...")
-    finally: 
-        FILE_SYSTEM.loadConfig(f"ProgramFiles/{username}/USER_CONFIG", "NEW_USER_CONFIG")
     try: 
         try: 
             os.mkdir(f"Users")
@@ -136,8 +127,17 @@ def createUserAccount(username: str, password: str, userNumber: int, overwriteCo
             except: pass
         for i in USER_FOLDERS_LIST: os.mkdir(f"Users/{username}/{i}")
     except Exception: print("User folders already exist, skipping...")
+    try:
+        with open(f"Users/accConfiguration{userNumber}.conf", "wb") as WRITE:
+            Rusername= base64.urlsafe_b64encode(username.encode("utf-8"))
+            Rpassword = base64.urlsafe_b64encode(password.encode("utf-8"))
+            WRITE.writelines([Rusername, "\n".encode("utf-8"),  Rpassword])
+        #os.mkdir(f"ProgramFiles/{username}")
+    except Exception: print("User already exists, skipping user creation tasks...")
+    finally: 
+        FILE_SYSTEM.loadConfig(f"Users/{username}/USER_CONFIG", "NEW_USER_CONFIG")
     if not overwriteConfigs: return True
-    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "APPS", [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskManager"]])
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "APPS", [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager", "Shelve Editor"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskManager", "ProgramFiles.shelveeditor"]])
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "PINNED", [["File Manager"], ["Notepad", "File Manager"]])
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "THEME", THEME)
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "CLOCK-WIDGET", 0)
@@ -145,11 +145,14 @@ def createUserAccount(username: str, password: str, userNumber: int, overwriteCo
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "WALLPAPER", None)
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "STARTUP_APPS", [])
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "PFP", os.path.join(CWD, "ProgramFiles/Icons/defaultpfp.png"))
+    FILE_SYSTEM.editConfig("SYS_CONFIG", "UPDATE_BRANCH", "main")
     FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", ["Black", "White"]) 
     FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
     FILE_SYSTEM.editConfig("SYS_CONFIG", "SETUP_IN_PROGRESS", 0)
     FILE_SYSTEM.editConfig("SYS_CONFIG", "FS_STOP_PREMATURE", False)
     FILE_SYSTEM.editConfig("SYS_CONFIG", "PYTHON_LAUNCH_COMMAND", "python3")
+    FILE_SYSTEM.editConfig("SYS_CONFIG", "VERSION", "2.3.9")
+    FILE_SYSTEM.editConfig("SYS_CONFIG", "UPDATE_TIME_LOG", [])
     return True
 try:
     GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = SYS_CONFIG["THEME"]
@@ -186,8 +189,8 @@ def giveIcon(appName: str, root, subsample=False, relaunch=False):
         try:
             if not subsample: return tkinter.PhotoImage(file=f"ProgramFiles/Icons/{appName}.png", master=root)
             else: return tkinter.PhotoImage(file=f"ProgramFiles/Icons/{appName}.png", master=root).subsample(subsample)
-        except EXP: 
-            if not relaunch: giveIcon("error", root, subsample, True)
+        except Exception: 
+            if not relaunch: return giveIcon("error", root, subsample, True)
 def loadAllIcons(appsList: list, root):
     for app in appsList:
         realApp = GUIButtonCommand.AppImportNameCheck(app)
@@ -712,7 +715,7 @@ class GUIButtonCommand:
             root.after(100, e)
         def shutdown():
             try:
-                if GLOBAL_VARS.USERNAME == "GUEST": FILE_SYSTEM.deleteFiles([[f"{CWD}/ProgramFiles/GUEST"]])
+                if GLOBAL_VARS.USERNAME == "GUEST": FILE_SYSTEM.deleteFiles([[f"{CWD}/Users/GUEST"]])
             finally: waitUntillTaskFinishes(lambda: os._exit(0))
         def restart():
             if safeModeRestartVar.get() == 1:
@@ -764,8 +767,10 @@ def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig
     progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
     GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID, T_BG, T_FG)
     appImport = importlib.import_module(progAppImport)
-    if appImport.NEEDS_FILESYSTEM_ACCESS: appImport.main(FILE_SYSTEM, userConfig, notifications, params, USER_CONFIG, PID)
-    else: appImport.main(userConfig, notifications, params, USER_CONFIG, PID)
+    try:
+        if appImport.NEEDS_FILESYSTEM_ACCESS: appImport.main(FILE_SYSTEM, userConfig, notifications, params, USER_CONFIG, PID)
+        else: raise Exception("NO NEEDS_FILESYSTEM_ACCESS VAR")
+    except Exception: appImport.main(userConfig, notifications, params, USER_CONFIG, PID)
 class Scrollable(tkinter.Frame):
     """
        Make a frame scrollable with scrollbar on the right.
@@ -863,7 +868,7 @@ class StartMenu:
         self.selectFolders.update()
         def _lnchApp(app, prm=None): GUIButtonCommand.launchItem(GUIButtonCommand.AppImportNameCheck(app), prm)
         for x, i in enumerate(GLOBAL_VARS.APPS_LIST):
-            img = GLOBAL_VARS.ICONS[GUIButtonCommand.AppImportNameCheck(i)]
+            img = giveIcon(GUIButtonCommand.AppImportNameCheck(i), GLOBAL_VARS.ROOT_WINDOW)
             img = img.subsample(2, 2)
             btn.e = img
             self.IMAGE_INSTANCES.append(img)
@@ -974,7 +979,7 @@ class PW11UserCreation:
         self.relaunchFunction = relaunchFunction
         USER_CONFIGS: list[list[str, list[str, int]]] = []
         self.USRNAME_PASWD_STR: dict[str, str] = {}
-        for file in Path(os.path.join(CWD, "ProgramFiles")).glob("accConfiguration*.conf"):
+        for file in Path(os.path.join(CWD, "Users")).glob("accConfiguration*.conf"):
             with open(file, "r") as reader:
                 usrNo = "".join(char for char in reversed(str(file).split(".")[0]))
                 idxForLastN = usrNo.index("n")
@@ -985,7 +990,7 @@ class PW11UserCreation:
                 USER_CONFIGS.append([usr, paswd])
                 self.USRNAME_PASWD_STR[usr] = [paswd, usrNumber]
         for i, user in enumerate(USER_CONFIGS):
-            FILE_SYSTEM.loadConfig(os.path.join(CWD, "ProgramFiles", user[0], "USER_CONFIG"), user[0])
+            FILE_SYSTEM.loadConfig(os.path.join(CWD, "Users", user[0], "USER_CONFIG"), user[0])
             config = FILE_SYSTEM.getConfig(user[0])
             IMG = Image.open(fp=config["PFP"])
             self.USER_PFPs[user[0]] = IMG
@@ -1074,7 +1079,7 @@ def main():
         ROOT_WINDOW.destroy()
         safeMode()
     global SYS_CONFIG
-    FILE_SYSTEM.loadConfig(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", "USER_CONFIG")
+    FILE_SYSTEM.loadConfig(f"Users/{GLOBAL_VARS.USERNAME}/USER_CONFIG", "USER_CONFIG")
     if FILE_SYSTEM.getConfig("SYS_CONFIG")["FS_STOP_PREMATURE"] == True:
         FILE_SYSTEM.loadFromPickle()
         messagebox.showinfo("I/O operation interrupt while shutdown, recovered.", "We detected that the shell has exited by force while the shell was performing an I/O operation via the ParWFS Library.\nIt has automatically restored the point where it left.\nPlease go to the target directory again and restart your operation!.", GLOBAL_VARS.ROOT_WINDOW)
@@ -1180,7 +1185,7 @@ def loginVerification(userNameText: tkinter.Entry, passwordText: tkinter.Entry, 
     print("Checking credentials")
     try:
         if int(userNum.get()) != 0:
-            with open(f"ProgramFiles/accConfiguration{userNum.get()}.conf", "r") as verify:
+            with open(f"Users/accConfiguration{userNum.get()}.conf", "r") as verify:
                 GLOBAL_VARS.USERNAME, password = verify.readlines()
                 GLOBAL_VARS.USERNAME = base64.urlsafe_b64decode(GLOBAL_VARS.USERNAME.rstrip('\n')).decode('utf-8')
                 password = base64.urlsafe_b64decode(password.rstrip('\n')).decode('utf-8')
@@ -1192,7 +1197,7 @@ def loginVerification(userNameText: tkinter.Entry, passwordText: tkinter.Entry, 
         else:
             loginWindow.destroy()
             GLOBAL_VARS.USERNAME = "GUEST"
-            try: os.mkdir("ProgramFiles/GUEST")
+            try: os.mkdir("Users/GUEST")
             except FileExistsError: pass
             try: main()
             except Exception as EXP: bsod(main, f"DESKTOP_LAUNCH_ERROR('{EXP}')")
@@ -1217,7 +1222,7 @@ def login():
         loginWindow.destroy()
         safeMode()
     numUsers = -1
-    for file in Path(os.path.join(CWD, "ProgramFiles")).glob("accConfiguration*.conf"): numUsers += 1
+    for file in Path(os.path.join(CWD, "Users")).glob("accConfiguration*.conf"): numUsers += 1
     loginWindow = tkinter.Tk()
     loginWindow.title("Login to Windows 11")
     loginWindow.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
@@ -1225,7 +1230,7 @@ def login():
     if numUsers < 1:
         createUserAccount("defaultuser0", "SYSTEM", 0, True, ["Black", "White"])
         GLOBAL_VARS.USERNAME="defaultuser0"
-        FILE_SYSTEM.loadConfig(os.path.join(CWD, "ProgramFiles/defaultuser0/USER_CONFIG"), "USER_CONFIG")
+        FILE_SYSTEM.loadConfig(os.path.join(CWD, "Users/defaultuser0/USER_CONFIG"), "USER_CONFIG")
         GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
         tkinter.Label(loginWindow, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="It seems that you don't have an user account set up!\nPlease setup an account first to use the system!\nRedirecting to the OOBE in 10 seconds!").grid(row=0, column=0)
         def launchOOBE(): loginWindow.destroy(); OOBE()
@@ -1305,10 +1310,10 @@ def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
             userToreset = input("Enter the GLOBAL_VARS.USERNAME of the user to reset the user too... [Type in defaultuser0 to only do system wise reset]")
             if userToreset.lower() != "defaultuser0":
                 try:
-                    with shelve.open(f"ProgramFiles/{userToreset}/USER_CONFIG") as deleteIt: deleteIt.clear()
+                    with shelve.open(f"Users/{userToreset}/USER_CONFIG") as deleteIt: deleteIt.clear()
                 except Exception as exp: print(f"ERROR OCCURED While resetting...!Error: {exp}")
             try:
-                shelveFilesToDelete = ["ProgramFiles/history", "ProgramFiles/IPChat/_serverConfig", "ProgramFiles/IPChat/serversList"]
+                shelveFilesToDelete = [f"Users/{userToreset}/history", f"Users/{userToreset}/IPChat/_serverConfig", f"Users/{userToreset}/IPChat/serversList"]
                 for shelveToDelete in shelveFilesToDelete:
                     try:
                         with shelve.open(shelveToDelete) as deleteIt:
@@ -1472,7 +1477,7 @@ if __name__ == "__main__":
             if SYS_CONFIG["SETUP_IN_PROGRESS"]:
                 createUserAccount("defaultuser0", "SYSTEM", 0, True, ["Black", "White"])
                 GLOBAL_VARS.USERNAME="defaultuser0"
-                FILE_SYSTEM.loadConfig(os.path.join(CWD, "ProgramFiles/defaultuser0/USER_CONFIG"), "USER_CONFIG")
+                FILE_SYSTEM.loadConfig(os.path.join(CWD, "Users/defaultuser0/USER_CONFIG"), "USER_CONFIG")
                 GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
                 OOBE()
             elif "-safemode" in arguements: safeMode()
@@ -1495,7 +1500,7 @@ if __name__ == "__main__":
                 else:
                     infoSysSelectSTR = "GLOBAL_CONFIG.USER_CONFIG"
                     GLOBAL_VARS.USERNAME = input("Type in the username whose settings are going to be changed!: ")
-                    GLOBAL_VARS.USER_CONFIG = shelve.open(f"ProgramFiles/{GLOBAL_VARS.USERNAME}/USER_CONFIG", writeback=True)
+                    GLOBAL_VARS.USER_CONFIG = shelve.open(f"Users/{GLOBAL_VARS.USERNAME}/USER_CONFIG", writeback=True)
                 print("The respective configuration module has been imported!\n"
                         f"Now, type in '{infoSysSelectSTR}[<CONFIG_NAME>] = <CONFIG>;' and then press enter to finish\n"
                         "New code lines and line endings MUST BE represented by the ; character!")

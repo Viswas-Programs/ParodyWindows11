@@ -102,11 +102,11 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     DWMFrame = tkinter.Frame(root, background=T_BG, borderwidth=5, highlightthickness=2, highlightcolor="grey")
     root.configure(highlightthickness=2, highlightcolor="grey")
     DWMFrame.rowconfigure(0, weight=1)
-    for i in range(1, root.winfo_screenwidth()+1):
-        DWMFrame.columnconfigure(i, weight=i)
-    DWMFrame.grid(row=0, column=0, sticky="EW", columnspan=root.winfo_screenwidth())
+    for i in range(1, root.winfo_width()+1):
+        DWMFrame.columnconfigure(i, weight=i+1)
+    DWMFrame.grid(row=0, column=0, sticky="EW", columnspan=root.winfo_width())
     DWMBtnFrame = tkinter.Frame(DWMFrame, background=T_BG)
-    DWMBtnFrame.grid(row=0, column=root.winfo_screenwidth())
+    DWMBtnFrame.grid(row=0, column=root.winfo_width())
     DWMFrame.PARAMETER_CALL_INFORMATION = {
         "root": root,
         "foreground": T_FG,
@@ -148,7 +148,10 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
         "minimize": minimizeBtn,
         "maximize": maximizeBtn
     }
-    def _quit(): root.QUIT_FUNC(); callHost.acknowledgeEndTask(PID); 
+    def _quit(): 
+        root.QUIT_FUNC()
+        callHost.acknowledgeEndTask(PID)
+        MANAGED_DWM_INSTANCES[associatePIDProcess][5].remove(PID)
     root.quit = _quit
     root.update()
     root.update_idletasks()
