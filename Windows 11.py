@@ -141,7 +141,7 @@ def createUserAccount(username: str, password: str, userNumber: int, overwriteCo
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "PINNED", [["File Manager"], ["Notepad", "File Manager"]])
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "THEME", THEME)
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "CLOCK-WIDGET", 0)
-    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "DEFAULTAPPASSOCIATION", {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"})
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "DEFAULTAPPASSOCIATION", {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer", "dat": "Shelve Editor"})
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "WALLPAPER", None)
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "STARTUP_APPS", [])
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "PFP", os.path.join(CWD, "ProgramFiles/Icons/defaultpfp.png"))

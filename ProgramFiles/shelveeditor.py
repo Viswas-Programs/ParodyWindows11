@@ -6,6 +6,7 @@ from ProgramFiles.errorHandler import messagebox
 from ProgramFiles.fileaskhandlers import askopenfilename
 import tkinter
 import shelve
+import tkinter.ttk as ttk
 INSTANCES = {}
 def focusIn(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='normal'); INSTANCES[PID].overrideredirect(True); return True
 def focusOut(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='iconic'); INSTANCES[PID].overrideredirect(True); return True
@@ -13,13 +14,13 @@ def focusMaximise(PID): INSTANCES[PID].attributes("-topmost", True)
 WIDGETS = {}
 FRAMES: dict[int, list[tkinter.Frame]] = {}
 BUTTON_FRAMES: dict[int, tkinter.Frame] = {}
-MAIN_FRAMES: dict[int, tkinter.Frame] = {}
-NEEDS_FILESYSTEM_ACCESS = True
+MAIN_FRAMES: dict[int, tkinter.Text] = {}
+NEEDS_FILESYSTEM_ACCESS = False
 THEME_WINDOW_BG, THEME_FOREGROUND = ["Black", "White"]
 
 SepKeyWIDGETSTORES: dict[int, list[dict[str, list[Entry]], dict[str, list[Entry]], int]] = {}
 
-def constructBackDict(PID, loadDict: dict, shelvePath: str=None, entryWidgetToChange: Entry = None):
+def constructBackDict(PID, loadDict: dict, shelvePath: str=None, entryWidgetToChange: Entry = None, fileExtension=""):
     MAIN_DICT = {}
     keyStore = SepKeyWIDGETSTORES[PID][0]
     valueStore = SepKeyWIDGETSTORES[PID][1]
@@ -43,7 +44,7 @@ def constructBackDict(PID, loadDict: dict, shelvePath: str=None, entryWidgetToCh
     else: 
         if not shelvePath: return str(MAIN_DICT)
         BACKUP_DICT = {}
-        with shelve.open(shelvePath, writeback=True) as writer:
+        with shelve.open(shelvePath+fileExtension, writeback=True) as writer:
             BACKUP_DICT.update(dict(writer))
             writer.clear()
             writer.update(MAIN_DICT)
@@ -55,7 +56,7 @@ def constructBackDict(PID, loadDict: dict, shelvePath: str=None, entryWidgetToCh
 
     return str(MAIN_DICT)
 
-def dictView(PrID, loadedDict: dict, shelvePath: str, callFromKey: str = None,):
+def dictView(PrID, loadedDict: dict, shelvePath: str, callFromKey: str = None, fileExtension=""):
     dctToIterate = None
     PID = PrID
     ROOT = INSTANCES[PrID]
@@ -77,12 +78,16 @@ def dictView(PrID, loadedDict: dict, shelvePath: str, callFromKey: str = None,):
         WIDGET_VALUE_STORE.clear()
         WIDGET_KEY_STORE.clear()
         for children in FRAMES[PID][4].winfo_children(): children.destroy()
-
+        del FRAMES[PID]
 
     KEY_STORE = {}
     VALUE_STORE = {}
-    MAIN_FRAMES[PID] = tkinter.Frame(ROOT, background=THEME_WINDOW_BG)
-    MAIN_FRAMES[PID].grid(row=2, column=0)
+    if PID in MAIN_FRAMES.keys(): 
+        for children in MAIN_FRAMES[PID].winfo_children(): children.destroy()
+    else:
+        MAIN_FRAMES[PID] = tkinter.Text(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
+        MAIN_FRAMES[PID].configure(state="disabled")
+        MAIN_FRAMES[PID].grid(row=2, column=0)
     tkinter.Label(MAIN_FRAMES[PID], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Key Type").grid(row=2, column=0)
     tkinter.Label(MAIN_FRAMES[PID], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Key").grid(row=2, column=1)
     tkinter.Label(MAIN_FRAMES[PID], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Value Type").grid(row=2, column=2)
@@ -99,7 +104,8 @@ def dictView(PrID, loadedDict: dict, shelvePath: str, callFromKey: str = None,):
     if callFromKey: cmd = lambda: constructBackDict(PID, loadedDict, shelvePath, SepKeyWIDGETSTORES[PrID][1][callFromKey][0])
     saveButton = tkinter.Button(BUTTON_FRAMES[PID], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Save Dict!", command=cmd)
     saveButton.grid(row=0, column=2)
-
+    scrollbar = ttk.Scrollbar(ROOT, command=MAIN_FRAMES[PID].yview)
+    scrollbar.grid(row=2, column=5, sticky="NES", rowspan=5)
     for i, keys in enumerate(dctToIterate.keys()):
         SepKeyWIDGETSTORES[PID][2] += 1
         FONT = ("Calibri", 14)
@@ -139,10 +145,8 @@ def removeKey(PID: int, keyToRemove: str):
     del SepKeyWIDGETSTORES[PID][0][keyToRemove]
     del SepKeyWIDGETSTORES[PID][1][keyToRemove]
 
-def openFile(PID: int):
-    filepath = askopenfilename("Open any shelve file (It will not consider extensions don't worry)", (("Shelve Data File", "*.dat"), ("Shelve Bak Files", "*.bak"), ("Shelve Dir Files", "*.dir"),("All Files", "*.*")), PID)
+def _openFile(PID: int, filepath: str):
     if isinstance(filepath, str): filepath = filepath.rstrip(".dir").rstrip(".bak").rstrip(".dat")
-    DICT = None
     try:
         with shelve.open(filepath) as reader: DICT = dict(reader)
         if not len(DICT.keys()) or not len(DICT.values()): raise Exception
@@ -151,8 +155,13 @@ def openFile(PID: int):
             with shelve.open(filepath+".dat") as reader: DICT = dict(reader)
             if not len(DICT.keys()) or not len(DICT.values()): raise Exception
         except Exception: messagebox.showerror("Cannot read file!", "The selected file cannot be read!", INSTANCES[PID])
-        else: dictView(PID, DICT, filepath)
+        else: dictView(PID, DICT, filepath, fileExtension=".dat")
     else: dictView(PID, DICT, filepath)
+def openFile(PID: int):
+    filepath = askopenfilename("Open any shelve file (It will not consider extensions don't worry)", (("Shelve Data File", "*.dat"), ("Shelve Bak Files", "*.bak"), ("Shelve Dir Files", "*.dir"),("All Files", "*.*")), PID)
+    DICT = None
+    _openFile(PID, filepath)
+    
 
 def _actualAddKey(PID, LoadedDict, KT, K, VT, V, callFromKey: str=None):
     kT = eval(KT)
@@ -205,12 +214,14 @@ def addNewKey(PID, LoadedDict, callFromKey: str=None):
     ROOT.mainloop()
 
 def main(*args):
+    print(args)
     INSTANCES[args[-1]] = tkinter.Tk()
-    THEME_WINDOW_BG, THEME_FOREGROUND = args[4]["THEME"]
+    THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "shelveeditor", "Shelve Editor", args[-1])
     BUTTON_FRAMES[args[-1]] = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
     BUTTON_FRAMES[args[-1]].grid(row=1, column=0, sticky="W")
     openFileButton = tkinter.Button(BUTTON_FRAMES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Open a shelve file!", command=lambda PID=args[-1]: openFile(PID))
     openFileButton.grid(row=0, column=0)
+    if args[2]: print(args[2]); _openFile(args[-1], args[2])
     INSTANCES[args[-1]].mainloop()
