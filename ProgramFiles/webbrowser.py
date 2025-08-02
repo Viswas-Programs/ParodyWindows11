@@ -41,9 +41,9 @@ def browse(PID, e=None):
         text.insert(0, url)
     frame = HtmlFrame(INSTANCES[PID], messages_enabled=False)
     frame.load_website(text.get()) 
-    frame.on_link_click(addToList)
-    if DARK_THEME: frame.enable_dark_theme(True, True)
-    frame.on_title_change(a)
+    frame.configure(on_link_click=addToList)
+    if DARK_THEME: frame.configure(dark_theme_enabled=True, image_inversion_enabled=True)
+    frame.bind("<<TitleChanged>>", lambda: a(frame.title()))
     frame.grid(row=2, column=0)
 def optionsWindow(PID, e=None):
     global DARK_THEME
@@ -81,8 +81,8 @@ def optionsWindow(PID, e=None):
         if SHOWN_ABOUT: aboutFrame.destroy()
         perFrame = tkinter.Frame(optionsWn, background=THEME_WINDOW_BG)
         perFrame.grid(row=1, column=1)
-        def changeTheme(e=None): global DARK_THEME;  frame.enable_dark_theme(True, True); DARK_THEME = True
-        def revChanges(e=None): global DARK_THEME;  frame.enable_dark_theme(False, False); DARK_THEME = False
+        def changeTheme(e=None): global DARK_THEME; frame.configure(dark_theme_enabled=True, image_inversion_enabled=True); DARK_THEME = True
+        def revChanges(e=None): global DARK_THEME;  frame.configure(dark_theme_enabled=True, image_inversion_enabled=True); DARK_THEME = False
         change = tkinter.Button(perFrame, text="Experimental dark theme! (on)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=changeTheme)
         change.grid(row=0, column=0)
         revchange = tkinter.Button(perFrame, text="Experimental dark theme! (off)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=revChanges)
@@ -103,14 +103,14 @@ def goBack(e=None):
     global frame
     if frame:
         frame.load_website(searches[searchNo-2])
-        if DARK_THEME: frame.enable_dark_theme(True, True)
+        if DARK_THEME: frame.configure(dark_theme_enabled=True, image_inversion_enabled=True)
         global text
         text.delete(0, tkinter.END)
         text.insert(searches[searchNo-2])
 def reloadWebsite(e=None):
     if frame:
         frame.load_website(searches[searchNo-1])
-        if DARK_THEME: frame.enable_dark_theme(True, True)
+        if DARK_THEME: frame.configure(dark_theme_enabled=True, image_inversion_enabled=True)
 
 def main(*args):
     global mainFrame
