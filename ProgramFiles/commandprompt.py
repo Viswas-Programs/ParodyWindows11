@@ -156,7 +156,7 @@ class cmdCommands(object):
             self.clearStdIn()
     def administrator(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get()) 
-        with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "r") as checkUser:
+        with open(os.path.join(self.CWD, f"Users/accConfiguration{self.getParams(1, ' ').lstrip('-')}.conf"), "r") as checkUser:
             usrname, pswd = checkUser.readlines()
             usrname = base64.urlsafe_b64decode(usrname.rstrip("\n")).decode("utf-8")
             pswd = base64.urlsafe_b64decode(pswd.rstrip("\n")).decode("utf-8")
@@ -228,7 +228,7 @@ class cmdCommands(object):
                     userToreset =  self.getParams(2, "-")
                     if userToreset.lower() != "defaultuser0":
                         try: 
-                            with shelve.open(f"ProgramFiles/{userToreset}/USER_CONFIG") as deleteIt: deleteIt.clear()
+                            with shelve.open(f"Users/{userToreset}/USER_CONFIG") as deleteIt: deleteIt.clear()
                         except Exception as exp: self.showMsg(f"ERROR OCCURED While resetting...!Error: {exp}")
                     shelveFilesToDelete = ["ProgramFiles/history", "ProgramFiles/IPChat/_serverConfig", "ProgramFiles/IPChat/serversList"]
                     for shelveToDelete in shelveFilesToDelete:
