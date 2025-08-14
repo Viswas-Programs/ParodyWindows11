@@ -105,7 +105,7 @@ class cmdCommands(object):
                     usersFolder = os.path.join(self.CWD, f"Users")
                     username = self.getParams(3, '-')
                     userNum = self.getParams(2, '-')
-                    os.mkdir(os.path.join(os.path.join(self.CWD, "ProgramFiles"), username))
+                    os.mkdir(os.path.join(os.path.join(self.CWD, "Users"), username))
                     try: 
                         os.mkdir(usersFolder)
                         os.mkdir(f"{usersFolder}/{username}")
@@ -116,9 +116,9 @@ class cmdCommands(object):
                         os.mkdir(f"{usersFolder}/{username}/{i}") 
                 except Exception: pass
                 finally:
-                    with open(os.path.join(self.CWD, f"ProgramFiles/accConfiguration{userNum}.conf"), "wb") as writeConfig:
+                    with open(os.path.join(self.CWD, f"Users/accConfiguration{userNum}.conf"), "wb") as writeConfig:
                         writeConfig.writelines([base64.urlsafe_b64encode(username.encode("utf-8")), "\n".encode("utf-8") , base64.urlsafe_b64encode((self.getParams(4, '-')).encode("utf-8"))])
-                    USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
+                    USER_CONFIG = shelve.open(f"Users/{username}/USER_CONFIG")
                     USER_CONFIG["APPS"] = [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskmanager"]]
                     USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
                     USER_CONFIG["THEME"] = ["Black", "White", "#242323"]
