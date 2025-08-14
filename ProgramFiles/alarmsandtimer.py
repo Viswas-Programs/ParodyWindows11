@@ -2,7 +2,7 @@ import tkinter
 import time
 from ProgramFiles.errorHandler import messagebox
 from ProgramFiles.entryWidget import Entry
-THEME_WINDOW_BG, THEME_FOREGROUND = ["", ""]
+THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black", "White", "Black"]
 SHOWN_TIMER = False
 SHOWN_ALARMS = False
 INSTANCES = {}
@@ -67,11 +67,11 @@ def returnInformation(PID):
 def main(*args):
     global THEME_WINDOW_BG, THEME_FOREGROUND
     global sidebar
-    THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
+    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     import ProgramFiles.dwm as DWM
-    DWM.createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "alarmsandtimer", "Alarms and Timers", args[-1])
+    DWM.createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "alarmsandtimer", "Alarms and Timers", args[-1])
     INSTANCES[args[-1]].title("Alarms and Timer")
     sidebar = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
     sidebar.grid(row=1, column=0)

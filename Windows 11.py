@@ -46,7 +46,7 @@ try:
     from PIL import Image, ImageTk, ImageGrab
     import psutil
     from ProgramFiles.fileaskhandlers import askopenfilename
-    from ProgramFiles.buttons import IconButton
+    from ProgramFiles.buttons import IconButton, SidebarButtons
     import platform
     from ProgramFiles import entryWidget
     from ProgramFiles.errorHandler import messagebox
@@ -115,9 +115,11 @@ class PW11GlobalVars():
         self.PINNED_APPS_DESKTOP = []
         self.PINNED_APPS = []
         self.APP_INSTANCE = LoadedApps()
+        self.THEME_WN_CLR = None
+        self.TASKBAR_FRAME: tkinter.Frame = None
 
 GLOBAL_VARS = PW11GlobalVars()
-def createUserAccount(username: str, password: str, userNumber: int, overwriteConfigs=True, THEME=["Black", "White"]):
+def createUserAccount(username: str, password: str, userNumber: int, overwriteConfigs=True, THEME=["Black", "White", "Black"]):
     try: 
         try: 
             os.mkdir(f"Users")
@@ -140,6 +142,7 @@ def createUserAccount(username: str, password: str, userNumber: int, overwriteCo
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "APPS", [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager", "Shelve Editor"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskManager", "ProgramFiles.shelveeditor"]])
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "PINNED", [["File Manager"], ["Notepad", "File Manager"]])
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "THEME", THEME)
+    FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "THEME_WN_BORDERS", {"START_MENU_HG_CLR": "Black", "START_MENU_HGBG": "Black", "DWM_HG_CLR": "Black", "DWM_HGBG": "Black"})
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "CLOCK-WIDGET", 0)
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "DEFAULTAPPASSOCIATION", {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer", "dat": "Shelve Editor"})
     FILE_SYSTEM.editConfig("NEW_USER_CONFIG", "WALLPAPER", None)
@@ -156,9 +159,11 @@ def createUserAccount(username: str, password: str, userNumber: int, overwriteCo
     return True
 try:
     GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = SYS_CONFIG["THEME"]
+    GLOBAL_VARS.THEME_WN_CLR = GLOBAL_VARS.THEME_WINDOW_BG
 except Exception:
     GLOBAL_VARS.THEME_WINDOW_BG = "Black"
     GLOBAL_VARS.THEME_FOREGROUND = "White"
+    GLOBAL_VARS.THEME_WN_CLR = "Black"
 
 GLOBAL_VARS.RUNNING_APPS =  FILE_SYSTEM.RUNNING_APPS
 ICONS = GLOBAL_VARS.ICONS
@@ -219,7 +224,7 @@ class Notifications(object):
         notificationsWindow = tkinter.Toplevel(background=GLOBAL_VARS.THEME_WINDOW_BG)
         PID = generatePID(DIALOGUE_BOXES)
         GLOBAL_VARS.RUNNING_APPS[PID] = "notification window"
-        dwm.createTopFrame(notificationsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "info", "Notification Center", PID)
+        dwm.createTopFrame(notificationsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "info", "Notification Center", PID)
         GLOBAL_VARS.NOTIFICATION_BUTTON.configure(text="Notifications (0)")
         if len(self.NotificationsList) == 0:
             a = tkinter.Label(notificationsWindow, text="No notifications (yet)", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
@@ -244,19 +249,20 @@ class settings():
         self.settingsWindow = tkinter.Toplevel(self.ROOT, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.PID = generatePID(CONTROL_PANELS)
         GLOBAL_VARS.RUNNING_APPS[self.PID] = "Control Panel"
-        dwm.createTopFrame(self.settingsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "settings", "Control Panel", self.PID)
+        dwm.createTopFrame(self.settingsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "settings", "Control Panel", self.PID)
         GUIButtonCommand.createRunningAppTaskbarIcon("settings", self.PID)
         btnFrame = tkinter.Frame(self.settingsWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
         btnFrame.grid(row=1, column=0)
-        homeBtn = tkinter.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Home", command=self.homePage)
+        sidebar = SidebarButtons(btnFrame, GLOBAL_VARS.THEME_WINDOW_BG)
+        homeBtn = sidebar.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Home", command=self.homePage)
         homeBtn.grid(row=0, column=0)
-        personalizeBtn = tkinter.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Personalization", command=self.personalization)
+        personalizeBtn = sidebar.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Personalization", command=self.personalization)
         personalizeBtn.grid(row=1, column=0)
-        appOpenerChangeBtn = tkinter.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="App Associations", command=self.changeFileOpeners)
+        appOpenerChangeBtn = sidebar.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="App Associations", command=self.changeFileOpeners)
         appOpenerChangeBtn.grid(row=2, column=0)
-        startupApps = tkinter.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Startup Apps", command=self.addStartupApps)
+        startupApps = sidebar.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Startup Apps", command=self.addStartupApps)
         startupApps.grid(row=3, column=0)
-        userManagementBtn = tkinter.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Users", command=self.addUserAccounts)
+        userManagementBtn = sidebar.Button(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Users", command=self.addUserAccounts)
         userManagementBtn.grid(row=4, column=0)
         self.setting = tkinter.Frame(self.settingsWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.setting.grid(row=1, column=1)
@@ -274,13 +280,13 @@ class settings():
         def changeBg():
             
             global SYS_CONFIG
-            colorToUse = colorchooser.askcolor(title="Select background!")
+            colorToUse = colorchooser.askcolor(title="Select title bar colour!")
             GLOBAL_VARS.THEME_WINDOW_BG = colorToUse[1]
-            crBg.configure(text=f"Current Background = {GLOBAL_VARS.THEME_WINDOW_BG}")
+            crBg.configure(text=f"Current Title Bar BG = {GLOBAL_VARS.THEME_WINDOW_BG}")
             if systemChangeTheme.get(): 
-                SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
-            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
-            dwm.changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND)
+                SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME",  [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
+            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME",  [GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG])
+            dwm.changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR)
             dwm._changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.ROOT_WINDOW)
             try:
                 GLOBAL_VARS.ROOT_WINDOW.configure(background=GLOBAL_VARS.THEME_WINDOW_BG,)
@@ -294,11 +300,25 @@ class settings():
             GLOBAL_VARS.THEME_FOREGROUND = colorToUse[1]
             print(GLOBAL_VARS.THEME_FOREGROUND)
             crFg.configure(text=f"Current foreground = {GLOBAL_VARS.THEME_FOREGROUND}")
-            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
+            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG])
             if systemChangeTheme.get(): 
                 SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
-            dwm.changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND)
             dwm._changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.ROOT_WINDOW)
+            dwm.changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR)
+            dwm._changeThemeForAllApps(GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.TASKBAR_FRAME)
+            GLOBAL_VARS.ROOT_WINDOW.update()
+        def changeWnClr():
+            global SYS_CONFIG
+            colorToUse = colorchooser.askcolor(title="Select background!")
+            GLOBAL_VARS.THEME_WN_CLR = colorToUse[1]
+            print(GLOBAL_VARS.THEME_FOREGROUND)
+            crWnClr.configure(text=f"Current background = {GLOBAL_VARS.THEME_FOREGROUND}")
+            GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR])
+            if systemChangeTheme.get(): 
+                SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
+            dwm._changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.ROOT_WINDOW)
+            dwm.changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR)
+            dwm._changeThemeForAllApps(GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.TASKBAR_FRAME)
             GLOBAL_VARS.ROOT_WINDOW.update()
         def changeWallpaper():
             nonlocal wallpaperText
@@ -325,6 +345,42 @@ class settings():
             except: pass
             wallpaperText = "Current Wallpaper: No wallpapers set yet!"
             wallpaperPath.configure(text=wallpaperText)
+        def usePresetThemes():
+            wn = tkinter.Toplevel(self.settingsWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
+            dwm.createTopFrame(wn, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "settings", "Preset Themes", generatePID(DIALOGUE_BOXES), associatePIDProcess=self.PID)
+            themesFrame = tkinter.Frame(wn, background=GLOBAL_VARS.THEME_WINDOW_BG)
+            themesFrame.grid(row=1, column=0)
+            details = tkinter.Frame(wn, background=GLOBAL_VARS.THEME_WINDOW_BG)
+            details.grid(row=1, column=1)
+            sidebar = SidebarButtons(themesFrame, GLOBAL_VARS.THEME_WINDOW_BG)
+            def useSelectedPreset(themeName: str):
+                with shelve.open(os.path.join(CWD, "Themes", themeName)) as reader:
+                    FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [reader["WINDOW_TITLE_COLOUR"], reader["FOREGROUND"], reader["BACKGROUND"]])
+                    FILE_SYSTEM.editConfig("USER_CONFIG", "THEME_WN_BORDERS", {"START_MENU_HG_CLR": reader["START_MENU_BORDER_ACTIVE"], "START_MENU_HGBG": reader["START_MENU_BORDER_INACTIVE"], "DWM_HG_CLR": reader["DWM_WINDOW_BORDER_ACTIVE"], "DWM_HGBG": reader["DWM_WINDOW_BORDER_INACTIVE"]})
+                    GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
+                    GLOBAL_VARS.THEME_WINDOW_BG = reader["BACKGROUND"]
+                    GLOBAL_VARS.THEME_FOREGROUND = reader["FOREGROUND"]
+                    GLOBAL_VARS.THEME_WN_CLR = reader["WINDOW_TITLE_COLOUR"]
+                    dwm._changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.ROOT_WINDOW)
+                    dwm.changeThemeForAllApps(GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR)
+                    dwm._changeThemeForAllApps(GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.TASKBAR_FRAME)
+            useThemeBtn = tkinter.Button(wn, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Use Selected Preset!", justify="center", command=lambda: useSelectedPreset(sidebar.currentSelection))
+            useThemeBtn.grid(row=2, column=1, sticky="NEWS")
+            def currentSelectionChange(themeName):
+                for child in details.winfo_children(): child.destroy()
+                with shelve.open(os.path.join(CWD, "Themes", themeName)) as reader:
+                    for x, keys in enumerate(dict(reader).keys()):
+                        txtLbl = tkinter.Label(details, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=keys.replace("_", " ").title())
+                        txtLbl.grid(row=x, column=0, sticky='W')
+                        colourLbl = tkinter.Label(details, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=reader[keys])
+                        colourLbl.grid(row=x, column=1, sticky='W')
+                        previewFrame = tkinter.Frame(details, background=reader[keys], width=100, height=10)
+                        previewFrame.grid(row=x, column=2)
+                    
+            for i, themes in enumerate(os.listdir(os.path.join(CWD, "Themes"))):
+                button = sidebar.Button(themesFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=themes.replace("_", " ").title(), command=lambda theme=themes: currentSelectionChange(theme), ID=themes)
+                button.grid(row=i, column=0)
+            wn.mainloop()
         self.setting.destroy()
         self.setting =  tkinter.Frame(self.settingsWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.setting.grid(row=1, column=1)
@@ -336,19 +392,25 @@ class settings():
         crFg.grid(row=1, column=0)
         changeForeground = tkinter.Button(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Change foreground!", command=changeFg)
         changeForeground.grid(row=1, column=1)
+        crWnClr = tkinter.Label(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=f"Current Window Title BG = {GLOBAL_VARS.THEME_FOREGROUND}")
+        crWnClr.grid(row=2, column=0)
+        changeWindowColour = tkinter.Button(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Change Window Title BG!", command=changeWnClr)
+        changeWindowColour.grid(row=2, column=1)
         ttk.Style(self.settingsWindow).configure("TCheckbutton", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
         systemChangeTheme = tkinter.IntVar()
         applyToSystem = ttk.Checkbutton(self.setting, text="Also apply changes to system theme!", variable=systemChangeTheme)
-        applyToSystem.grid(row=2, column=0)
+        applyToSystem.grid(row=3, column=0)
+        usePrThemesBtn = tkinter.Button(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Use Preset Themes!", command=usePresetThemes, justify="center")
+        usePrThemesBtn.grid(row=4, column=0, columnspan=2)
         wallpaperText = "Current Wallpaper: "
         if GLOBAL_VARS.USER_CONFIG["WALLPAPER"]: wallpaperText += GLOBAL_VARS.USER_CONFIG["WALLPAPER"]
         else: wallpaperText += "No wallpapers set yet!"
         wallpaperPath = tkinter.Label(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=wallpaperText)
-        wallpaperPath.grid(row=3, column=0)
+        wallpaperPath.grid(row=5, column=0)
         changeWallpaperButton = tkinter.Button(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Change Wallpaper", command=changeWallpaper)
-        changeWallpaperButton.grid(row=3, column=1)
+        changeWallpaperButton.grid(row=5, column=1)
         removeWallpaperButton = tkinter.Button(self.setting, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Remove Wallpaper", command=removeWallpaper)
-        removeWallpaperButton.grid(row=4, column=1)
+        removeWallpaperButton.grid(row=6, column=1)
     def changeFileOpeners(self, reLaunch=False):
         def __internals_AddNewEntry(*args):
             def __internals_AddNewEntry_AddAppNames(*args):
@@ -364,7 +426,7 @@ class settings():
                     messagebox.showerror('Error changing default app association', f'Error changing default app association.\nProb: {I}', addNewEntryWn, MainPID=PID )
             addNewEntryWn = tkinter.Toplevel(self.settingsWindow)
             PID = generatePID(DIALOGUE_BOXES)
-            dwm.createTopFrame(addNewEntryWn, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "settings", "Add new app association wizard", PID , associatePIDProcess=self.PID)
+            dwm.createTopFrame(addNewEntryWn, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "settings", "Add new app association wizard", PID , associatePIDProcess=self.PID)
             GLOBAL_VARS.RUNNING_APPS[PID] = "Control Panel - New App Association Wizard"
             nEntFrm = tkinter.Frame(addNewEntryWn, background=GLOBAL_VARS.THEME_WINDOW_BG)
             nEntFrm.grid(row=1, column=0)
@@ -523,7 +585,7 @@ class GUIButtonCommand:
         if T_BG and T_FG: 
             THEME_WBG = T_BG
             THEME_FG = T_FG
-        else: THEME_WBG, THEME_FG = GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND
+        else: THEME_WBG, THEME_FG = GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND
         POS = len(list(dict(GLOBAL_VARS.RUNNING_APPS).keys()))
         realApp = GUIButtonCommand.AppImportNameCheck(app=app)
         appIcon = giveIcon(realApp, ROOT, 2)
@@ -590,16 +652,16 @@ class GUIButtonCommand:
             GLOBAL_VARS.PINNED_APPS.append(appName)
             GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
         appIcon = giveIcon(appName, GLOBAL_VARS.ROOT_WINDOW, 2)
-        appBtn = tkinter.Button(GLOBAL_VARS.APPS_FRAME, image=appIcon, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=lambda: GUIButtonCommand.launchItem(appToPin) )
+        appBtn = tkinter.Button(GLOBAL_VARS.APPS_FRAME, image=appIcon, background=GLOBAL_VARS.THEME_WN_CLR, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=lambda: GUIButtonCommand.launchItem(appToPin), anchor="w", justify="left")
         appBtn.imgRef = appIcon
-        appBtn.grid(row=0, column=GLOBAL_VARS.PINNED_APPS.index(appToPin))
+        appBtn.grid(row=0, column=GLOBAL_VARS.PINNED_APPS.index(appToPin), sticky="NSW")
     @staticmethod
     def taskbarselfGUI(e=None):
         # SHIT CODE, WILL PROBABLY CHANGE TO A COMBOBOX PRETTY SOON
         taskbarselfWindow = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW)
         taskbarselfWindow.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
         PID = generatePID(DIALOGUE_BOXES)
-        frame = dwm.createTopFrame(taskbarselfWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "info", "Taskbar App Pinning Wizard", PID)
+        frame = dwm.createTopFrame(taskbarselfWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "info", "Taskbar App Pinning Wizard", PID)
         frame.ALL_BUTTONS["minimize"].grid_forget()
         GLOBAL_VARS.RUNNING_APPS[PID] = "TaskbarAppPinWizard"
         addWidgetsFrame = tkinter.LabelFrame(taskbarselfWindow, text="Add widgets", 
@@ -611,14 +673,13 @@ class GUIButtonCommand:
         pinItems = tkinter.LabelFrame(taskbarselfWindow, text="Pin items",
                                         background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
         pinItems.grid(row=2, column=0)
-        r = -1
         PINNED_APPS = list(GLOBAL_VARS.PINNED_APPS)
         NOT_PINNED_APPS = []
         for app in GLOBAL_VARS.APPS_LIST:
             if app not in PINNED_APPS: NOT_PINNED_APPS.append(app)
         combobox = ttk.Combobox(pinItems, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, values=NOT_PINNED_APPS, state='readonly')
         combobox.grid(row=1, column=0)
-        combobox.bind("<<ComboboxSelected>>", lambda e: GUIButtonCommand.pinApps(combobox.get()) )
+        combobox.bind("<<ComboboxSelected>>", lambda e: GUIButtonCommand.pinApps(GUIButtonCommand.AppImportNameCheck(combobox.get())) )
         taskbarselfWindow.mainloop()
     @staticmethod
     def standardisedContextMenuPopup(contextMenuObj: tkinter.Menu,  event=None, *args):
@@ -679,7 +740,7 @@ class GUIButtonCommand:
         iconToAdd = None
         addNewIcon = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW, background=GLOBAL_VARS.THEME_WINDOW_BG)
         PID = generatePID(DIALOGUE_BOXES)
-        frame  = dwm.createTopFrame(addNewIcon, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "info", "Desktop App Pinning Wizard", PID)
+        frame  = dwm.createTopFrame(addNewIcon, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "info", "Desktop App Pinning Wizard", PID)
         GLOBAL_VARS.RUNNING_APPS[PID] = "DesktopAppPinningWizard"
         frame.ALL_BUTTONS["minimize"].grid_forget()
         desktopAppsList = ttk.Combobox(addNewIcon)
@@ -733,7 +794,7 @@ class GUIButtonCommand:
         shutdownWindow = tkinter.Toplevel(root, background=GLOBAL_VARS.THEME_WINDOW_BG)
         PID = generatePID(DIALOGUE_BOXES)
         GLOBAL_VARS.RUNNING_APPS[PID] = "shutdownmenu"
-        frame = dwm.createTopFrame(shutdownWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "shutdown", "Shutdown Menu", PID)
+        frame = dwm.createTopFrame(shutdownWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "shutdown", "Shutdown Menu", PID)
         frame.ALL_BUTTONS["minimize"].grid_forget()
         shutdownWindow.title("Shutdown/Restart the shell")
         a = tkinter.Label(shutdownWindow, text="What you want to do now?", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
@@ -762,10 +823,10 @@ def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig
     ParWFS._instances["root"].RUNNING_APPS[PID] = app
     ShelveRef = USER_CONFIG
     PER_PROGRAM_COMMAND_APPS_LIST = ShelveRef["APPS"][1]
-    T_BG, T_FG = ShelveRef["THEME"]
+    T_ACT_CLR, T_FG, T_BG = ShelveRef["THEME"]
     appToLaunch = GUIButtonCommand.AppImportNameCheck(app=app)
     progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
-    GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID, T_BG, T_FG)
+    GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID, T_ACT_CLR, T_FG)
     appImport = importlib.import_module(progAppImport)
     try:
         if appImport.NEEDS_FILESYSTEM_ACCESS: appImport.main(FILE_SYSTEM, userConfig, notifications, params, USER_CONFIG, PID)
@@ -828,8 +889,10 @@ class StartMenu:
         GLOBAL_VARS.ROOT_WINDOW.update()
         self.posX = btn.winfo_rootx()
         self.posY = taskbarFrame.winfo_height()
-
-        self.startMenuFrame = tkinter.Frame(GLOBAL_VARS.ROOT_WINDOW, background=GLOBAL_VARS.THEME_WINDOW_BG, width=self.width, height=self.height, borderwidth=5, border=5, highlightcolor="white", highlightthickness=3)
+        BGCLR = GLOBAL_VARS.USER_CONFIG["THEME_WN_BORDERS"]
+        HG_CLR = BGCLR["START_MENU_HG_CLR"]
+        HGBG = BGCLR["START_MENU_HGBG"]
+        self.startMenuFrame = tkinter.Frame(GLOBAL_VARS.ROOT_WINDOW, background=GLOBAL_VARS.THEME_WINDOW_BG, width=self.width, height=self.height, borderwidth=5, border=5, highlightcolor=HG_CLR, highlightbackground=HGBG, highlightthickness=3)
         self.startMenuFrame.place(x=self.posX, y=self.posY, bordermode="outside")
         self._LSideFrame = tkinter.Frame(self.startMenuFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, height=self.height, width=self.width/2)
         self._LSideFrame.grid(row=0, column=0)
@@ -906,7 +969,7 @@ class TaskManager:
         self.ROOT = tkinter.Toplevel(root, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.fileView = ttk.Treeview(self.ROOT, style="Treeview")
         PID = generatePID(TASK_MANAGERS)
-        dwm.createTopFrame(self.ROOT, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG, "taskmanager", "Task Manager", PID)
+        dwm.createTopFrame(self.ROOT, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "taskmanager", "Task Manager", PID)
         GLOBAL_VARS.RUNNING_APPS[PID] = "Task Manager"
         GUIButtonCommand.createRunningAppTaskbarIcon("Task Manager", PID)
         self.ROOT.title("Task Manager")
@@ -1085,7 +1148,7 @@ def main():
         messagebox.showinfo("I/O operation interrupt while shutdown, recovered.", "We detected that the shell has exited by force while the shell was performing an I/O operation via the ParWFS Library.\nIt has automatically restored the point where it left.\nPlease go to the target directory again and restart your operation!.", GLOBAL_VARS.ROOT_WINDOW)
     GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
     GLOBAL_VARS.APPS_LIST, GLOBAL_VARS.COMMAND_APPS_LIST = GLOBAL_VARS.USER_CONFIG["APPS"]
-    GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = GLOBAL_VARS.USER_CONFIG["THEME"]
+    GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG = GLOBAL_VARS.USER_CONFIG["THEME"]
     GLOBAL_VARS.PINNED_APPS = GLOBAL_VARS.USER_CONFIG["PINNED"][0]
     GLOBAL_VARS.PINNED_APPS_DESKTOP = GLOBAL_VARS.USER_CONFIG["PINNED"][1]
     print("Loaded apps and user settings!")
@@ -1096,8 +1159,8 @@ def main():
     callHost.setLoadedApps(GLOBAL_VARS.APP_INSTANCE)
     loadAllIcons(GLOBAL_VARS.APPS_LIST, ROOT_WINDOW)
     loadAllIcons(["shutdown", "restart", "start"], ROOT_WINDOW)
-    taskbarFrame = tkinter.Frame(ROOT_WINDOW, background=GLOBAL_VARS.THEME_WINDOW_BG)
-    taskbarFrame.identifier = "taskbar"
+    GLOBAL_VARS.TASKBAR_FRAME = tkinter.Frame(ROOT_WINDOW, background=GLOBAL_VARS.THEME_WN_CLR)
+    GLOBAL_VARS.TASKBAR_FRAME.identifier = "taskbar"
     ROOT_WINDOW.identifier = "root_window"
     GLOBAL_VARS.ROOT_WINDOW = ROOT_WINDOW
     desktopFrame = tkinter.Frame(ROOT_WINDOW, background=GLOBAL_VARS.THEME_WINDOW_BG, border=15)
@@ -1109,7 +1172,7 @@ def main():
         GLOBAL_VARS.WALLPAPER.identifier = "wallpaper"
     ROOT_WINDOW.grid_rowconfigure(1, weight=1)
     ROOT_WINDOW.grid_columnconfigure(0, weight=1)
-    contextMenu = tkinter.Menu(taskbarFrame, tearoff=False, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+    contextMenu = tkinter.Menu(GLOBAL_VARS.TASKBAR_FRAME, tearoff=False, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
     contextMenu.add_command(label="Taskbar settings", command=GUIButtonCommand.taskbarselfGUI)
     contextMenu.identifier = "taskbar"
     def runningTaskbarAppsLOOP():  
@@ -1134,28 +1197,30 @@ def main():
     ROOT_WINDOW.after(300, runningTaskbarAppsLOOP)
     def recurringClockFunc():
             cr_time = time.strftime("%H:%M:%S %p")
-            GLOBAL_VARS.CLOCK_LABEL = tkinter.Label(taskbarFrame, text=cr_time, background=GLOBAL_VARS.THEME_WINDOW_BG,
-                                    foreground=GLOBAL_VARS.THEME_FOREGROUND)
+            GLOBAL_VARS.CLOCK_LABEL = tkinter.Label(GLOBAL_VARS.TASKBAR_FRAME, text=cr_time, background=GLOBAL_VARS.THEME_WN_CLR,
+                                    foreground=GLOBAL_VARS.THEME_FOREGROUND, justify="right", anchor="e")
     
             GLOBAL_VARS.CLOCK_LOOP_ID = GLOBAL_VARS.CLOCK_LABEL.after(1000, recurringClockFunc)
-            GLOBAL_VARS.CLOCK_LABEL.grid(row=0, column=2, sticky="ne")
+            GLOBAL_VARS.CLOCK_LABEL.grid(row=0, column=6, sticky="E")
     try:
         if GLOBAL_VARS.USER_CONFIG["CLOCK-WIDGET"] == 1: recurringClockFunc()
     except: pass
-    appsFrame = tkinter.Frame(taskbarFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, border=5)
+    appsFrame = tkinter.Frame(GLOBAL_VARS.TASKBAR_FRAME, background=GLOBAL_VARS.THEME_WN_CLR, border=5)
     img = Image.open(os.path.join(CWD, "ProgramFiles/Icons/start.png"))
     img = img.resize((int(img.width/2), int(img.height/2)))
     img = ImageTk.PhotoImage(img)
-    shutDown = tkinter.Button(taskbarFrame, text="Start", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
-                                command=lambda: StartMenu(shutDown, taskbarFrame), image=img, compound="left")
+    shutDown = tkinter.Button(GLOBAL_VARS.TASKBAR_FRAME, text="Start", background=GLOBAL_VARS.THEME_WN_CLR, foreground=GLOBAL_VARS.THEME_FOREGROUND,
+                                command=lambda: StartMenu(shutDown, GLOBAL_VARS.TASKBAR_FRAME), image=img, compound="left")
     shutDown.img = img
     shutDown.grid(row=0, column=0, padx=5)
     tooltips.createToolTipAtGivenPos(shutDown, 1, ROOT_WINDOW, "Shutdown or restart the shell!", )
     appsFrame.grid(row=0, column=1, sticky="n")
-    FILE_SYSTEM.RunAppsFrame = runningAppsFrame = GLOBAL_VARS.RUNNING_APPS_FRAME = tkinter.Frame(taskbarFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, padx=10, border=5)
-    runningAppsFrame.grid(row=0, column=4, sticky="n")
-    notificationsButton = tkinter.Button(taskbarFrame, text="Notifications (0)", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command= lambda: notification.showNotificationsList(notification))
-    notificationsButton.grid(row=0, column=3, sticky="ne", padx=5)
+    FILE_SYSTEM.RunAppsFrame = runningAppsFrame = GLOBAL_VARS.RUNNING_APPS_FRAME = tkinter.Frame(GLOBAL_VARS.TASKBAR_FRAME, background=GLOBAL_VARS.THEME_WN_CLR, padx=10, border=5)
+    runningAppsFrame.grid(row=0, column=4, sticky="W")
+    #for i in range(2, GLOBAL_VARS.TASKBAR_FRAME.winfo_width()+1):
+    GLOBAL_VARS.TASKBAR_FRAME.columnconfigure(5, weight=1)
+    notificationsButton = tkinter.Button(GLOBAL_VARS.TASKBAR_FRAME, text="Notifications (0)", background=GLOBAL_VARS.THEME_WN_CLR, foreground=GLOBAL_VARS.THEME_FOREGROUND, command= lambda: notification.showNotificationsList(notification), justify="right", anchor="e",)
+    notificationsButton.grid(row=0, column=7, sticky="E", padx=5)
     GLOBAL_VARS.NOTIFICATION_BUTTON = notificationsButton
     GLOBAL_VARS.DESKTOP_FRAME = desktopFrame
     GLOBAL_VARS.APPS_FRAME = appsFrame
@@ -1166,8 +1231,8 @@ def main():
     GLOBAL_VARS.DESKTOP_CONTEXT_MENU = desktopContextMenu
     GLOBAL_VARS.TASKBAR_CONTEXT_MENU = contextMenu
     ROOT_WINDOW.bind("<Button-3>", GUIButtonCommand.OSContextMenuPopup)
-    taskbarFrame.bind("<Button-3>", lambda event: GUIButtonCommand.standardisedContextMenuPopup(contextMenu, event))
-    taskbarFrame.grid(row=0, column=0, sticky="EW")
+    GLOBAL_VARS.TASKBAR_FRAME.bind("<Button-3>", lambda event: GUIButtonCommand.standardisedContextMenuPopup(contextMenu, event))
+    GLOBAL_VARS.TASKBAR_FRAME.grid(row=0, column=0, sticky="NEW", )
     desktopFrame.grid(row=1, column=0, sticky="NW")
     desktopFrame.lift()
     
@@ -1475,7 +1540,7 @@ if __name__ == "__main__":
         if not os.access("ProgramFiles/commandprompt.py", os.F_OK) or not os.access("ProgramFiles/errorHandler.py", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
         else:
             if SYS_CONFIG["SETUP_IN_PROGRESS"]:
-                createUserAccount("defaultuser0", "SYSTEM", 0, True, ["Black", "White"])
+                createUserAccount("defaultuser0", "SYSTEM", 0, True, ["Black", "White", "Black"])
                 GLOBAL_VARS.USERNAME="defaultuser0"
                 FILE_SYSTEM.loadConfig(os.path.join(CWD, "Users/defaultuser0/USER_CONFIG"), "USER_CONFIG")
                 GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.getConfig("USER_CONFIG")
@@ -1488,8 +1553,9 @@ if __name__ == "__main__":
                 password = input("Enter your user's password: ")
                 foreground = input("Enter your user's preffered foreground colour: ")
                 background = input("Enter your user's preffered background colour: ")
+                windowColour = input("Enter your user's preffered window background colour: ")
                 userNumber = input("Enter your user's wanted user number (can be any number): ")
-                createUserAccount(GLOBAL_VARS.USERNAME, password, userNumber, True, [background, foreground])
+                createUserAccount(GLOBAL_VARS.USERNAME, password, userNumber, True, [background, foreground, windowColour])
                 print("Initialized new entries!")
             elif "-configchange" in arguements:
                 print("You have entered the configuration manager! Press CTRL+C anytime to exit!\n")
@@ -1498,7 +1564,7 @@ if __name__ == "__main__":
                     infoSysSelectSTR = "SYS_CONFIG"
                     SYS_CONFIG = shelve.open("ProgramFiles/SYS_CONFIG", writeback=True)
                 else:
-                    infoSysSelectSTR = "GLOBAL_CONFIG.USER_CONFIG"
+                    infoSysSelectSTR = "GLOBAL_VARS.USER_CONFIG"
                     GLOBAL_VARS.USERNAME = input("Type in the username whose settings are going to be changed!: ")
                     GLOBAL_VARS.USER_CONFIG = shelve.open(f"Users/{GLOBAL_VARS.USERNAME}/USER_CONFIG", writeback=True)
                 print("The respective configuration module has been imported!\n"

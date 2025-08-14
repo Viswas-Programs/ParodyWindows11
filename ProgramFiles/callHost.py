@@ -45,3 +45,5 @@ def endTaskByName(importName: str, externalPrintMsg=print):
         externalPrintMsg(f"\nKilled process {PID} associated with process {importName}")
 def endTaskByPID(PID: int):
     W11.TaskManager.endTask(PID)
+def getCurrentUsername():
+    return W11.GLOBAL_VARS.USERNAME

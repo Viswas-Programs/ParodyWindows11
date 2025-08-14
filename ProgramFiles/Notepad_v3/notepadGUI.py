@@ -65,6 +65,9 @@ class NotepadRun(object):
     Text, file_to_open: str=None, THEME_FOREGROUND="White", THEME_BACKGROUND="Black", PID=0) -> bool:
         print(f"Program started at {datetime.datetime.now()}")
         self.PID =  PID
+        self.THEME_FOREGROUND = THEME_FOREGROUND
+        self.THEME_TYPING_WIDGETS_BG = THEME_BACKGROUND
+        self.THEME_WINDOW_BG = THEME_BACKGROUND
         self.CURRENT_VERSION, self.UPDATE_BRANCH = versionFind()
         self.fileopen = file_to_open
         self.PROGRAM_MODE_CONFIG = False
@@ -78,12 +81,10 @@ class NotepadRun(object):
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.text = text_box
         self.text.configure(font=(self.font, self.size))
-        self.buttonFrame = tkinter.Frame(self.root, background="Black", pady=10)
+        self.buttonFrame = tkinter.Frame(self.root, background=self.THEME_WINDOW_BG, pady=10)
         self.buttonFrame.grid(row=3, column=0)
         self.saveTo = saveTo
-        self.THEME_FOREGROUND = THEME_FOREGROUND
-        self.THEME_TYPING_WIDGETS_BG = THEME_BACKGROUND
-        self.THEME_WINDOW_BG = THEME_BACKGROUND
+
         self.ZOOM_SIZE = 5
         self.saveTo.insert(1.0, f"{initialPath}/Documents/")
         print(f"Set initial path to {initialPath}/Documents/")
@@ -139,7 +140,7 @@ class NotepadRun(object):
             self.saveTo.configure(insertbackground="white",
                                   selectbackground='white',
                                   selectforeground='black')
-            self._title_bar(window=self.root, mode_val=20)
+            #self._title_bar(window=self.root, mode_val=20)
         print("Initialized the buttons to get into buttonFrame")
         self.root.bind("<Control-r>", self.readFile)
         self.root.bind("<Control-s>", self.save)

@@ -16,7 +16,7 @@ except:
     
 
 INSTANCES = {}
-THEME_WINDOW_BG, THEME_FOREGROUND = ["", ""]
+THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black", "White", "Black"]
 FOLDER_MODE = False
 NEEDS_FILESYSTEM_ACCESS = False
 SET_MS = 5000
@@ -124,10 +124,10 @@ def main(username, notification, fileopenHandle, *args):
         callHost.acknowledgeEndTask(PID)
         INSTANCES[PID].destroy()
         return True
-    global THEME_WINDOW_BG, THEME_FOREGROUND
+    global THEME_WINDOW_BG, THEME_FOREGROUND, THEME_ACT_CLR
     global SLIDESHOW_MODE
     global imageViewer, imageName, nextBtn, backBtn
-    THEME_WINDOW_BG, THEME_FOREGROUND = args[0]["THEME"]
+    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[0]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     _INDEVMENU = Menu(createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "photoviewer", "Photo Viewer", args[-1]))

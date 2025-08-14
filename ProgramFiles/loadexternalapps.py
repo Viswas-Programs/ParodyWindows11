@@ -7,7 +7,7 @@ from ProgramFiles import fileaskhandlers
 from ProgramFiles.dwm import createTopFrame
 from ProgramFiles import callHost
 
-THEME_WINDOW_BG, THEME_FOREGROUND = ["",""]
+THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black","White", "Black"]
 PROCESS_RUNNING = True
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
@@ -64,12 +64,12 @@ def loadCustomApp(PID):
 def main(*args):
     global externalAppsName
     global buttonText
-    global THEME_FOREGROUND, THEME_WINDOW_BG
+    global THEME_FOREGROUND, THEME_WINDOW_BG, THEME_ACT_CLR
     global showRefreshBtn
-    THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
+    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
-    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "loadexternalapps", "Load External Apps", args[-1])
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "loadexternalapps", "Load External Apps", args[-1])
     INSTANCES[args[-1]].title("Load External Apps", args[-1])
     externalAppsName = []
     buttonText = "Look for external apps!"

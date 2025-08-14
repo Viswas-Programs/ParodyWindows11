@@ -14,7 +14,7 @@ except:
     os.system("pip install psutil")
     import psutil
 NEEDS_FILESYSTEM_ACCESS = True
-THEME_WINDOW_BG, THEME_FOREGROUND = ["",""]
+THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black","White", "Black"]
 INSTANCES = {}
 def focusIn(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='normal'); INSTANCES[PID].overrideredirect(True); return True
 def focusOut(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='iconic'); INSTANCES[PID].overrideredirect(True); return True
@@ -38,7 +38,8 @@ def main(FILESYSTEM: ParWFS, *args):
         PROCESS_RUNNING = True
         global THEME_FOREGROUND
         global THEME_WINDOW_BG
-        THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
+        global THEME_ACT_CLR
+        THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
         filepath = None
         def newFolder(PID, *event):
             toplevel = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
@@ -47,6 +48,8 @@ def main(FILESYSTEM: ParWFS, *args):
                     os.mkdir(os.path.join(filepath, newFolderEntry.get()))
                     lookUpFiles(os.path.join(filepath, newFolderEntry.get()))
                 except Exception as EXCEPTION: messagebox.showerror("ERROR!", EXCEPTION, INSTANCES[PID], MainPID=PID)
+            internalPID = callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES)
+            createTopFrame(toplevel, THEME_FOREGROUND, THEME_ACT_CLR, "filemanager", "New Folder Menu", internalPID, associatePIDProcess=PID )
             tkinter.Label(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Folder Name!").grid(row=0, column=0)
             newFolderEntry = Entry(toplevel, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
             newFolderEntry.configure(insertbackground=THEME_FOREGROUND, selectbackground=THEME_FOREGROUND, selectforeground=THEME_WINDOW_BG)
@@ -88,7 +91,7 @@ def main(FILESYSTEM: ParWFS, *args):
             lookUpFiles(path=path)
         INSTANCES[args[-1]] = tkinter.Tk()
         INSTANCES[args[-1]].title("File Manager")
-        createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "filemanager", "File Manager", args[-1])
+        createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "filemanager", "File Manager", args[-1])
         ttk.Style(INSTANCES[args[-1]]).configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         mainFrame = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
         mainFrame.grid(row=1, column=0)

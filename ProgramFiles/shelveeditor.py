@@ -16,7 +16,7 @@ FRAMES: dict[int, list[tkinter.Frame]] = {}
 BUTTON_FRAMES: dict[int, tkinter.Frame] = {}
 MAIN_FRAMES: dict[int, tkinter.Text] = {}
 NEEDS_FILESYSTEM_ACCESS = False
-THEME_WINDOW_BG, THEME_FOREGROUND = ["Black", "White"]
+THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black", "White", "Black"]
 
 SepKeyWIDGETSTORES: dict[int, list[dict[str, list[Entry]], dict[str, list[Entry]], int]] = {}
 
@@ -65,7 +65,7 @@ def dictView(PrID, loadedDict: dict, shelvePath: str, callFromKey: str = None, f
         dctToIterate = dict(loadedDict)
         InternalPID = callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES)
         INSTANCES[InternalPID] = ROOT = topLevel = tkinter.Toplevel(INSTANCES[PrID], background=THEME_WINDOW_BG)
-        createTopFrame(ROOT, THEME_FOREGROUND, THEME_WINDOW_BG, "shelveeditor", f"DictView {callFromKey}", InternalPID, associatePIDProcess=PID)
+        createTopFrame(ROOT, THEME_FOREGROUND, THEME_ACT_CLR, "shelveeditor", f"DictView {callFromKey}", InternalPID, associatePIDProcess=PID)
         PID = InternalPID
     else: dctToIterate = dict(loadedDict)
     if PID not in SepKeyWIDGETSTORES.keys(): SepKeyWIDGETSTORES[PID] = [{}, {}, 0]
@@ -192,7 +192,7 @@ def addNewKey(PID, LoadedDict, callFromKey: str=None):
     InternalPID = callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES)
     txt = "MAIN"
     if callFromKey: txt=callFromKey
-    createTopFrame(ROOT, THEME_FOREGROUND, THEME_WINDOW_BG, "shelveeditor", f"Add New Key Wizard [Target: {txt}]", InternalPID, associatePIDProcess=PID )
+    createTopFrame(ROOT, THEME_FOREGROUND, THEME_ACT_CLR, "shelveeditor", f"Add New Key Wizard [Target: {txt}]", InternalPID, associatePIDProcess=PID )
 
     tkinter.Label(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Key Type").grid(row=1, column=0)
     tkinter.Label(ROOT, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Key").grid(row=1, column=1)
@@ -214,11 +214,14 @@ def addNewKey(PID, LoadedDict, callFromKey: str=None):
     ROOT.mainloop()
 
 def main(*args):
-    print(args)
     INSTANCES[args[-1]] = tkinter.Tk()
-    THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
+    print(args[3])
+    global THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG
+    print(THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG)
+    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
+    print(THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG)
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
-    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "shelveeditor", "Shelve Editor", args[-1])
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "shelveeditor", "Shelve Editor", args[-1])
     BUTTON_FRAMES[args[-1]] = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
     BUTTON_FRAMES[args[-1]].grid(row=1, column=0, sticky="W")
     openFileButton = tkinter.Button(BUTTON_FRAMES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Open a shelve file!", command=lambda PID=args[-1]: openFile(PID))

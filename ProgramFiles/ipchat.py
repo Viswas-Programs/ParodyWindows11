@@ -6,7 +6,7 @@ from ProgramFiles.errorHandler import messagebox
 import shelve
 from ProgramFiles.dwm import close, createTopFrame
 from ProgramFiles.entryWidget import Entry
-THEME_WINDOW_BG, THEME_FOREGROUND = ["", ""]
+THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black", "White", "Black"]
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
 def receive():
@@ -115,7 +115,7 @@ def main(*args):
     fileMenu.add_command(label="Configure Server", command=configureServer)
     fileMenu.add_command(label="Previously connected servers", command=lambda: getServerList(args[-1]))
     altMenu.add_cascade(label="File", menu=fileMenu)
-    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "ipchat", "IP Chat", args[-1], on_closing)
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "ipchat", "IP Chat", args[-1], on_closing)
     mainFrame = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
     mainFrame.grid(row=1, column=0)
     messages_frame = tkinter.Frame(mainFrame, background=THEME_WINDOW_BG)

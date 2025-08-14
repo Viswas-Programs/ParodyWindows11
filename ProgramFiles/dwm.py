@@ -1,7 +1,9 @@
 import tkinter
+import ParWFS
 try:
     import ProgramFiles.callHost as callHost
     from ProgramFiles.entryWidget import Entry
+    from ProgramFiles.buttons import SIDEBAR_BUTTON_INSTANCES
 except Exception:
     from tkinter import Entry
     try: import callHost
@@ -16,13 +18,14 @@ def _changeThemeForAllApps(newBg, newFg, widget: tkinter.BaseWidget):
         widget.configure(background=newBg)
         widget.configure(foreground=newFg)
     except Exception: pass
-def changeThemeForAllApps(newBg, newFg):
-    roots = []
-    for appLists in MANAGED_DWM_INSTANCES.values(): roots.append(appLists[2])
-    for root in roots: _changeThemeForAllApps(newBg, newFg, root)
-    closeBtns = []
-    for closeBtn in MANAGED_DWM_INSTANCES.values(): closeBtns.append(closeBtn[3])
-    for closeBn in closeBtns: closeBn.configure(background="red", foreground="white")
+def changeThemeForAllApps(newBg, newFg, newWnTitleClr):
+    for DWMFrame in MANAGED_DWM_INSTANCES.values():
+        _changeThemeForAllApps(newBg, newFg, DWMFrame[4].PARAMETER_CALL_INFORMATION["root"])
+        DWMFrame[4].configure(background=newWnTitleClr)
+        _changeThemeForAllApps(newWnTitleClr, newFg, DWMFrame[4])
+        DWMFrame[4].ALL_BUTTONS["close"].configure(background="red", foreground="white")
+    for sidebarInstances in SIDEBAR_BUTTON_INSTANCES:
+        sidebarInstances.defaultColour = newBg
 def title(newTitle=None, PID=0):
     if newTitle: MANAGED_DWM_INSTANCES[PID][1].configure(text=newTitle); MANAGED_DWM_INSTANCES[PID][0] = newTitle
     return MANAGED_DWM_INSTANCES[PID][0]
@@ -99,8 +102,12 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     root.update()
     root.update_idletasks()
     #root.wm_attributes('-type', 'splash')
-    DWMFrame = tkinter.Frame(root, background=T_BG, borderwidth=5, highlightthickness=2, highlightcolor="grey")
-    root.configure(highlightthickness=2, highlightcolor="grey")
+    try:  BRCLRS = ParWFS._instances["root"].getConfig("USER_CONFIG")["THEME_WN_BORDERS"]
+    except: BRCLRS = {"DWM_HG_CLR": "Black", "DWM_HGBG": "Black"}
+    HG_CLR = BRCLRS["DWM_HG_CLR"]
+    HGBG = BRCLRS["DWM_HGBG"]
+    DWMFrame = tkinter.Frame(root, background=T_BG, borderwidth=5, highlightthickness=2, highlightcolor=HG_CLR, highlightbackground=HGBG)
+    root.configure(highlightthickness=2, highlightcolor=HG_CLR, highlightbackground=HGBG)
     DWMFrame.rowconfigure(0, weight=1)
     for i in range(1, root.winfo_width()+1):
         DWMFrame.columnconfigure(i, weight=i+1)

@@ -13,7 +13,7 @@ global USER_CONFIG
 USER_CONFIG: shelve
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
-THEME_WINDOW_BG, THEME_FOREGROUND = ["", ""]
+THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black", "White", "Black"]
 def showDescription(PID, e=None):
     def uninstallProgram(e=None):
         try:
@@ -47,9 +47,9 @@ def main(username, notification, *args):
     global externalAppsList
     global appsList
     USER_CONFIG = args[1]
-    THEME_WINDOW_BG, THEME_FOREGROUND = USER_CONFIG["THEME"]
+    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = USER_CONFIG["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
-    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "softwarestore", "Software Store", args[-1])
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "softwarestore", "Software Store", args[-1])
     try:
         appsList = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/softwareStoreApps.json", timeout=10)
         appsList = appsList.json()

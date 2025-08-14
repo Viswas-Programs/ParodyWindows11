@@ -43,11 +43,11 @@ def main(username, notification, *args):
     UPDATE_CHGLOG = LAST_UPDATE.read()
     CURRENT_VERSION = "2.3.9"
     with shelve.open("ProgramFiles/SYS_CONFIG") as read: CURRENT_VERSION = read["VERSION"] 
-    THEME_WINDOW_BG, THEME_FOREGROUND = args[1]["THEME"]
+    THEME_ACT_COLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[1]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].title("Update manager")
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
-    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "updatemanager", "Update Manager", args[-1])
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_COLR, "updatemanager", "Update Manager", args[-1])
     changeeLogScrollbar = ttk.Scrollbar(INSTANCES[args[-1]])
     changeeLogScrollbar.grid(row=1, column=1, sticky="nsw")
     changelogs = Text(INSTANCES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, yscrollcommand=changeeLogScrollbar.set)

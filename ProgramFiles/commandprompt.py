@@ -121,9 +121,9 @@ class cmdCommands(object):
                     USER_CONFIG = shelve.open(f"ProgramFiles/{username}/USER_CONFIG")
                     USER_CONFIG["APPS"] = [["Command Prompt", "Load External Apps", "Notepad", "Web Browser", "Update Manager", "IP Chat", "File Manager", "Software Store", "File Share", "Black Jack", "Alarms and Timer", "Photo Viewer", "Control Panel", "Task Manager"], ["ProgramFiles.alarmsandtimer", "ProgramFiles.blackjack", "ProgramFiles.commandprompt", "ProgramFiles.loadexternalapps", "ProgramFiles.ipchat", "ProgramFiles.notepad", "ProgramFiles.webbrowser", "ProgramFiles.updatemanager", "ProgramFiles.fileshare", "ProgramFiles.filemanager", "ProgramFiles.softwarestore", "ProgramFiles.photoviewer", "ProgramFiles.controlPanel", "ProgramFiles.taskmanager"]]
                     USER_CONFIG["PINNED"] = ["File Manager"], ["Notepad", "File Manager"]
-                    USER_CONFIG["THEME"] = ["Black", "White"]
+                    USER_CONFIG["THEME"] = ["Black", "White", "#242323"]
                     USER_CONFIG["CLOCK-WIDGET"] = 0
-                    USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer"}
+                    USER_CONFIG["DEFAULTAPPASSOCIATION"] = {"txt": "Notepad", "jpg": "Photo Viewer", "png": "Photo Viewer", "dat": "Shelve Editor"}
                     USER_CONFIG["WALLPAPER"] = None
                     USER_CONFIG["STARTUP_APPS"] = []
                     USER_CONFIG["PFP"] = os.path.join(self.CWD, "ProgramFiles/Icons/defaultpfp.png")
@@ -444,14 +444,16 @@ class cmdCommands(object):
 
         
 THEME_WINDOW_BG, THEME_FOREGROUND = shelve.open("ProgramFiles/SYS_CONFIG")["THEME"]
+THEME_WN_CLR = THEME_WINDOW_BG
 def main(FILE_SYSTEM, *args): 
     ABLE_TO_USE_DWM = False
     EXP = None
+    THEME_WN_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     try:
         from ProgramFiles import dwm
-        dwm.createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "commandprompt", "Command Prompt", args[-1])
+        dwm.createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WN_CLR, "commandprompt", "Command Prompt", args[-1])
         ABLE_TO_USE_DWM = True
     except Exception as erm: EXP = erm
     INSTANCES[args[-1]].title("Command Interpreter")
@@ -491,4 +493,4 @@ def returnInformation(PID):
         # Would add more stuff here in the future, such as memory usage and shi. 
     }
 if __name__ == "__main__":
-    main(None, None, "defaultuser0",  None, dict({"THEME": ["Black", "White"]}), 99999)
+    main(None, None, "defaultuser0",  None, dict({"THEME": ["Black", "White", "Black"]}), 99999)

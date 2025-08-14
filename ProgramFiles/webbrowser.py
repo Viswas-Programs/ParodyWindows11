@@ -21,7 +21,7 @@ SHOWN_HISTORY = False
 SHOWN_ABOUT = False
 SHOWN_PERSONALIZATION = False
 DARK_THEME = False 
-THEME_WINDOW_BG, THEME_FOREGROUND = ["Black", "White"]
+THEME_ACT_BG, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black", "White", "Black"]
 def browse(PID, e=None):
     global frame
     print("SEARCH: ", text.get())
@@ -88,7 +88,7 @@ def optionsWindow(PID, e=None):
         revchange = tkinter.Button(perFrame, text="Experimental dark theme! (off)", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=revChanges)
         revchange.grid(row=1, column=0)
     optionsWn = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
-    createTopFrame(optionsWn, THEME_FOREGROUND, THEME_WINDOW_BG, "webbrowser", "Browser Settings", callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES), associatePIDProcess=PID)
+    createTopFrame(optionsWn, THEME_FOREGROUND, THEME_ACT_BG, "webbrowser", "Browser Settings", callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES), associatePIDProcess=PID)
     btnFrame = tkinter.Frame(optionsWn, background=THEME_WINDOW_BG)
     btnFrame.grid(row=1, column=0)
     historyBtn = tkinter.Button(btnFrame, text="History", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=showHistory)
@@ -116,11 +116,11 @@ def main(*args):
     global mainFrame
     global frame
     global text
-    global THEME_FOREGROUND, THEME_WINDOW_BG
-    THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
+    global THEME_FOREGROUND, THEME_WINDOW_BG, THEME_ACT_BG
+    THEME_ACT_BG, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
-    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_WINDOW_BG, "webbrowser", "Web Browser", args[-1])
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_BG, "webbrowser", "Web Browser", args[-1])
     INSTANCES[args[-1]].title("Web Browser")
     mainFrame = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
     mainFrame.grid(row=1, column=0)
