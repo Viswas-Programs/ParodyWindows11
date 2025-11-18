@@ -94,6 +94,7 @@ class ParWFS:
         if not self.currentLoadedConfigFiles: self.currentLoadedConfigFiles = {}
         try: 
             with shelve.open(configFileName) as cuh: self.currentLoadedConfigFiles[configName] = [configFileName, dict(cuh)]
+            return self.currentLoadedConfigFiles[configName][1]
         except Exception as EXP: print(EXP)
     def unloadConfig(self, configName):
         try:

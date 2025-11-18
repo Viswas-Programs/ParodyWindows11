@@ -1246,15 +1246,15 @@ def main():
     FILE_SYSTEM.ROOT = ROOT_WINDOW
     ROOT_WINDOW.mainloop()
 import base64
-def loginVerification(userNameText: tkinter.Entry, passwordText: tkinter.Entry, userNum: tkinter.Entry,  loginWindow: tkinter.Tk, e=None):
+def loginVerification(userNameText: str, passwordText: tkinter.Entry, userNum: int,  loginWindow: tkinter.Tk, e=None):
     print("Checking credentials")
     try:
-        if int(userNum.get()) != 0:
-            with open(f"Users/accConfiguration{userNum.get()}.conf", "r") as verify:
+        if int(userNum) != 0:
+            with open(f"Users/accConfiguration{userNum}.conf", "r") as verify:
                 GLOBAL_VARS.USERNAME, password = verify.readlines()
                 GLOBAL_VARS.USERNAME = base64.urlsafe_b64decode(GLOBAL_VARS.USERNAME.rstrip('\n')).decode('utf-8')
                 password = base64.urlsafe_b64decode(password.rstrip('\n')).decode('utf-8')
-                if userNameText.get() == GLOBAL_VARS.USERNAME and passwordText.get() == password:
+                if userNameText == GLOBAL_VARS.USERNAME and passwordText.get() == password:
                     loginWindow.destroy()
                     try: main()
                     except Exception as EXP: bsod(main, f"DESKTOP_LAUNCH_ERROR('{EXP}')")
@@ -1278,16 +1278,11 @@ def login():
     def safeModePREPTask(e=None):
         global SYS_CONFIG
         SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
-        msg.destroy()
-        msg2.destroy()
-        userNameText.destroy()
-        passwordText.destroy()
-        loginBtn.destroy()
-        shutdownBtn.destroy()
         loginWindow.destroy()
         safeMode()
     numUsers = -1
-    for file in Path(os.path.join(CWD, "Users")).glob("accConfiguration*.conf"): numUsers += 1
+    CONFIG_FILES = []
+    for file in Path(os.path.join(CWD, "Users")).glob("accConfiguration*.conf"): numUsers += 1; CONFIG_FILES.append(str(file))
     loginWindow = tkinter.Tk()
     loginWindow.title("Login to Windows 11")
     loginWindow.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
@@ -1302,32 +1297,88 @@ def login():
         loginWindow.after(10000, launchOOBE)
     else:
         loadAllIcons(["shutdown", "restart"], loginWindow)
-        msg = tkinter.Label(loginWindow, text="Enter your Username: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        msg.grid(row=0, column=0)
-        userNameText = tkinter.Entry(loginWindow, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        userNameText.grid(row=0, column=1)
-        userNameText.focus()
-        userNameText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
-        msg2 = tkinter.Label(loginWindow, text="Enter your Password", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        msg2.grid(row=1, column=0)
-        passwordText = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG, show="*")
-        passwordText.grid(row=1, column=1)
-        passwordText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
-        def passwordTextFocus(*e): passwordText.focus()
-        userNameText.bind("<Tab>", passwordTextFocus)
-        userNameText.bind("<Return>", lambda: passwordTextFocus)
-        msg3 = tkinter.Label(loginWindow, text="Enter your user number", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        userNum = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG)
-        userNum.grid(row=2, column=1)
-        userNum.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
-        msg3.grid(row=2, column=0)
-        userNum.bind("<Return>", lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
-        loginBtn = tkinter.Button(loginWindow, text="Login", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
-                                    command=lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
-        loginBtn.grid(row=3, column=1)
+        loginWindow.grid_rowconfigure(0, weight=1) 
+        loginWindow.grid_columnconfigure(0, weight=1)
+        userBtnFrame = tkinter.Frame(background=GLOBAL_VARS.THEME_WINDOW_BG)
+        userBtnFrame.grid(row=0, column=0)
+        perUserFrame = tkinter.Frame(background=GLOBAL_VARS.THEME_WINDOW_BG) # grid: 0, 0
+        def backToSelection():
+            userBtnFrame.grid_forget()
+            for child in dict(perUserFrame.children).values(): child.destroy()
+            perUserFrame.grid_forget()
+            userBtnFrame.grid(row=0, column=0)
+        balls = -1
+        loginWindow.PFP_LOGIN_IMAGES = []
+        def selectUser(username:str, pfpFilePath:str, userNumber:int):
+            userBtnFrame.grid_forget()
+            perUserFrame.grid(row=0, column=0)
+            pfpImage = Image.open(fp=pfpFilePath)
+            pfpImage = ImageTk.PhotoImage(pfpImage.resize(tuple((int(pfpImage.width/2), int(pfpImage.height/2)))))
+            loginWindow.PFP_LOGIN_IMAGES.append(pfpImage)
+            UserButton = tkinter.Button(perUserFrame, text=username, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=pfpImage, compound="top", state="disabled")
+            UserButton.grid(row=0, column=0)
+            loginEntAndBtnFrame = tkinter.Frame(perUserFrame, background=GLOBAL_VARS.THEME_WINDOW_BG)
+            loginEntAndBtnFrame.grid(row=1, column=0)
+            passwordText = tkinter.Entry(loginEntAndBtnFrame, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG, show="*")
+            passwordText.grid(row=0, column=0)
+            passwordText.focus()
+            passwordText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
+            loginBt = tkinter.Button(loginEntAndBtnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="->")
+            loginBt.configure(command=lambda e=None: loginVerification(username, passwordText, userNumber, loginWindow))
+            loginBt.grid(row=0, column=1)
+            backToUserSelect = tkinter.Button(perUserFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Back to user selection!", command=backToSelection)
+            backToUserSelect.grid(row=2, column=0)
+            passwordText.bind("<Return>", lambda e=None: loginVerification(username, passwordText, userNumber, loginWindow))
+
+        for files in CONFIG_FILES:
+            balls += 1
+            pfpFilepath = None
+            userNum = None
+            with open(files, "r") as reader:
+                ball = reader.readlines()[0]
+                e = (base64.urlsafe_b64decode(ball).decode("utf-8"))
+                if e == "defaultuser0": continue
+                print(e)
+                userNum = int((str(files)[str(files).index("accConfiguration")+16:]).rstrip(".conf"))
+                perUsrConfig = FILE_SYSTEM.loadConfig(f"Users/{e}/USER_CONFIG", f"{e}_LOGIN_USER_INFO")
+                pfpFilepath = (perUsrConfig["PFP"])
+                FILE_SYSTEM.unloadConfig(f"{e}_LOGIN_USER_INFO")
+            pfpImage = Image.open(fp=pfpFilepath)
+            pfpImage = ImageTk.PhotoImage(pfpImage.resize(tuple((int(pfpImage.width/2), int(pfpImage.height/2)))))
+            loginWindow.PFP_LOGIN_IMAGES.append(pfpImage)
+            UserButton = tkinter.Button(userBtnFrame, text=e, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=pfpImage, compound="top", command=lambda f=e, g=pfpFilepath, h=userNum:selectUser(f, g, h))
+            UserButton.grid(row=0, column=balls)
+        #msg = tkinter.Label(loginWindow, text="Enter your Username: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        #msg.grid(row=0, column=0)
+        #userNameText = tkinter.Entry(loginWindow, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        #userNameText.grid(row=0, column=1)
+        #userNameText.focus()
+        #userNameText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
+        #msg2 = tkinter.Label(loginWindow, text="Enter your Password", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        #msg2.grid(row=1, column=0)
+        #passwordText = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG, show="*")
+        #passwordText.grid(row=1, column=1)
+        #passwordText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
+        #def passwordTextFocus(*e): passwordText.focus()
+        #userNameText.bind("<Tab>", passwordTextFocus)
+        #userNameText.bind("<Return>", lambda: passwordTextFocus)
+        #msg3 = tkinter.Label(loginWindow, text="Enter your user number", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
+        #userNum = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG)
+        #userNum.grid(row=2, column=1)
+        #userNum.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
+        #msg3.grid(row=2, column=0)
+        #userNum.bind("<Return>", lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
+        #loginBtn = tkinter.Button(loginWindow, text="Login", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
+        #                            command=lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
+        #loginBtn.grid(row=3, column=1)
         shutdownBtn = tkinter.Button(loginWindow, text="Shutdown", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
                                     command=lambda: GUIButtonCommand.shutdownMenu(loginWindow))
-        shutdownBtn.grid(row=0, column=GLOBAL_VARS.MAX_COLUMN_DESKTOP)
+        #shutdownBtn.grid(row=0, column=GLOBAL_VARS.MAX_COLUMN_DESKTOP)
+        btnWidth = loginWindow.winfo_screenwidth()/15
+        btnHeight= loginWindow.winfo_screenheight()/15
+        shutdownBtn.place(x=loginWindow.winfo_screenwidth()-btnWidth-15, y=loginWindow.winfo_screenheight()-btnHeight-15, width=btnWidth, height=btnHeight)
+        #shutdownBtn.place(x=1000, y=1000)
+
     loginWindow.bind("<Escape>", safeModePREPTask)
     loginWindow.mainloop()
 def autoRecoveryEnv() -> None:
