@@ -104,7 +104,7 @@ class PW11GlobalVars():
         self.TASKBAR_CONTEXT_MENU: tkinter.Menu = None
         self.CLOCK_LABEL: tkinter.Label = None
         self.CLOCK_LOOP_ID = None
-        self.RUNNING_APPS: dict[int, str] = {}
+        self.RUNNING_APPS: dict[str, dict[int, str]] = {}
         self.ICONS: dict[str, tkinter.PhotoImage] = {}
         self.THEME_WINDOW_BG: str = None
         self.THEME_FOREGROUND: str = None
@@ -178,8 +178,9 @@ DIALOGUE_BOXES = (700, 850)
 
 def generatePID(LIB_TO_USE: tuple[int, int]):
     PID = random.randint(LIB_TO_USE[0], LIB_TO_USE[1])
-    while PID in dict(GLOBAL_VARS.RUNNING_APPS).keys():
-        PID = random.randint(LIB_TO_USE[0], LIB_TO_USE[1])
+    for key in dict(GLOBAL_VARS.RUNNING_APPS).keys():
+        while PID in dict(dict(GLOBAL_VARS.RUNNING_APPS)[key]).keys():
+            PID = random.randint(LIB_TO_USE[0], LIB_TO_USE[1])
     return PID
 
 def returnRunningApps():
@@ -223,7 +224,7 @@ class Notifications(object):
     def showNotificationsList(self, event=None):
         notificationsWindow = tkinter.Toplevel(background=GLOBAL_VARS.THEME_WINDOW_BG)
         PID = generatePID(DIALOGUE_BOXES)
-        GLOBAL_VARS.RUNNING_APPS[PID] = "notification window"
+        GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][PID] = "notification window"
         dwm.createTopFrame(notificationsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "info", "Notification Center", PID)
         GLOBAL_VARS.NOTIFICATION_BUTTON.configure(text="Notifications (0)")
         if len(self.NotificationsList) == 0:
@@ -248,9 +249,9 @@ class settings():
         self.total_memory = str(f"{psutil.virtual_memory().total/1000000000} GigaBytes")
         self.settingsWindow = tkinter.Toplevel(self.ROOT, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.PID = generatePID(CONTROL_PANELS)
-        GLOBAL_VARS.RUNNING_APPS[self.PID] = "Control Panel"
+        GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][self.PID] = "Control Panel"
         dwm.createTopFrame(self.settingsWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "settings", "Control Panel", self.PID)
-        GUIButtonCommand.createRunningAppTaskbarIcon("settings", self.PID)
+        GUIButtonCommand.createRunningAppTaskbarIcon("settings", self.PID, username=GLOBAL_VARS.USERNAME)
         btnFrame = tkinter.Frame(self.settingsWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
         btnFrame.grid(row=1, column=0)
         sidebar = SidebarButtons(btnFrame, GLOBAL_VARS.THEME_WINDOW_BG)
@@ -282,7 +283,7 @@ class settings():
             global SYS_CONFIG
             colorToUse = colorchooser.askcolor(title="Select title bar colour!")
             GLOBAL_VARS.THEME_WINDOW_BG = colorToUse[1]
-            crBg.configure(text=f"Current Title Bar BG = {GLOBAL_VARS.THEME_WINDOW_BG}")
+            crBg.configure(text=f"Current background = {GLOBAL_VARS.THEME_WINDOW_BG}")
             if systemChangeTheme.get(): 
                 SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME",  [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
             GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME",  [GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG])
@@ -298,7 +299,6 @@ class settings():
             global SYS_CONFIG
             colorToUse = colorchooser.askcolor(title="Select foreground!")
             GLOBAL_VARS.THEME_FOREGROUND = colorToUse[1]
-            print(GLOBAL_VARS.THEME_FOREGROUND)
             crFg.configure(text=f"Current foreground = {GLOBAL_VARS.THEME_FOREGROUND}")
             GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WINDOW_BG])
             if systemChangeTheme.get(): 
@@ -311,7 +311,6 @@ class settings():
             global SYS_CONFIG
             colorToUse = colorchooser.askcolor(title="Select background!")
             GLOBAL_VARS.THEME_WN_CLR = colorToUse[1]
-            print(GLOBAL_VARS.THEME_FOREGROUND)
             crWnClr.configure(text=f"Current background = {GLOBAL_VARS.THEME_FOREGROUND}")
             GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR])
             if systemChangeTheme.get(): 
@@ -427,7 +426,7 @@ class settings():
             addNewEntryWn = tkinter.Toplevel(self.settingsWindow)
             PID = generatePID(DIALOGUE_BOXES)
             dwm.createTopFrame(addNewEntryWn, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "settings", "Add new app association wizard", PID , associatePIDProcess=self.PID)
-            GLOBAL_VARS.RUNNING_APPS[PID] = "Control Panel - New App Association Wizard"
+            GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][PID] = "Control Panel - New App Association Wizard"
             nEntFrm = tkinter.Frame(addNewEntryWn, background=GLOBAL_VARS.THEME_WINDOW_BG)
             nEntFrm.grid(row=1, column=0)
             textAssociationEntry = tkinter.Entry(nEntFrm, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
@@ -511,8 +510,8 @@ class GUIButtonCommand:
         if application == "Command Prompt":
             import ProgramFiles.commandprompt as CMD
             appToLaunchPID = generatePID(PROCESS_IDS)
-            GLOBAL_VARS.RUNNING_APPS[appToLaunchPID] = application
-            GUIButtonCommand.createRunningAppTaskbarIcon(application, appToLaunchPID)
+            GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][appToLaunchPID] = application
+            GUIButtonCommand.createRunningAppTaskbarIcon(application, appToLaunchPID, username=GLOBAL_VARS.USERNAME)
             try: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID)
             except: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, params, dict({"THEME": ["Black", "White"]}), appToLaunchPID)        
         else: 
@@ -520,8 +519,8 @@ class GUIButtonCommand:
             #progAppImport = f"{GLOBAL_VARS.COMMAND_APPS_LIST[GLOBAL_VARS.COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
             appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{appToLaunch}")
             appPID = generatePID(PROCESS_IDS)
-            GLOBAL_VARS.RUNNING_APPS[appPID] = application
-            GUIButtonCommand.createRunningAppTaskbarIcon(application, appPID) 
+            GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][appPID] = application
+            GUIButtonCommand.createRunningAppTaskbarIcon(application, appPID, username=GLOBAL_VARS.USERNAME) 
             if appImport.NEEDS_FILESYSTEM_ACCESS:
                 appImport.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appPID)
             else:
@@ -531,7 +530,6 @@ class GUIButtonCommand:
         try:
             dwm.focus(PID)
         except Exception as EXP:
-            print(EXP)
             try:
                 appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{realApp}")
                 if appImport.returnInformation(PID)["state"] == "normal": appImport.focusOut(PID)
@@ -580,13 +578,13 @@ class GUIButtonCommand:
         if imageLoaded: tooltips._createToolTipAtGivenPos(PID, GLOBAL_VARS.ROOT_WINDOW, exp+ttl+f'\nPID: {PID}', GUIButtonCommand.FOCUS_focusApp, event, image=GLOBAL_VARS.ROOT_WINDOW.E_IMG, compound="top")
         else: tooltips._createToolTipAtGivenPos(PID, GLOBAL_VARS.ROOT_WINDOW, exp+ttl+f'\nPID: {PID}', GUIButtonCommand.FOCUS_focusApp, event)
     @staticmethod
-    def createRunningAppTaskbarIcon(app: str, PID:int, T_BG=None, T_FG=None):
+    def createRunningAppTaskbarIcon(app: str, PID:int, T_BG=None, T_FG=None, username="defaultuser0"):
         ROOT = GLOBAL_VARS.ROOT_WINDOW
         if T_BG and T_FG: 
             THEME_WBG = T_BG
             THEME_FG = T_FG
         else: THEME_WBG, THEME_FG = GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND
-        POS = len(list(dict(GLOBAL_VARS.RUNNING_APPS).keys()))
+        POS = len(list(dict(ParWFS._instances["root"].RUNNING_APPS[username]).keys()))
         realApp = GUIButtonCommand.AppImportNameCheck(app=app)
         appIcon = giveIcon(realApp, ROOT, 2)
         taskbarAppBtn = tkinter.Button(ParWFS._instances["root"].RunAppsFrame, text=app, background=THEME_WBG, foreground=THEME_FG, command=lambda e=realApp: GUIButtonCommand.FOCUS_focusApp(PID, realApp) , image=appIcon, compound='left')
@@ -616,7 +614,10 @@ class GUIButtonCommand:
             for i in dict(RunningAppsList[0].children).values():
                 if i.processInfo[0] == pid:
                     i.destroy()
-            del RunningAppsList[1][pid]
+            for j in dict(RunningAppsList[1]).keys():
+                if pid in dict(RunningAppsList[1])[j].keys():
+                    del RunningAppsList[1][j][pid]
+                    break
         except Exception as EXP: print(f"Error while handling exits for PID {pid}\nReason: {EXP}\nSkipping Exit Handles.")
     @staticmethod
     def currentTime(*args):
@@ -663,7 +664,7 @@ class GUIButtonCommand:
         PID = generatePID(DIALOGUE_BOXES)
         frame = dwm.createTopFrame(taskbarselfWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "info", "Taskbar App Pinning Wizard", PID)
         frame.ALL_BUTTONS["minimize"].grid_forget()
-        GLOBAL_VARS.RUNNING_APPS[PID] = "TaskbarAppPinWizard"
+        GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][PID] = "TaskbarAppPinWizard"
         addWidgetsFrame = tkinter.LabelFrame(taskbarselfWindow, text="Add widgets", 
                                             background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
         addWidgetsFrame.grid(row=1, column=0)
@@ -741,7 +742,7 @@ class GUIButtonCommand:
         addNewIcon = tkinter.Toplevel(GLOBAL_VARS.ROOT_WINDOW, background=GLOBAL_VARS.THEME_WINDOW_BG)
         PID = generatePID(DIALOGUE_BOXES)
         frame  = dwm.createTopFrame(addNewIcon, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "info", "Desktop App Pinning Wizard", PID)
-        GLOBAL_VARS.RUNNING_APPS[PID] = "DesktopAppPinningWizard"
+        GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][PID] = "DesktopAppPinningWizard"
         frame.ALL_BUTTONS["minimize"].grid_forget()
         desktopAppsList = ttk.Combobox(addNewIcon)
         # for z in self.CurrentDesktopIconsList:
@@ -788,12 +789,17 @@ class GUIButtonCommand:
             else:
                 try: GLOBAL_VARS.ROOT_WINDOW.destroy()
                 finally:
-                    print(f"""{PYTHON_COMMAND_ARG} "Windows 11.py" """)
                     os.system(f"""{PYTHON_COMMAND_ARG} "Windows 11.py" """)
-
+        def logout():
+            for apps in dict(GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME]).keys():
+                dwm.focusOut(apps)
+            GLOBAL_VARS.START_MENU_ACTIVE.destroy()
+            dwm.close(PID)
+            GLOBAL_VARS.ROOT_WINDOW.destroy()
+            login()
         shutdownWindow = tkinter.Toplevel(root, background=GLOBAL_VARS.THEME_WINDOW_BG)
         PID = generatePID(DIALOGUE_BOXES)
-        GLOBAL_VARS.RUNNING_APPS[PID] = "shutdownmenu"
+        GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][PID] = "shutdownmenu"
         frame = dwm.createTopFrame(shutdownWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "shutdown", "Shutdown Menu", PID)
         frame.ALL_BUTTONS["minimize"].grid_forget()
         shutdownWindow.title("Shutdown/Restart the shell")
@@ -815,18 +821,25 @@ class GUIButtonCommand:
         safeModeRestartChk.grid(row=2, column=2, padx=10)
         tkinter.Label(shutdownWindow, text="Shutdown", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND).grid(row=3, column=0)
         tkinter.Label(shutdownWindow, text="Restart", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND).grid(row=3, column=1)
+        if (GLOBAL_VARS.USERNAME != "defaultuser0"): 
+            logoutIcon = GLOBAL_VARS.ICONS["logout"].subsample(4,4)
+            logoutBTN = tkinter.Button(shutdownWindow, image=logoutIcon, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Logout", command=logout)
+            logoutBTN.grid(row=4, column=0)
+            tkinter.Label(shutdownWindow, text="Logout", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND).grid(row=5, column=0)
+            logoutBTN.imageRef = logoutIcon
         shutdownWindow.mainloop()
 
 def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig= None, notifications=None,):
     PID = random.randint(5000, 9999)
-    while PID in ParWFS._instances["root"].RUNNING_APPS.keys(): PID = random.randint(5000, 9999)
-    ParWFS._instances["root"].RUNNING_APPS[PID] = app
+    for usr in ParWFS._instances["root"].RUNNING_APPS.keys():
+        while PID in ParWFS._instances["root"].RUNNING_APPS[usr].keys(): PID = random.randint(5000, 9999)
+    ParWFS._instances["root"].RUNNING_APPS[userConfig][PID] = app
     ShelveRef = USER_CONFIG
     PER_PROGRAM_COMMAND_APPS_LIST = ShelveRef["APPS"][1]
     T_ACT_CLR, T_FG, T_BG = ShelveRef["THEME"]
     appToLaunch = GUIButtonCommand.AppImportNameCheck(app=app)
     progAppImport = f"{PER_PROGRAM_COMMAND_APPS_LIST[PER_PROGRAM_COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
-    GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID, T_ACT_CLR, T_FG)
+    GUIButtonCommand.createRunningAppTaskbarIcon(appToLaunch, PID, T_ACT_CLR, T_FG, userConfig)
     appImport = importlib.import_module(progAppImport)
     try:
         if appImport.NEEDS_FILESYSTEM_ACCESS: appImport.main(FILE_SYSTEM, userConfig, notifications, params, USER_CONFIG, PID)
@@ -970,8 +983,8 @@ class TaskManager:
         self.fileView = ttk.Treeview(self.ROOT, style="Treeview")
         PID = generatePID(TASK_MANAGERS)
         dwm.createTopFrame(self.ROOT, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "taskmanager", "Task Manager", PID)
-        GLOBAL_VARS.RUNNING_APPS[PID] = "Task Manager"
-        GUIButtonCommand.createRunningAppTaskbarIcon("Task Manager", PID)
+        GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][PID] = "Task Manager"
+        GUIButtonCommand.createRunningAppTaskbarIcon("Task Manager", PID, username=GLOBAL_VARS.USERNAME)
         self.ROOT.title("Task Manager")
         self.fileView.grid(row=1, column=0, sticky="w")
         self.fileView['column'] = "Applications"
@@ -991,35 +1004,37 @@ class TaskManager:
         self.ROOT.after(1000, self.updateEach1000Ms)
         SELECTED_SMTH = self.fileView.focus()
         for i in self.fileView.get_children(): self.fileView.delete(i)
-        for i, PID in enumerate(GLOBAL_VARS.RUNNING_APPS):
-            appToIns = GLOBAL_VARS.RUNNING_APPS.get(PID)
-            appToIns += f" <<<PID: {PID}>>> "
-            self.fileView.configure(style="Treeview")
-            self.fileView.insert(parent='', iid=PID, text='', index='end', values=[appToIns],)
+        for usr in dict(GLOBAL_VARS.RUNNING_APPS).keys():
+            for i, PID in enumerate(GLOBAL_VARS.RUNNING_APPS[usr].keys()):
+                appToIns = GLOBAL_VARS.RUNNING_APPS[usr].get(PID)
+                appToIns += f" <<<PID: {PID}>>> <<<USERNAME: {usr}>>>"
+                self.fileView.configure(style="Treeview")
+                self.fileView.insert(parent='', iid=f"{PID}:{usr}", text='', index='end', values=[appToIns],)
         self.fileView.focus(SELECTED_SMTH)
         self.fileView.selection_set([SELECTED_SMTH])
     def focusInOut(self, *arg):
-        PID = int(self.fileView.focus())
-        realApp = GUIButtonCommand.AppImportNameCheck(GLOBAL_VARS.RUNNING_APPS[PID])
+        username = "".join(e for e in str(self.fileView.focus()).split(":")[1:])
+        PID = int(str(self.fileView.focus()).split(":")[0])
+        realApp = GUIButtonCommand.AppImportNameCheck(GLOBAL_VARS.RUNNING_APPS[username][PID])
         GUIButtonCommand.FOCUS_focusApp(PID, realApp)
     @staticmethod    
-    def endTask(PID):
-        application = PID
+    def endTask(string:str, username=None):
+        if username == None: username = GLOBAL_VARS.USERNAME
+        application = int(string.split(":")[0])
+        username = "".join(boi for boi in string.split(":")[1:])
         try: dwm.close(PID=int(application))
         except Exception as EXP:
-            print(EXP) 
             try:
-                appToEnd = str(GLOBAL_VARS.RUNNING_APPS[int(application)])
-                appToEnd.replace(f"<<<PID: {application}>>>", "")
+                appToEnd = str(GLOBAL_VARS.RUNNING_APPS[username][int(application)])
+                appToEnd.replace(f"<<<PID: {application}>>>", "").replace(f"<<<USERNAME: {username}>>>")
                 command = GLOBAL_VARS.COMMAND_APPS_LIST[GLOBAL_VARS.COMMAND_APPS_LIST.index(f"ProgramFiles.{ GUIButtonCommand.AppImportNameCheck(app=appToEnd)}")] 
                 appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{appToEnd}")
                 appImport.endTask(int(application))
-                del GLOBAL_VARS.RUNNING_APPS[int(application)]
+                del GLOBAL_VARS.RUNNING_APPS[username][int(application)]
             except Exception as E:
-                print(E)
                 try: 
                     dwm.MANAGED_DWM_INSTANCES[int(application)][2].destroy()
-                    del GLOBAL_VARS.RUNNING_APPS[int(application)]
+                    del GLOBAL_VARS.RUNNING_APPS[username][int(application)]
                 except Exception as U: messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {U}\nFrom\n{E}\nFrom\n{EXP}", GLOBAL_VARS.ROOT_WINDOW)
 
 class PW11UserCreation:
@@ -1100,7 +1115,6 @@ class PW11UserCreation:
         deleteButton = tkinter.Button(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Delete user!", command=lambda userNum=self.USRNAME_PASWD_STR.get(username)[1]: self.deleteUserAccount(userNum))
         deleteButton.grid(row=5, column=0)
     def deleteUserAccount(self, usernum):
-        print(usernum)
         GUIButtonCommand.launchItem("Command Prompt", f"user -delete -{usernum}")
         
     def createNewUserPanel(self,):
@@ -1158,7 +1172,7 @@ def main():
     from ProgramFiles import callHost
     callHost.setLoadedApps(GLOBAL_VARS.APP_INSTANCE)
     loadAllIcons(GLOBAL_VARS.APPS_LIST, ROOT_WINDOW)
-    loadAllIcons(["shutdown", "restart", "start"], ROOT_WINDOW)
+    loadAllIcons(["shutdown", "restart", "start", "logout"], ROOT_WINDOW)
     GLOBAL_VARS.TASKBAR_FRAME = tkinter.Frame(ROOT_WINDOW, background=GLOBAL_VARS.THEME_WN_CLR)
     GLOBAL_VARS.TASKBAR_FRAME.identifier = "taskbar"
     ROOT_WINDOW.identifier = "root_window"
@@ -1179,7 +1193,7 @@ def main():
         ROOT_WINDOW.after(300, runningTaskbarAppsLOOP)
         for widget in dict(runningAppsFrame.children).values():
             try:
-                location = list(GLOBAL_VARS.RUNNING_APPS.keys()).index(widget.processInfo[0])
+                location = list(dict(GLOBAL_VARS.RUNNING_APPS)[GLOBAL_VARS.USERNAME].keys()).index(widget.processInfo[0])
                 widget.grid_configure(row=0, column=location)
                 appNameReal = GUIButtonCommand.AppImportNameCheck(widget.processInfo[1])
                 try: widget.configure(text=dwm.title(None, widget.processInfo[0]))
@@ -1244,6 +1258,9 @@ def main():
         except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"Error pinning {app} in the taskbar.\nPROB:{EXP}", root=ROOT_WINDOW)
     startUpTasks(GLOBAL_VARS.USER_CONFIG, ROOT_WINDOW)
     FILE_SYSTEM.ROOT = ROOT_WINDOW
+    for app in dict(GLOBAL_VARS.RUNNING_APPS)[GLOBAL_VARS.USERNAME].keys():
+        if (not ((app in range(PROCESS_IDS[0], PROCESS_IDS[1])) or (app in range(EXTERNAL_PID[0], EXTERNAL_PID[1])))): continue
+        GUIButtonCommand.createRunningAppTaskbarIcon(GUIButtonCommand.AppImportNameCheck(dict(GLOBAL_VARS.RUNNING_APPS)[GLOBAL_VARS.USERNAME][app]), app, username=GLOBAL_VARS.USERNAME)
     ROOT_WINDOW.mainloop()
 import base64
 def loginVerification(userNameText: str, passwordText: tkinter.Entry, userNum: int,  loginWindow: tkinter.Tk, e=None):
@@ -1282,6 +1299,8 @@ def login():
         safeMode()
     numUsers = -1
     CONFIG_FILES = []
+    GLOBAL_VARS.RUNNING_APPS["defaultuser0"] = {}
+    GLOBAL_VARS.USERNAME = "defaultuser0"
     for file in Path(os.path.join(CWD, "Users")).glob("accConfiguration*.conf"): numUsers += 1; CONFIG_FILES.append(str(file))
     loginWindow = tkinter.Tk()
     loginWindow.title("Login to Windows 11")
@@ -1299,6 +1318,8 @@ def login():
         loadAllIcons(["shutdown", "restart"], loginWindow)
         loginWindow.grid_rowconfigure(0, weight=1) 
         loginWindow.grid_columnconfigure(0, weight=1)
+        WALLPAPER_LBL = tkinter.Label(loginWindow)
+        WALLPAPER_LBL.grid(row=0, column=0)
         userBtnFrame = tkinter.Frame(background=GLOBAL_VARS.THEME_WINDOW_BG)
         userBtnFrame.grid(row=0, column=0)
         perUserFrame = tkinter.Frame(background=GLOBAL_VARS.THEME_WINDOW_BG) # grid: 0, 0
@@ -1309,25 +1330,40 @@ def login():
             userBtnFrame.grid(row=0, column=0)
         balls = -1
         loginWindow.PFP_LOGIN_IMAGES = []
-        def selectUser(username:str, pfpFilePath:str, userNumber:int):
+        loginWindow.WALLPAPER_LOGIN_IMAGES = []
+        WALLPAPER = None
+        temp= None
+        def selectUser(username:str, pfpFilePath:str, userNumber:int, wallpaperPath:str = None, bg:str=None, fg:str=None):
             userBtnFrame.grid_forget()
             perUserFrame.grid(row=0, column=0)
             pfpImage = Image.open(fp=pfpFilePath)
             pfpImage = ImageTk.PhotoImage(pfpImage.resize(tuple((int(pfpImage.width/2), int(pfpImage.height/2)))))
             loginWindow.PFP_LOGIN_IMAGES.append(pfpImage)
-            UserButton = tkinter.Button(perUserFrame, text=username, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=pfpImage, compound="top", state="disabled")
+            UserButton = tkinter.Button(perUserFrame, text=username, background=bg, foreground=fg, image=pfpImage, compound="top", state="disabled")
             UserButton.grid(row=0, column=0)
-            loginEntAndBtnFrame = tkinter.Frame(perUserFrame, background=GLOBAL_VARS.THEME_WINDOW_BG)
+            loginEntAndBtnFrame = tkinter.Frame(perUserFrame, background=bg)
             loginEntAndBtnFrame.grid(row=1, column=0)
-            passwordText = tkinter.Entry(loginEntAndBtnFrame, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG, show="*")
+            loginWindow.configure(background=bg)
+            loginEntAndBtnFrame.configure(background=bg)
+            perUserFrame.configure(background=bg)
+            passwordText = tkinter.Entry(loginEntAndBtnFrame, foreground=fg, background=bg, show="*")
             passwordText.grid(row=0, column=0)
             passwordText.focus()
-            passwordText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
-            loginBt = tkinter.Button(loginEntAndBtnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="->")
+            passwordText.configure(insertbackground=fg, selectbackground=fg, selectforeground=bg)
+            loginBt = tkinter.Button(loginEntAndBtnFrame, background=bg, foreground=fg, text="->")
             loginBt.configure(command=lambda e=None: loginVerification(username, passwordText, userNumber, loginWindow))
             loginBt.grid(row=0, column=1)
-            backToUserSelect = tkinter.Button(perUserFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Back to user selection!", command=backToSelection)
+            backToUserSelect = tkinter.Button(perUserFrame, background=bg, foreground=fg, text="Back to user selection!", command=backToSelection)
             backToUserSelect.grid(row=2, column=0)
+            loginWindow.configure(background=bg)
+            loginEntAndBtnFrame.configure(background=bg)
+            perUserFrame.configure(background=bg)
+            if (wallpaperPath != None):
+                    wallPaperimg = ImageTk.PhotoImage(Image.open(wallpaperPath).resize(tuple((int(loginWindow.winfo_screenwidth()), int(loginWindow.winfo_screenheight())))))
+                    loginWindow.WALLPAPER_LOGIN_IMAGES.append(wallPaperimg)
+                    WALLPAPER_LBL.configure(image=wallPaperimg)
+            else:
+                WALLPAPER_LBL.configure(image="")
             passwordText.bind("<Return>", lambda e=None: loginVerification(username, passwordText, userNumber, loginWindow))
 
         for files in CONFIG_FILES:
@@ -1338,16 +1374,21 @@ def login():
                 ball = reader.readlines()[0]
                 e = (base64.urlsafe_b64decode(ball).decode("utf-8"))
                 if e == "defaultuser0": continue
-                print(e)
                 userNum = int((str(files)[str(files).index("accConfiguration")+16:]).rstrip(".conf"))
                 perUsrConfig = FILE_SYSTEM.loadConfig(f"Users/{e}/USER_CONFIG", f"{e}_LOGIN_USER_INFO")
                 pfpFilepath = (perUsrConfig["PFP"])
+                if (perUsrConfig["WALLPAPER"]):
+                    wallPaperimg = ImageTk.PhotoImage(Image.open(perUsrConfig["WALLPAPER"]).resize(tuple((int(loginWindow.winfo_screenwidth()), int(loginWindow.winfo_screenheight())))))
+                    loginWindow.WALLPAPER_LOGIN_IMAGES.append(wallPaperimg)
+                    WALLPAPER_LBL.configure(image=wallPaperimg)
+                if (not (e in dict(GLOBAL_VARS.RUNNING_APPS).keys())): GLOBAL_VARS.RUNNING_APPS[e] = {}
                 FILE_SYSTEM.unloadConfig(f"{e}_LOGIN_USER_INFO")
-            pfpImage = Image.open(fp=pfpFilepath)
-            pfpImage = ImageTk.PhotoImage(pfpImage.resize(tuple((int(pfpImage.width/2), int(pfpImage.height/2)))))
-            loginWindow.PFP_LOGIN_IMAGES.append(pfpImage)
-            UserButton = tkinter.Button(userBtnFrame, text=e, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=pfpImage, compound="top", command=lambda f=e, g=pfpFilepath, h=userNum:selectUser(f, g, h))
-            UserButton.grid(row=0, column=balls)
+
+                pfpImage = Image.open(fp=pfpFilepath)
+                pfpImage = ImageTk.PhotoImage(pfpImage.resize(tuple((int(pfpImage.width/2), int(pfpImage.height/2)))))
+                loginWindow.PFP_LOGIN_IMAGES.append(pfpImage)
+                UserButton = tkinter.Button(userBtnFrame, text=e, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=pfpImage, compound="top", command=lambda f=e, g=pfpFilepath, h=userNum, i=perUsrConfig["WALLPAPER"], j=perUsrConfig["THEME"][2], k=perUsrConfig["THEME"][1]:selectUser(f, g, h, i, j, k))
+                UserButton.grid(row=0, column=balls)
         #msg = tkinter.Label(loginWindow, text="Enter your Username: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
         #msg.grid(row=0, column=0)
         #userNameText = tkinter.Entry(loginWindow, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
@@ -1575,7 +1616,6 @@ class OOBE:
         self.MAINROOT.mainloop()
     def destroy(self, *args):
         if (self.USER_ACCOUNTS_PANEL.USERS_CREATED != 0):
-            print("Destroyed")
             self.MAINROOT.destroy()
             FILE_SYSTEM.editConfig("SYS_CONFIG", "SETUP_IN_PROGRESS", 0)
             login()

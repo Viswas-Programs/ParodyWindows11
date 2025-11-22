@@ -24,7 +24,7 @@ class RedirectOutput:
         self.cmdInstance.showMsg(text)
         
 class cmdCommands(object):
-    def __init__(self, stdout: tkinter.Text, stdin: Entry, root: tkinter.Tk, FS=None, username="NotDefined", PID=99999) -> None:
+    def __init__(self, stdout: tkinter.Text, stdin: Entry, root: tkinter.Tk, FS=None, username="defaultuser0", PID=99999) -> None:
         try:
             with shelve.open("ProgramFiles/SYS_CONFIG") as SYS_CONFIG: self.VERSION = SYS_CONFIG["VERSION"]
         except Exception:
@@ -186,7 +186,7 @@ class cmdCommands(object):
             self.stdout.configure(state="disabled")
         except Exception as EXP: print(EXP)
     def launchCmd(self, directInvoke=False,  e=None):
-        if " " not in self.stdin.get(): self.stdin.insert(tkinter.END, "  ")
+        if " " not in self.stdin.get(): self.stdin.insert(tkinter.END, " ")
         command = f"self.{self.getParams(0, ' ')}()"
         if directInvoke == True: print("hi"); command = f"self.{self.stdin.get().split(' ')[0]}(self.getParams(1, ' ').lstrip('-'))"
 
@@ -336,7 +336,9 @@ class cmdCommands(object):
         else: self.showMsg("\nPlease enable administrator mode before removing a file")
         self.clearStdIn()
     def getParams(self, paramToGet: int, includeParamSeparator: str = " ") -> str:
-        return self.stdin.get().split(' ')[paramToGet].lstrip(includeParamSeparator)
+        try:
+            return self.stdin.get().split(' ')[paramToGet].lstrip(includeParamSeparator)
+        except: print("Get params error: Most likely Index Error!")
     def fsLoadConfig(self):
         if not self.FILE_SYSTEM:
             self.showMsg("\nCannot load the given config: File system hasn't been initialised into the command prompt!")
@@ -399,7 +401,7 @@ class cmdCommands(object):
     def taskkill(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         print("hi?")
-        param = " ".join( char for char in self.stdin.get().split(" ")[1:])
+        param = "".join( char for char in self.stdin.get().split(" ")[1:])
         print(param)
         try:
             charList = param.split(".")
@@ -413,18 +415,17 @@ class cmdCommands(object):
             else: raise Exception("PID-Based stuff")
         except Exception:
             if SHELL_MODULES_LOADED:
-                try: callHost.endTaskByPID(int(charList[0]))
-                except Exception as EXP: self.showMsg(f"\nError Occured: {EXP}")
-                else: self.showMsg(f"\nKilled process associated with {charList[0]}!")
-            else: self.showMsg("\nCould not end task by PID, because shell modules are not loaded!")
+                try: callHost.endTaskByPID(int(param), self.showMsg)
+                except Exception as EXP: self.showMsg(f"\nError Occured while killing process: {EXP}")
         self.clearStdIn()
     def tasklist(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         if SHELL_MODULES_LOADED:
             try:
-                self.showMsg("\nPID \t PROCESS NAME")
+                self.showMsg("\nPID \t USERNAME \t PROCESS NAME")
                 RUNNING_APPS = dict(callHost.returnRunningAppsList()[1])
-                for i, item in enumerate(list(RUNNING_APPS.values())): self.showMsg(f"\n{list(RUNNING_APPS.keys())[i]} \t {item}")
+                for usr in RUNNING_APPS.keys():
+                    for i, item in enumerate(list(RUNNING_APPS[usr].values())): self.showMsg(f"\n{list(RUNNING_APPS[usr].keys())[i]} \t {usr} \t {item}")
             except Exception as EXP: self.showMsg(f"\nCouldn't list all tasks due to an error\nError: {EXP}")
         else: self.showMsg("\nCould not list all tasks because the shell modules are not loaded!")
         self.clearStdIn()
@@ -437,6 +438,29 @@ class cmdCommands(object):
         try: callHost.LOADED_APPS.reloadAppCache(appToReload)
         except Exception as EXP: self.showMsg(f"\nUnable to reload app cache!\n{EXP}")
         else: self.showMsg(f"\nApp cache for {appToReload} has been updated!")
+    def launchApp(self):
+        print("Launchapp CMD")
+        app = self.getParams(1, "-").lstrip("app=")
+        filename = None
+        param = None
+        indx = None
+        username = self.username
+        if len(self.stdin.get().split()) > 2:
+            filename = ("".join(word for word in self.stdin.get().split()[2:]))
+            indx = len("".join(word for word in self.stdin.get().split()[:2]))+2
+            param=None
+            print(filename)
+            if "-filename=" in filename:
+                filename.lstrip('-filename="')
+                indx = filename.rfind('*"')
+                param = filename[0:indx]
+                indx +=2
+            if len(self.stdin.get()[indx+2:]) > 8:
+                username = self.stdin.get()[indx:].lstrip().lstrip("-username=")
+            print(username, app, param, "Launchapp CMD")
+        callHost.appLauncherForExternalApps(app, username, param )
+
+        
     def ver(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()

@@ -35,37 +35,50 @@ def close(PID):
     if MANAGED_DWM_INSTANCES[PID][4].SUBPROCESS == True: MANAGED_DWM_INSTANCES[MANAGED_DWM_INSTANCES[PID][4].PARAMETER_CALL_INFORMATION["ParentPID"]][5].remove(PID)
     try: callHost.acknowledgeEndTask(PID)
     except Exception as exp: print(f"Cannot call host for end task acknowledgement!\n{exp}")
-def focusOut(PID):
+    del MANAGED_DWM_INSTANCES[PID]
+def focusOut(PID, dontCloseAll=False):
     MANAGED_DWM_INSTANCES[PID][2].update()
     MANAGED_DWM_INSTANCES[PID][2].state(newstate="withdrawn")
-def focusIn(PID):
+    if dontCloseAll: return
+    for instances in MANAGED_DWM_INSTANCES[PID][5]: focusOut(instances, dontCloseAll)
+    return
+def focusIn(PID, dontOpenAll=False):
     MANAGED_DWM_INSTANCES[PID][2].update()
     MANAGED_DWM_INSTANCES[PID][2].state(newstate="normal")
     MANAGED_DWM_INSTANCES[PID][2].lift()
     MANAGED_DWM_INSTANCES[PID][2].update()
+    if dontOpenAll: return
+    for instances in MANAGED_DWM_INSTANCES[PID][5]: focusIn(instances, dontOpenAll)
+    return
 def getFocus(PID):
     return MANAGED_DWM_INSTANCES[PID][2].state()
-def setFocus(PID, newState):
+def setFocus(PID, newState, dontSetToAll=False):
     MANAGED_DWM_INSTANCES[PID][2].lift()
     MANAGED_DWM_INSTANCES[PID][2].update()
     MANAGED_DWM_INSTANCES[PID][2].state(newstate=newState)
     MANAGED_DWM_INSTANCES[PID][2].update()
+    if dontSetToAll: return
+    for instances in MANAGED_DWM_INSTANCES[PID][5]: setFocus(instances, newState, dontSetToAll)
+    return
 def returnWindow(PID) -> tkinter.Tk:
     return MANAGED_DWM_INSTANCES[PID][2]
 def focus(PID, focusFrom=None, *args):
-    instance = MANAGED_DWM_INSTANCES[PID]
-    instance[2].update()
-    if instance[2].state() == "normal":
-        if focusFrom in ("button", "taskmanager") and instance[4].SUBPROCESS: instance[4].MINIMIZE_CALL = 0
-        instance[2].state(newstate="withdrawn")
-        for instances in instance[5]: setFocus(instances, "withdrawn")
-    else:
-        instance[4].MINIMIZE_CALL = 1
+    try:
+        instance = MANAGED_DWM_INSTANCES[PID]
         instance[2].update()
-        instance[2].state(newstate="normal")
-        instance[2].lift()
-        for instances in instance[5]: 
-            if MANAGED_DWM_INSTANCES[instances][4].MINIMIZE_CALL != 0: setFocus(instances, "normal")
+        if instance[2].state() == "normal":
+            if focusFrom in ("button", "taskmanager") and instance[4].SUBPROCESS: instance[4].MINIMIZE_CALL = 0
+            instance[2].state(newstate="withdrawn")
+            for instances in instance[5]: setFocus(instances, "withdrawn")
+        else:
+            instance[4].MINIMIZE_CALL = 1
+            instance[2].update()
+            instance[2].state(newstate="normal")
+            instance[2].lift()
+            for instances in instance[5]: 
+                if MANAGED_DWM_INSTANCES[instances][4].MINIMIZE_CALL != 0: setFocus(instances, "normal")
+    except Exception as EXP:
+        print("ERROR OCCURED IN DWM FOCUS: ", EXP)
 
     instance[2].update()
     return (instance[2].state())
