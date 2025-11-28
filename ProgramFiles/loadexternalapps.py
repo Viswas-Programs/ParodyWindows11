@@ -5,7 +5,7 @@ import tkinter.ttk as ttk
 from pathlib import Path
 from ProgramFiles import fileaskhandlers
 from ProgramFiles.dwm import createTopFrame
-from ProgramFiles import callHost
+from ProgramFiles.treeview import Treeview
 
 THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black","White", "Black"]
 PROCESS_RUNNING = True
@@ -48,7 +48,7 @@ def show(PID, e=None):
     global showRefreshBtn
     buttonText = "Refresh"
     showRefreshBtn.configure(text=buttonText, command=refresh)
-    externalAppsList = ttk.Treeview(INSTANCES[PID], style="Treeview")
+    externalAppsList = Treeview(INSTANCES[PID], style="Treeview")
     externalAppsList.grid(row=1, column=0, sticky="w")
     externalAppsList['column'] = "Apps"
     externalAppsList.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)

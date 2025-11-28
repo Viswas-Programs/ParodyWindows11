@@ -61,11 +61,12 @@ def endTaskByPID(PID: int, externalPrintMsg=print):
     except Exception as EXP: externalPrintMsg(f"\n Could not terminate process {PID} under username {USERNAME}\nError: {EXP}")
     else: externalPrintMsg(f"\nKilled process {PID} under username {USERNAME}")
 def getCurrentUsername():
-    return W11.GLOBAL_VARS.USERNAME
+    print("Here")
+    return ParWFS._instances["root"].GLOBAL_VARS.USERNAME
 def appLauncherForExternalApps(appName, userName, param):
     USER_CONFIG = None
     import shelve, os
-    print("Wassup")
+
     with shelve.open(os.path.join(getHostDir(), "Users", userName, "USER_CONFIG")) as shelveRead:
         USER_CONFIG=dict(shelveRead)
     W11._AppLauncherForExternalApps(appName, USER_CONFIG, param, userName, W11.notification )

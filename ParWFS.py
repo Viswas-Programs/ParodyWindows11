@@ -24,6 +24,7 @@ class ParWFS:
         self.RUNNING_APPS = {}
         self.RunAppsFrame = None
         self.ROOT = None
+        self.GLOBAL_VARS = None
         self.FS_STOP_RESUME_OBJECT = []
         self.STOP_CALLED = {}
         self.RESUME_CALL = {}

@@ -8,11 +8,20 @@ from ParWFS import ParWFS
 from ProgramFiles.dwm import createTopFrame
 from ProgramFiles.progressBars import ProgressOutOfMaxValueBar
 from ProgramFiles.entryWidget import Entry
+from ProgramFiles.treeview import Treeview
 try: 
     import psutil
 except:
     os.system("pip install psutil")
     import psutil
+KNOWN_FILETYPES = {
+    "py": "Python File",
+    "txt": "Text File",
+    "png": "PNG Image",
+    "jpeg": "JPEG Image",
+    "jpg": "JPG Image",
+    "conf": "ParW11 Credential File"
+}
 NEEDS_FILESYSTEM_ACCESS = True
 THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black","White", "Black"]
 INSTANCES = {}
@@ -66,17 +75,27 @@ def main(FILESYSTEM: ParWFS, *args):
             for i in fileView.get_children():
                 fileView.delete(i)
             for file in range(len(filesInFolder)):
+                fileType = "File"
+                if os.path.isdir(f"{os.path.join(filepath, filesInFolder[file])}"): fileType="DIRECTORY"
+                else:
+                    split = str(filesInFolder[file]).split(".")
+                    extension = split[-1]
+                    if len(split) > 1:
+                        if extension in list(KNOWN_FILETYPES.keys()): fileType = KNOWN_FILETYPES[extension]
+                        else: fileType=f"{extension.upper()} File"
+
                 fileView.configure(style="Treeview")
-                fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
+                fileView.insert(parent='', iid=file, text=filesInFolder[file], index='end', values=[fileType],)
         def openFileOrFolder(*event):
             nonlocal filepath
             selectedFileIndex = fileView.focus()
-            selectedFile = fileView.item(selectedFileIndex, 'values')[0]
+            #selectedFile = fileView.item(selectedFileIndex, 'values')[0]
+            selectedFile = fileView.item(selectedFileIndex)
             if os.path.isdir(f"{os.path.join(filepath, selectedFile)}"):
                 filepath = os.path.join(filepath, selectedFile)
                 lookUpFiles(filepath)
             else:
-                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], FILESYSTEM.getConfig("USER_CONFIG"))
+                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], args[3])
 
         def goBackFolder(path: str):  
             if "\\" in path:
@@ -125,7 +144,7 @@ def main(FILESYSTEM: ParWFS, *args):
         def delete(*args):
             import shutil
             selectedFileIndex = fileView.focus()
-            selectedFile = os.path.join(filepath, fileView.item(selectedFileIndex, 'values')[0])
+            selectedFile = os.path.join(filepath, fileView.item(selectedFileIndex))
             FILESYSTEM.deleteFiles([[selectedFile, filepath]])
             fileView.delete(selectedFileIndex)
         def popup(event=None, *args):
@@ -139,12 +158,14 @@ def main(FILESYSTEM: ParWFS, *args):
                 files.grab_release()
         def copyFiles(ev=None):
             selectedFileIndex = fileView.focus()
-            selectedFile = fileView.item(selectedFileIndex, 'values')[0]
+            #selectedFile = fileView.item(selectedFileIndex, 'values')[0]
+            selectedFile = fileView.item(selectedFileIndex)
             absFilePath = os.path.join(filepath, selectedFile)
             FILESYSTEM.copyFiles([[absFilePath, filepath]])
         def cutFiles(ev=None):
             selectedFileIndex = fileView.focus()
-            selectedFile = fileView.item(selectedFileIndex, 'values')[0]
+            #selectedFile = fileView.item(selectedFileIndex, 'values')[0]
+            selectedFile = fileView.item(selectedFileIndex)
             absFilePath = os.path.join(filepath, selectedFile)
             FILESYSTEM.cutFiles([[absFilePath, filepath]])
         def pasteFiles(ev=None):
@@ -156,12 +177,15 @@ def main(FILESYSTEM: ParWFS, *args):
 
         commandBar.grid(row=1, column=0)
         ttk.Style().configure("Treeview", width=100)
-        fileView = ttk.Treeview(fileContentFrame, style="Treeview")
+        fileView = Treeview(fileContentFrame, style="Treeview")
         fileView.grid(row=0, column=1, sticky="w")
-        fileView['column'] = "Files"
-        fileView.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
-        fileView.column("Files", anchor=tkinter.W, width=600)
-        fileView.heading("Files", text="Files", anchor=tkinter.CENTER)
+        #fileView['column'] = "Files"
+        fileView["column"] = "File Type"
+        fileView.column("#0", width=600, anchor=tkinter.CENTER)
+        fileView.heading("#0", "Files")
+        #fileView.column("Files", width=600)
+        #fileView.heading("Files", text="Files", anchor=tkinter.CENTER)
+        fileView.heading("File Type", text="File Type", anchor=tkinter.CENTER)
         fileView.bind("<Double-1>", openFileOrFolder)
         fileView.bind("<Button-3>", popup)
         fileView.configure(style="Treeview")

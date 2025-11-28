@@ -108,7 +108,7 @@ class PW11GlobalVars():
         self.ICONS: dict[str, tkinter.PhotoImage] = {}
         self.THEME_WINDOW_BG: str = None
         self.THEME_FOREGROUND: str = None
-        self.USERNAME: str = None
+        self.USERNAME: str = "defaultuser0"
         self.APPS_LIST: list[str] = []
         self.COMMAND_APPS_LIST: list[str] = []
         self.USER_CONFIG: shelve.Shelf = None
@@ -118,7 +118,9 @@ class PW11GlobalVars():
         self.THEME_WN_CLR = None
         self.TASKBAR_FRAME: tkinter.Frame = None
 
-GLOBAL_VARS = PW11GlobalVars()
+ParWFS._instances["root"].GLOBAL_VARS = PW11GlobalVars()
+GLOBAL_VARS = ParWFS._instances["root"].GLOBAL_VARS
+def getUsername(): return GLOBAL_VARS.USERNAME
 def createUserAccount(username: str, password: str, userNumber: int, overwriteConfigs=True, THEME=["Black", "White", "Black"]):
     try: 
         try: 
