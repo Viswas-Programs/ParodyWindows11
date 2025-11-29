@@ -515,7 +515,7 @@ class GUIButtonCommand:
             GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][appToLaunchPID] = application
             GUIButtonCommand.createRunningAppTaskbarIcon(application, appToLaunchPID, username=GLOBAL_VARS.USERNAME)
             try: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID)
-            except: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, params, dict({"THEME": ["Black", "White"]}), appToLaunchPID)        
+            except: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, notification, params, dict({"THEME": ["Black", "White", "Black"]}), appToLaunchPID)        
         else: 
             appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
             #progAppImport = f"{GLOBAL_VARS.COMMAND_APPS_LIST[GLOBAL_VARS.COMMAND_APPS_LIST.index(f'ProgramFiles.{appToLaunch}')]}"
@@ -1308,6 +1308,7 @@ def login():
     loginWindow.title("Login to Windows 11")
     loginWindow.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
     loginWindow.attributes('-fullscreen', True)
+    loginWindow.bind("<Shift-F10>", lambda e=None: GUIButtonCommand.launchItem("Command Prompt"))
     if numUsers < 1:
         createUserAccount("defaultuser0", "SYSTEM", 0, True, ["Black", "White"])
         GLOBAL_VARS.USERNAME="defaultuser0"
@@ -1316,6 +1317,7 @@ def login():
         tkinter.Label(loginWindow, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="It seems that you don't have an user account set up!\nPlease setup an account first to use the system!\nRedirecting to the OOBE in 10 seconds!").grid(row=0, column=0)
         def launchOOBE(): loginWindow.destroy(); OOBE()
         loginWindow.after(10000, launchOOBE)
+    
     else:
         loadAllIcons(["shutdown", "restart"], loginWindow)
         loginWindow.grid_rowconfigure(0, weight=1) 

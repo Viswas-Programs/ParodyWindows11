@@ -1,4 +1,5 @@
 import tkinter
+import threading
 import ParWFS
 try:
     import ProgramFiles.callHost as callHost
@@ -92,7 +93,35 @@ def focusMaximise(PID):
         MANAGED_DWM_INSTANCES[PID][2].OLD_GEO = MANAGED_DWM_INSTANCES[PID][2].geometry()
     MANAGED_DWM_INSTANCES[PID][2].update()
     MANAGED_DWM_INSTANCES[PID][2].lift()
-def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroyFunc=None, associatePIDProcess=None):
+
+def receiveMessage(PID, messageContent):
+    root = MANAGED_DWM_INSTANCES[PID][2]
+    root.MESSAGES[PID] = messageContent
+    if root.MESSAGES_CALLBACK != None:
+        root.MESSAGES_CALLBACK(root.MESSAGES[PID])
+    if root.MESSAGES_AUTODELETE:
+        deleteMessages(PID)
+    
+
+def seeMessages(PID):
+    return MANAGED_DWM_INSTANCES[PID][2].MESSAGES
+
+def deleteMessages(PID, amount=None, oldToNew=True):
+    amt = amount
+    if amount == None:
+        amt = 0
+        for message in dict(MANAGED_DWM_INSTANCES[PID][2].MESSAGES).keys():  amt += 1
+    indexAccess = range(0, amt)
+    if not oldToNew: indexAccess = range(len(dict(MANAGED_DWM_INSTANCES[PID][2].MESSAGES).keys())-1, len(dict(MANAGED_DWM_INSTANCES[PID][2].MESSAGES).keys())-amt-1, -1 )
+    for i in indexAccess:
+        del MANAGED_DWM_INSTANCES[PID][2].MESSAGES[list(MANAGED_DWM_INSTANCES[PID][2].MESSAGES.keys())[i]]
+    return MANAGED_DWM_INSTANCES[PID][2].MESSAGES
+
+def disableCheckNewMessages(PID):
+    if MANAGED_DWM_INSTANCES[PID][2].CHECK_MESSAGES_THREAD: MANAGED_DWM_INSTANCES[PID][2].CHECK_MESSAGES_RAN = False
+
+
+def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroyFunc=None, associatePIDProcess=None, callbackForInternalMsg=None, autoDeleteOldMsg=True):
     root.geometry("+200+200")
     def start_move(event):
         root.x = event.x
@@ -114,6 +143,10 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     root.overrideredirect(True)
     root.update()
     root.update_idletasks()
+    root.MESSAGES = {}
+    root.MESSAGES_CALLBACK = callbackForInternalMsg
+    root.MESSAGES_AUTODELETE = autoDeleteOldMsg
+        
     #root.wm_attributes('-type', 'splash')
     try:  BRCLRS = ParWFS._instances["root"].getConfig("USER_CONFIG")["THEME_WN_BORDERS"]
     except: BRCLRS = {"DWM_HG_CLR": "Black", "DWM_HGBG": "Black"}

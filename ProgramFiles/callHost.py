@@ -13,6 +13,23 @@ PIDsToGen = {
     "DIALOGUE_IDS": W11.DIALOGUE_BOXES
 }
 LOADED_APPS = None
+
+def sendCallToAnotherApp(YourPID, appName, messageContent: dict):
+    from ProgramFiles import dwm
+    RUNNING_APPS = ParWFS._instances["root"].RUNNING_APPS
+    importName= appImportNameCheck(appName)
+    for usr in list(dict(RUNNING_APPS).keys()):
+        for PID in list(dict(RUNNING_APPS)[usr].keys()):
+            appName = dict(RUNNING_APPS)[usr][PID]
+            print(W11.GUIButtonCommand.AppImportNameCheck(appName), importName)
+            if appImportNameCheck(appName) == importName: 
+                message = {
+                    "SenderPID": YourPID,
+                    "ReceiverPID": PID,
+                    "messageContent": messageContent
+                }
+                dwm.receiveMessage(PID, message)
+
 def setLoadedApps(loadedAppInst):
     global LOADED_APPS
     LOADED_APPS = loadedAppInst
