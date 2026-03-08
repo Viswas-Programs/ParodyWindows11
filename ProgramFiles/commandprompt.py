@@ -472,7 +472,7 @@ THEME_WN_CLR = THEME_WINDOW_BG
 def main(FILE_SYSTEM, *args): 
     ABLE_TO_USE_DWM = False
     EXP = None
-    THEME_WN_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
+    THEME_WN_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[2]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     try:
@@ -500,7 +500,7 @@ def main(FILE_SYSTEM, *args):
         cmdInstance.ADMINISTRATOR = True
         cmdInstance.showMsg("\nDetected launch from recovery environment\nSuccesfully turned on administrator mode!")
         cmdInstance.ROOT.title("Administrator - Command Interpreter")
-    if args[2]: cmdInstance.stdin.insert(0, args[2]); cmdInstance.launchCmd(True)
+    if args[1]: cmdInstance.stdin.insert(0, args[2]); cmdInstance.launchCmd(True)
     INSTANCES[args[-1]].mainloop()
     return args[-1]
 

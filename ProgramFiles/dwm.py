@@ -5,28 +5,36 @@ try:
     import ProgramFiles.callHost as callHost
     from ProgramFiles.entryWidget import Entry
     from ProgramFiles.buttons import SIDEBAR_BUTTON_INSTANCES
-except Exception:
+except Exception as EXP:
     from tkinter import Entry
     try: import callHost
-    except: print("No callhost for you")
+    except: print("No callhost for you", EXP)
 
 MANAGED_DWM_INSTANCES = {}
 
 def _changeThemeForAllApps(newBg, newFg, widget: tkinter.BaseWidget):
-    for wdg in widget.winfo_children():
-        _changeThemeForAllApps(newBg, newFg, wdg)
+    try:
+        for wdg in widget.winfo_children():
+            _changeThemeForAllApps(newBg, newFg, wdg)
+    except: pass
+            
     try:
         widget.configure(background=newBg)
         widget.configure(foreground=newFg)
     except Exception: pass
 def changeThemeForAllApps(newBg, newFg, newWnTitleClr):
-    for DWMFrame in MANAGED_DWM_INSTANCES.values():
-        _changeThemeForAllApps(newBg, newFg, DWMFrame[4].PARAMETER_CALL_INFORMATION["root"])
-        DWMFrame[4].configure(background=newWnTitleClr)
-        _changeThemeForAllApps(newWnTitleClr, newFg, DWMFrame[4])
-        DWMFrame[4].ALL_BUTTONS["close"].configure(background="red", foreground="white")
-    for sidebarInstances in SIDEBAR_BUTTON_INSTANCES:
-        sidebarInstances.defaultColour = newBg
+    try:
+        for DWMFrame in MANAGED_DWM_INSTANCES.values():
+            if DWMFrame[0] == None: continue
+            _changeThemeForAllApps(newBg, newFg, DWMFrame[4].PARAMETER_CALL_INFORMATION["root"])
+            DWMFrame[4].configure(background=newWnTitleClr)
+            _changeThemeForAllApps(newWnTitleClr, newFg, DWMFrame[4])
+            DWMFrame[4].ALL_BUTTONS["close"].configure(background="red", foreground="white")
+    except: pass
+    finally:
+        for sidebarInstances in SIDEBAR_BUTTON_INSTANCES:
+            sidebarInstances.defaultColour = newBg
+
 def title(newTitle=None, PID=0):
     if newTitle: MANAGED_DWM_INSTANCES[PID][1].configure(text=newTitle); MANAGED_DWM_INSTANCES[PID][0] = newTitle
     return MANAGED_DWM_INSTANCES[PID][0]
@@ -204,7 +212,8 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     def _quit(): 
         root.QUIT_FUNC()
         callHost.acknowledgeEndTask(PID)
-        MANAGED_DWM_INSTANCES[associatePIDProcess][5].remove(PID)
+        try: MANAGED_DWM_INSTANCES[associatePIDProcess][5].remove(PID)
+        except Exception: pass
     root.quit = _quit
     root.update()
     root.update_idletasks()

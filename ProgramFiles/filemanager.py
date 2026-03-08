@@ -23,7 +23,14 @@ KNOWN_FILETYPES = {
     "conf": "ParW11 Credential File"
 }
 NEEDS_FILESYSTEM_ACCESS = True
-THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black","White", "Black"]
+def getTheme(messageContent: dict):
+    global THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG
+    if THEME_ACT_CLR == None: THEME_ACT_CLR = messageContent["messageContent"]["GETATTR"]
+    elif THEME_FOREGROUND == None: THEME_FOREGROUND = messageContent["messageContent"]["GETATTR"]
+    else: THEME_WINDOW_BG= messageContent["messageContent"]["GETATTR"]
+    
+THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = None, None, None
+e= [THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG]
 INSTANCES = {}
 def focusIn(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='normal'); INSTANCES[PID].overrideredirect(True); return True
 def focusOut(PID): INSTANCES[PID].overrideredirect(False); INSTANCES[PID].state(newstate='iconic'); INSTANCES[PID].overrideredirect(True); return True
@@ -48,7 +55,9 @@ def main(FILESYSTEM: ParWFS, *args):
         global THEME_FOREGROUND
         global THEME_WINDOW_BG
         global THEME_ACT_CLR
-        THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
+        THEME_ACT_CLR = "Black"
+        THEME_FOREGROUND = "White"
+        THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[2]["THEME"]
         filepath = None
         def newFolder(PID, *event):
             toplevel = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
@@ -95,7 +104,7 @@ def main(FILESYSTEM: ParWFS, *args):
                 filepath = os.path.join(filepath, selectedFile)
                 lookUpFiles(filepath)
             else:
-                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[1], args[3])
+                fileRouters.handleFiles(os.path.join(filepath, selectedFile), args[0], args[2])
 
         def goBackFolder(path: str):  
             if "\\" in path:
@@ -110,7 +119,10 @@ def main(FILESYSTEM: ParWFS, *args):
             lookUpFiles(path=path)
         INSTANCES[args[-1]] = tkinter.Tk()
         INSTANCES[args[-1]].title("File Manager")
-        createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "filemanager", "File Manager", args[-1])
+        createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "filemanager", "File Manager", args[-1], callbackForInternalMsg=getTheme )
+        #callHost._sendCallToPID(args[-1], 0, {"method": "GET", "GETATTR": "THEME_WN_CLR"})
+        #callHost._sendCallToPID(args[-1], 0, {"method": "GET", "GETATTR": "THEME_FOREGROUND"})
+        #callHost._sendCallToPID(args[-1], 0, {"method": "GET", "GETATTR": "THEME_WINDOW_BG"})
         ttk.Style(INSTANCES[args[-1]]).configure("Treeview", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         mainFrame = tkinter.Frame(INSTANCES[args[-1]], background=THEME_WINDOW_BG)
         mainFrame.grid(row=1, column=0)
@@ -174,7 +186,12 @@ def main(FILESYSTEM: ParWFS, *args):
             progressBar.function = func
             progressBar.runFunc()
             lookUpFiles(filepath)
-
+        def pinToDesktop(ev=None):
+            selectedFlIndx = fileView.focus()
+            if not selectedFlIndx: return
+            selectedFile = fileView.item(selectedFlIndx)
+            absFilePath = os.path.join(filepath, selectedFile)
+            callHost._sendCallToPID(args[-1], 0, {"method": "EXEC_ACTION", "CREATE_DESKTOP_ICON": {"appname": "<<ANYAPP>>", "command": "<<ANYAPP>>", "param": absFilePath, "writeTo": True }})
         commandBar.grid(row=1, column=0)
         ttk.Style().configure("Treeview", width=100)
         fileView = Treeview(fileContentFrame, style="Treeview")
@@ -196,9 +213,10 @@ def main(FILESYSTEM: ParWFS, *args):
         files.add_command(label="Copy", command=copyFiles)
         files.add_command(label="Cut", command=cutFiles)
         files.add_command(label="Paste", command=pasteFiles)
+        files.add_command(label="Pin to Desktop", command=pinToDesktop)
         lookUpFiles(addressBar.get())
-        if (args[2]):
-            lookUpFiles(args[2])
+        if (args[1]):
+            lookUpFiles(args[1])
         INSTANCES[args[-1]].mainloop()
         return args[-1]
     except Exception as exp:

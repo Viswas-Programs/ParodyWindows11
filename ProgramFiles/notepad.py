@@ -12,7 +12,7 @@ except:
 PROCESS_RUNNING = False
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
-def main(username, notifications, filename, *args):
+def main(username, filename, *args):
     global PROCESS_RUNNING
     try:
         print(args[-1])

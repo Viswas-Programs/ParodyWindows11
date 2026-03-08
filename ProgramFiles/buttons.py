@@ -10,8 +10,10 @@ class IconButton:
         self.BUTTONBIND = None
         self.SEQUENCE = None
         self.BUTTON = tkinter.Label(self.master, background=self.background, foreground=self.foreground, image=self.image, **kwargs)
-        self.specialBind(False)
+        self.BUTTON.identifier = f"desktopIconBtn-{command}"
+        self.specialBind()
     def specialBind(self, newSequence=False):
+        print(self.doubleClickMode, newSequence, not newSequence)
         if self.BUTTONBIND: self.BUTTON.unbind(self.SEQUENCE, self.BUTTONBIND)
         if not newSequence:
             if self.doubleClickMode: self.SEQUENCE = "<Double-1>"
@@ -19,7 +21,7 @@ class IconButton:
         else:
             self.SEQUENCE = newSequence
         def handlerFunc(ev): self.command()
-        self.BUTTON.bind(self.SEQUENCE, handlerFunc)
+        self.BUTTONBIND = self.BUTTON.bind(self.SEQUENCE, handlerFunc)
     def configure(self, **kwargs):
         if "command" in kwargs: 
             self.command=kwargs["command"]
@@ -27,10 +29,10 @@ class IconButton:
         if "clickMode" in kwargs: 
             if kwargs["clickMode"]: self.specialBind("<Double-1>")
             else: self.specialBind("<Button-1>")
-    def destroy(self):
-        self.BUTTON.destroy()
-    def grid(self, **kwargs):
-        self.BUTTON.grid(**kwargs)
+    def destroy(self): self.BUTTON.destroy()
+    def grid(self, **kwargs): self.BUTTON.grid(**kwargs)
+    def bind(self, *args, **kwargs): self.BUTTON.bind(args, kwargs)
+
 
 SIDEBAR_BUTTON_INSTANCES = []
 

@@ -105,7 +105,7 @@ def main(*args):
     global msg_list
     global BUFSIZ
     global THEME_WINDOW_BG, THEME_FOREGROUND
-    THEME_WINDOW_BG, THEME_FOREGROUND = args[3]["THEME"]
+    THEME_WINDOW_BG, THEME_FOREGROUND = args[2]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     INSTANCES[args[-1]].title("IP Chat")

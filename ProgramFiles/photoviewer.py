@@ -119,7 +119,7 @@ def changeMsSlideShow(PID):
     setMs = tkinter.Button(editWindow, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Set ms!", command=setSlideshowMS)
     setMs.grid(row=2, column=1)
     editWindow.mainloop()
-def main(username, notification, fileopenHandle, *args):
+def main(username, fileopenHandle, *args):
     def destroy(PID):
         callHost.acknowledgeEndTask(PID)
         INSTANCES[PID].destroy()

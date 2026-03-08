@@ -8,11 +8,11 @@ from ProgramFiles import callHost
 from ProgramFiles.fileaskhandlers import askopenfilename
 from ProgramFiles.dwm import createTopFrame
 W11 = importlib.__import__("Windows 11")
-def openWithSettings(root, fileName: str, USER_CONFIG: shelve, userName: str, notifications, ):
+def openWithSettings(root, fileName: str, USER_CONFIG: shelve, userName: str, ):
     def comboBoxHandler(e=None):
         app = launcherComboBox.get()
         OpenWithMenuWindow.destroy()
-        W11._AppLauncherForExternalApps(app, USER_CONFIG,  fileName, userName, notifications,)
+        W11._AppLauncherForExternalApps(app, USER_CONFIG,  fileName, userName,)
     def askAppName():
         appToOpenWith = askopenfilename("Select a program to open with. ", (("Py Files", "*.py"), ("PyC Files", "*.pyc")))
         OpenWithMenuWindow.destroy()
@@ -36,7 +36,7 @@ def openWithSettings(root, fileName: str, USER_CONFIG: shelve, userName: str, no
     OpenWithCustomAppBtn.grid(row=3, column=1)
     OpenWithMenuWindow.mainloop()
 
-def handleFiles(fileName: str, userConfig: str, notifications: any, USER_CONFIG: shelve):
+def handleFiles(fileName: str, userConfig: str, USER_CONFIG: shelve):
     defaultProgramFileAssociations = USER_CONFIG
     fileExtension = fileName.split(".")[-1]
     fileName = fileName.replace("\\", "/")
@@ -45,8 +45,8 @@ def handleFiles(fileName: str, userConfig: str, notifications: any, USER_CONFIG:
         try:
             app: str= defaultProgramFileAssociations["DEFAULTAPPASSOCIATION"].get(fileExtension)
             print(app, fileExtension, defaultProgramFileAssociations["DEFAULTAPPASSOCIATION"])
-            W11._AppLauncherForExternalApps(app,USER_CONFIG,  fileName, userConfig, notifications)
+            W11._AppLauncherForExternalApps(app,USER_CONFIG,  fileName, userConfig)
         except Exception as I: 
             print(I)
-            openWithSettings(None, fileName, USER_CONFIG, userConfig, notifications)
+            openWithSettings(None, fileName, USER_CONFIG, userConfig)
     else: os.system(fileName)

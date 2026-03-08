@@ -117,7 +117,7 @@ def main(*args):
     global frame
     global text
     global THEME_FOREGROUND, THEME_WINDOW_BG, THEME_ACT_BG
-    THEME_ACT_BG, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
+    THEME_ACT_BG, THEME_FOREGROUND, THEME_WINDOW_BG = args[2]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_BG, "webbrowser", "Web Browser", args[-1])

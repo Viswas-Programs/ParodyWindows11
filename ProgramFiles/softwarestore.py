@@ -40,7 +40,7 @@ def showDescription(PID, e=None):
     else:
         tkinter.Button(wn, text="Uninstall", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=uninstallProgram).pack()
     wn.mainloop()
-def main(username, notification, *args):
+def main(username,  *args):
     global THEME_FOREGROUND, THEME_WINDOW_BG, USER_CONFIG
     global usrname
     usrname = username

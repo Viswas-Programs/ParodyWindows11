@@ -10,6 +10,7 @@ import time
 from ProgramFiles.dwm import createTopFrame
 import shelve
 from ProgramFiles.entryWidget import Text
+from ProgramFiles import notifications
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
 
@@ -38,7 +39,8 @@ except requests.exceptions.ConnectTimeout:
     changelogText = "ERROR: Cannot access the server for the required files and newest updates! Try again later!"
     version = 1.0
     fileList = ["NONE"]
-def main(username, notification, *args):
+def main(username,  *args):
+    notification = notifications.notifications
     LAST_UPDATE = open("ProgramFiles/update_config/LAST_UPDATE.txt", "w+")
     UPDATE_CHGLOG = LAST_UPDATE.read()
     CURRENT_VERSION = "2.3.9"

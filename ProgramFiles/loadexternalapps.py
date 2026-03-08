@@ -66,7 +66,7 @@ def main(*args):
     global buttonText
     global THEME_FOREGROUND, THEME_WINDOW_BG, THEME_ACT_CLR
     global showRefreshBtn
-    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
+    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[2]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "loadexternalapps", "Load External Apps", args[-1])

@@ -215,10 +215,10 @@ def addNewKey(PID, LoadedDict, callFromKey: str=None):
 
 def main(*args):
     INSTANCES[args[-1]] = tkinter.Tk()
-    print(args[3])
+    print(args[2])
     global THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG
     print(THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG)
-    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
+    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[2]["THEME"]
     print(THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG)
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "shelveeditor", "Shelve Editor", args[-1])
@@ -226,5 +226,5 @@ def main(*args):
     BUTTON_FRAMES[args[-1]].grid(row=1, column=0, sticky="W")
     openFileButton = tkinter.Button(BUTTON_FRAMES[args[-1]], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, text="Open a shelve file!", command=lambda PID=args[-1]: openFile(PID))
     openFileButton.grid(row=0, column=0)
-    if args[2]: print(args[2]); _openFile(args[-1], args[2])
+    if args[1]: print(args[2]); _openFile(args[-1], args[1])
     INSTANCES[args[-1]].mainloop()

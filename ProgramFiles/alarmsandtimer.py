@@ -67,7 +67,7 @@ def returnInformation(PID):
 def main(*args):
     global THEME_WINDOW_BG, THEME_FOREGROUND
     global sidebar
-    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[3]["THEME"]
+    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = args[2]["THEME"]
     INSTANCES[args[-1]] = tkinter.Tk()
     INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     import ProgramFiles.dwm as DWM

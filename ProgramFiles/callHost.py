@@ -22,14 +22,16 @@ def sendCallToAnotherApp(YourPID, appName, messageContent: dict):
         for PID in list(dict(RUNNING_APPS)[usr].keys()):
             appName = dict(RUNNING_APPS)[usr][PID]
             print(W11.GUIButtonCommand.AppImportNameCheck(appName), importName)
-            if appImportNameCheck(appName) == importName: 
-                message = {
-                    "SenderPID": YourPID,
-                    "ReceiverPID": PID,
-                    "messageContent": messageContent
-                }
-                dwm.receiveMessage(PID, message)
-
+            if appImportNameCheck(appName) == importName: _sendCallToPID(YourPID, PID, messageContent)
+                
+def _sendCallToPID(YourPID, PID, msg):
+    from ProgramFiles import dwm
+    message = {
+        "SenderPID": YourPID,
+        "ReceiverPID": PID,
+        "messageContent": msg
+    }
+    dwm.receiveMessage(PID, message)
 def setLoadedApps(loadedAppInst):
     global LOADED_APPS
     LOADED_APPS = loadedAppInst
@@ -45,7 +47,7 @@ def getRangeToGenPID(type:str):
             PID = random.randint(rangeOfPID[0], rangeOfPID[1])
     return PID
 def addToRunningAppsList(PID, type):
-    ParWFS._instances["root"].RUNNING_APPS["defaultuser0"][PID] = type
+    ParWFS._instances["root"].RUNNING_APPS[getCurrentUsername()][PID] = type
 def returnRunningAppsList():
     return [ParWFS._instances["root"].RunAppsFrame,ParWFS._instances["root"].RUNNING_APPS]
 def getReqIcon(iconStr, root):
@@ -86,4 +88,9 @@ def appLauncherForExternalApps(appName, userName, param):
 
     with shelve.open(os.path.join(getHostDir(), "Users", userName, "USER_CONFIG")) as shelveRead:
         USER_CONFIG=dict(shelveRead)
-    W11._AppLauncherForExternalApps(appName, USER_CONFIG, param, userName, W11.notification )
+    W11._AppLauncherForExternalApps(appName, USER_CONFIG, param, userName)
+def getTheme():
+    try:
+        return [W11.GLOBAL_VARS.THEME_WINDOW_BG, W11.GLOBAL_VARS.THEME_FOREGROUND, W11.GLOBAL_VARS.THEME_WN_CLR]
+    except Exception:
+        return ["Black", "White", "Black"]
