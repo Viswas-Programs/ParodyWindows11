@@ -13,7 +13,6 @@ class IconButton:
         self.BUTTON.identifier = f"desktopIconBtn-{command}"
         self.specialBind()
     def specialBind(self, newSequence=False):
-        print(self.doubleClickMode, newSequence, not newSequence)
         if self.BUTTONBIND: self.BUTTON.unbind(self.SEQUENCE, self.BUTTONBIND)
         if not newSequence:
             if self.doubleClickMode: self.SEQUENCE = "<Double-1>"
@@ -47,11 +46,13 @@ class SidebarButtons:
         self.SELF_ID = len(SIDEBAR_BUTTON_INSTANCES)
         self.WIDTH = standardizedWidth
         SIDEBAR_BUTTON_INSTANCES.append(self)
-    def commandWrapper(self, ID, redirectCommand):
+    def commandWrapper(self, ID, redirectCommand=None):
+        redirCmd = redirectCommand
+        if redirectCommand == None: redirCmd= self.buttons[ID].OLD_COMMAND
         self.currentSelection = ID
         for button in self.buttons.values(): button.configure(background=self.defaultColour)
         self.buttons[ID].configure(background=self.selectionColour)
-        redirectCommand()
+        redirCmd()
         return
     def Button(self, *args, **kwargs):
         ID = self.BUTTON_COUNT
@@ -60,6 +61,7 @@ class SidebarButtons:
             del kwargs["ID"]
         button = tkinter.Button(*args, **kwargs)
         oldCommand = kwargs["command"]
+        button.OLD_COMMAND = oldCommand
         button.configure(command=lambda Id=ID, CMD=oldCommand: self.commandWrapper(Id, CMD), width=self.WIDTH)
         button.destroyFunc = button.destroy
         button.destroy = lambda Id=ID: self.removeWhenButtonDestroy(Id)
