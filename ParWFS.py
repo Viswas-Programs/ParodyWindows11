@@ -106,7 +106,6 @@ class ParWFS:
         if not self.currentLoadedConfigFiles: self.currentLoadedConfigFiles = {}
         with shelve.open(self.currentLoadedConfigFiles[configName][0], writeback=True) as writeBack:
             writeBack[keyToChange] = valueToAdd
-            writeBack.sync()
             self.currentLoadedConfigFiles[configName][1] = dict(writeBack)
         return self.currentLoadedConfigFiles[configName][1]
     def getConfig(self, configName: str):

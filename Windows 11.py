@@ -1,6 +1,43 @@
 from pathlib import Path
 import tkinter
 import importlib
+from datetime import datetime
+
+class ErrorRouter:
+    def __init__(self):
+        self.LOGS = {str(datetime.now()): "SESSION STARTUP"}
+    
+    def addTextLog(self, text):
+        self.LOGS[str(datetime.now())] = text
+    
+    def updateFileLogs(self):
+        TEXT = ""
+        for T, Log in self.LOGS.items():
+            TEXT += f"{T}: {Log}\n"
+        with open(os.path.join(CWD, "ProgramFiles", "LOG.txt"), "a") as writer:
+            writer.write(TEXT)
+        with shelve.open(os.path.join(CWD, "ProgramFiles", "LOG"), writeback=True) as shelveWrite:
+            shelveWrite.update(self.LOGS)
+        self.LOGS.clear()
+
+    def addRawLog(self, exception: Exception, objectsInvolved=[], additionalText="", ):
+        typeofExp = exception.__class__.__name__
+        extendedText = ""
+        if len(objectsInvolved)>0: extendedText += "on the objects"
+        for i in objectsInvolved: extendedText += f" {i} of type {type(i)} "
+        self.LOGS[str(datetime.now())] = f"{typeofExp} occured with reasoning {additionalText} {exception}{extendedText}"
+    def sync(self, errorInstance):
+        """ merges given instance of ErrorRouter with current"""
+        self.LOGS.update(errorInstance.LOGS)
+    def __del__(self):
+        try:
+            self.LOGS = {str(datetime.now()): "ERROR ROUTER DEL"}
+            self.updateFileLogs()
+        except: pass
+
+
+LOGGER = ErrorRouter()
+
 def bsod(obj, supportCode) -> None:
     text = f"""A problem has occured on ParodyWin11 and has been shutdown to prevent further damage\n
 If this is the first time you're seeing this stop screen, please make sure you have proper configuration files 
@@ -10,26 +47,28 @@ Technical information: {obj} Failed to load properly (Improperly loaded!)\nSuppo
 Restarting in a moment..."""
     try:
         def restart():
+            LOGGER.updateFileLogs()
             bsodWind.destroy()
             time.sleep(5)
             os.system(f""" python "Windows 11.py" """)
             exit()
         try:
-            SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", SYS_CONFIG["CBSRESTARTATTEMPT"] + 1)
+            SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", CBSRESTART + 1)
             with open("ProgramFiles/CRASHLOGS", "a") as UPDATE_CRASH_LOGS: UPDATE_CRASH_LOGS.write(f"\n{supportCode} occured on {datetime.now()} on {obj}")
-        except Exception as EXP: exp = EXP; 
+        except Exception as EXP: exp = EXP; LOGGER.addRawLog(EXP, [SYS_CONFIG["CBSRESTARTATTEMPT"]], "Within BSOD: Unable to either add crashlog or cbs-restart-attempt") 
         finally:
+            LOGGER.addTextLog(f"BSOD Occured: {supportCode} on object {obj}")
+            LOGGER.updateFileLogs()
             bsodWind = tkinter.Tk()
             bsodWind.configure(background="blue")
             bsodWind.attributes("-fullscreen", True)
             tkinter.Label(bsodWind, background="Blue", foreground="White", text=text, font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
-            
             try: 
                 if exp: tkinter.Label(bsodWind, background="Blue", foreground="White", text=f"During above error, another error occured: {exp}", font=("Arial Rounded MT Bold", 18)).pack(anchor=tkinter.W)
             except Exception: pass
             bsodWind.after(10000, restart)
             bsodWind.mainloop()
-    except Exception as EXP: print(text, EXP)
+    except Exception as EXP: print(text, EXP); LOGGER.addRawLog(EXP, [supportCode], "Unable to start BSOD. ")
 try:
     from ProgramFiles import dwm
     import ParWFS
@@ -50,7 +89,7 @@ try:
     import platform
     from ProgramFiles import entryWidget
     from ProgramFiles.errorHandler import messagebox
-except Exception as E: 
+except Exception as E:
     bsod(__name__, str(E) + "\nMODULE_NOT_FOUND_ERROR")
 CWD = os.getcwd()
 FILE_SYSTEM = ParWFS.ParWFS()
@@ -58,7 +97,8 @@ FILE_SYSTEM.loadConfig("ProgramFiles/SYS_CONFIG", "SYS_CONFIG")
 SYS_CONFIG = FILE_SYSTEM.getConfig("SYS_CONFIG")
 try:
     PYTHON_COMMAND_ARG = SYS_CONFIG["PYTHON_LAUNCH_COMMAND"]
-except Exception:
+except Exception as EXP:
+    LOGGER.addRawLog(EXP, [SYS_CONFIG], "PYTHON_LAUNCH_COMMAND doesn't exist on SYS_CONFIG")
     FILE_SYSTEM.editConfig("SYS_CONFIG", "PYTHON_LAUNCH_COMMAND", "python3")
     PYTHON_COMMAND_ARG = SYS_CONFIG["PYTHON_LAUNCH_COMMAND"]
 USER_FOLDERS_LIST = ["My Documents", "My Pictures", "My Videos", "My Downloads"]
@@ -68,19 +108,21 @@ class LoadedApps():
     def __init__(self):
         self.IMPORTED_APPS = dict()
         self.ROOT = None
-    def getAppCache(self, appName):
+    def getAppCache(self, appName, showerror=True):
         try:
             realAppName = appName
-            if realAppName not in self.IMPORTED_APPS.keys(): self.reloadAppCache(realAppName)
+            if realAppName not in self.IMPORTED_APPS.keys(): self.reloadAppCache(realAppName, showerror)
             return self.IMPORTED_APPS[appName]
         except Exception as EXP:
-            messagebox.showerror("Unable to use/import app!", f"Error trying to use/import an app!\n{EXP}", self.ROOT)
-    def reloadAppCache(self, appName):
+            LOGGER.addRawLog(EXP, [realAppName, self.IMPORTED_APPS], f"Unable to import {realAppName}")
+            if showerror: messagebox.showerror("Unable to use/import app!", f"Error trying to use/import an app!\n{EXP}", self.ROOT)
+    def reloadAppCache(self, appName, showerror=True):
         realAppName = appName
         try:
             self.IMPORTED_APPS[realAppName] = importlib.import_module(realAppName)
         except Exception as EXP:
-            messagebox.showerror("Can't reload app code!", f"Error trying to reload the app code!\n{EXP}")
+            LOGGER.addRawLog(EXP, [self.IMPORTED_APPS, realAppName], f"Unable to reload app cache for {realAppName}")
+            if showerror: messagebox.showerror("Can't reload app code!", f"Error trying to reload the app code!\n{EXP}")
 
 
 class PW11GlobalVars():
@@ -208,6 +250,7 @@ def messageHandler(messageContent: dict):
 GLOBAL_VARS.MESSAGES_CALLBACK = messageHandler
 def getUsername(): return GLOBAL_VARS.USERNAME
 def createUserAccount(username: str, password: str, userNumber: int, overwriteConfigs=True, THEME=["Black", "White", "Black"]):
+    LOGGER.addTextLog(f"User creation process called for: {username} with usernumber {userNumber}")
     try: 
         try: 
             os.mkdir(f"Users")
@@ -244,11 +287,13 @@ def createUserAccount(username: str, password: str, userNumber: int, overwriteCo
     FILE_SYSTEM.editConfig("SYS_CONFIG", "PYTHON_LAUNCH_COMMAND", "python3")
     FILE_SYSTEM.editConfig("SYS_CONFIG", "VERSION", "2.3.9")
     FILE_SYSTEM.editConfig("SYS_CONFIG", "UPDATE_TIME_LOG", [])
+    LOGGER.addTextLog(f"User creation process finished for {username} with usernumber {userNumber}")
     return True
 try:
     GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND = SYS_CONFIG["THEME"]
     GLOBAL_VARS.THEME_WN_CLR = GLOBAL_VARS.THEME_WINDOW_BG
-except Exception:
+except Exception as EXP:
+    LOGGER.addRawLog(EXP, [SYS_CONFIG], "Unable to load theme")
     GLOBAL_VARS.THEME_WINDOW_BG = "Black"
     GLOBAL_VARS.THEME_FOREGROUND = "White"
     GLOBAL_VARS.THEME_WN_CLR = "Black"
@@ -279,10 +324,12 @@ def giveIcon(appName: str, root, subsample=False, relaunch=False):
         else:
             return GLOBAL_VARS.ICONS[appName].subsample(subsample)
     except Exception as exp:
+        LOGGER.addRawLog(exp, [appName, GLOBAL_VARS.ICONS], "Wasn't able to load icon from stored GLOBAL_VARS.ICONS, giving icon manually")
         try:
             if not subsample: return tkinter.PhotoImage(file=f"ProgramFiles/Icons/{appName}.png", master=root)
             else: return tkinter.PhotoImage(file=f"ProgramFiles/Icons/{appName}.png", master=root).subsample(subsample)
-        except Exception: 
+        except Exception as EXP:
+            LOGGER.addRawLog(EXP, [appName, tkinter.PhotoImage], "Unable to load icon, giving error icon!") 
             if not relaunch: return giveIcon("error", root, subsample, True)
 def loadAllIcons(appsList: list, root):
     for app in appsList:
@@ -290,7 +337,7 @@ def loadAllIcons(appsList: list, root):
         try:
             GLOBAL_VARS.ICONS[realApp] = tkinter.PhotoImage(file=f"ProgramFiles/Icons/{realApp}.png", master=root)
             root.erm = GLOBAL_VARS.ICONS[realApp]
-        except: pass
+        except Exception as EXP: LOGGER.addRawLog(EXP, [GLOBAL_VARS.ICONS, realApp], "Unable to load icon for app from loadAllIcons")
 
 def setBorderTheme(START_MENU_BORDER_ACTIVE, START_MENU_BORDER_INACTIVE, DWM_WINDOW_BORDER_ACTIVE, DWM_WINDOW_BORDER_INACTIVE ):
     global GLOBAL_VARS
@@ -559,7 +606,8 @@ class settings():
                     GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
                     self.changeFileOpeners(True)
                 except Exception as I:
-                    messagebox.showerror('Error changing default app association', f'Error changing default app association.\nProb: {I}', addNewEntryWn, MainPID=PID )
+                    LOGGER.addRawLog(I, [GLOBAL_VARS.USER_CONFIG, CurrentConfig, extension, app], "Error in adding new default app associations")
+                    messagebox.showerror('Error creating default app association', f'Error creating default app association.\nProb: {I}', addNewEntryWn, MainPID=PID )
             addNewEntryWn = tkinter.Toplevel(self.settingsWindow)
             PID = generatePID(DIALOGUE_BOXES)
             dwm.createTopFrame(addNewEntryWn, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "settings", "Add new app association wizard", PID , associatePIDProcess=self.PID)
@@ -592,6 +640,7 @@ class settings():
                     CurrentConfig.update({i: app})
                     GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "DEFAULTAPPASSOCIATION", CurrentConfig)
                 except Exception as I:
+                    LOGGER.addRawLog(I, [GLOBAL_VARS.USER_CONFIG, CurrentConfig, i, app], "Error changing default app association")
                     messagebox.showerror('Error changing default app association', f'Error changing default app association.\n{I}', self.settingsWindow, MainPID=self.PID )
             comboBox = ttk.Combobox(innerFrame, values=GLOBAL_VARS.APPS_LIST, state='readonly', background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
             comboBox.bind("<<ComboboxSelected>>", lambda e=None: changeDefAppEvent(comboBox.get()))
@@ -642,16 +691,15 @@ class AppIconManager:
         GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS= 0
         for frame in dict(GLOBAL_VARS.DESKTOP_FRAME.children).values():
             frame.destroy()
-        print(GLOBAL_VARS.APPS_FRAME.children)
         for button in dict(GLOBAL_VARS.APPS_FRAME.children).values():
             if not isinstance(button, tkinter.Button): continue
             button.destroy()
         for app, param in GLOBAL_VARS.PINNED_APPS_DESKTOP:
             try: AppIconManager.createDesktopAppIcon(f"{app}", f"{app}", False, param)
-            except Exception as EXP: messagebox.showerror("Error pinning app to desktop", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
+            except Exception as EXP:  messagebox.showerror("Error pinning app to desktop", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
         for app in GLOBAL_VARS.PINNED_APPS:
             try: AppIconManager.pinTaskbarApp(f"{app}",False)
-            except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
+            except Exception as EXP: LOGGER.addRawLog(EXP, [app], "Error pinning app to taskbar"); messagebox.showerror("Error pinning app to taskbar", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
     @staticmethod
     def createRunningAppTaskbarIcon(app: str, PID:int, T_BG=None, T_FG=None, username="defaultuser0"):
         ROOT = GLOBAL_VARS.ROOT_WINDOW
@@ -698,7 +746,7 @@ class AppIconManager:
             apList[1].remove([appName, param])
             GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
             GLOBAL_VARS.PINNED_APPS_DESKTOP.remove([appName, param])
-        except Exception: pass
+        except Exception as EXP: LOGGER.addRawLog(EXP, [appName, param], "Error removing app from desktop");
         AppIconManager.refreshDesktop()
 
     @staticmethod
@@ -751,7 +799,7 @@ class AppIconManager:
             apList[0].remove(appName)
             GLOBAL_VARS.PINNED_APPS.remove(appName)
             GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
-        except: pass
+        except Exception as EXP: LOGGER.addRawLog(EXP, [appName], "Error removing app from taskbar")
         AppIconManager.refreshDesktop()
 
 class ShutdownMenu():
@@ -798,16 +846,24 @@ class ShutdownMenu():
     def shutdown(self):
         try:
             if GLOBAL_VARS.USERNAME == "GUEST": FILE_SYSTEM.deleteFiles([[f"{CWD}/Users/GUEST"]])
-        finally: self.waitUntillTaskFinishes(lambda: os._exit(0))
+        finally: 
+            LOGGER.addTextLog("Shutdown initiated")
+            LOGGER.updateFileLogs()
+            self.waitUntillTaskFinishes(lambda: os._exit(0))
     def restart(self):
         if self.safeModeRestartVar.get() == 1:
             try: GLOBAL_VARS.ROOT_WINDOW.destroy()
             finally:
                 def sigma(): os.system(f"""{PYTHON_COMMAND_ARG} "Windows 11.py" -safemode """)
+                LOGGER.addTextLog("Shutdown initiated")
+                LOGGER.updateFileLogs()
                 self.waitUntillTaskFinishes(sigma)
         else:
             try: GLOBAL_VARS.ROOT_WINDOW.destroy()
-            finally: os.system(f"""{PYTHON_COMMAND_ARG} "Windows 11.py" """)
+            finally: 
+                LOGGER.addTextLog("Shutdown initiated")
+                LOGGER.updateFileLogs()
+                os.system(f"""{PYTHON_COMMAND_ARG} "Windows 11.py" """)
     def logout(self):
         for apps in dict(GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME]).keys():
             dwm.focusOut(apps)
@@ -853,6 +909,7 @@ class GUIButtonCommand:
                 if appImport.returnInformation(PID)["state"] == "normal": appImport.focusOut(PID)
                 else: appImport.focusIn(PID)
             except Exception as EXCEPTION:
+                LOGGER.addRawLog(EXCEPTION, [appImport, GLOBAL_VARS.APP_INSTANCE], "Error in focus in/out")
                 messagebox.showerror("Error in focus in/out", EXCEPTION, GLOBAL_VARS.ROOT_WINDOW)
     @staticmethod
     def FOCUS_scrShotPreview(PID, realApp, event: tkinter.Event):
@@ -861,11 +918,18 @@ class GUIButtonCommand:
             oldFocus = dwm.getFocus(PID)
             dwm.focusIn(PID)
             wnToFocus = dwm.returnWindow(PID)
-        except: 
-            appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{realApp}")
-            oldFocus = appImport.returnInformation(PID)["state"]
-            appImport.focusIn(PID)
-            wnToFocus = appImport.INSTANCES[PID]
+        except Exception as EXP:
+            LOGGER.addRawLog(EXP, [PID, realApp], "Unable to use DWM for focusing window - either app has no DWM or it is hung up")
+            try:
+                appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{realApp}", False)
+                oldFocus = appImport.returnInformation(PID)["state"]
+                appImport.focusIn(PID)
+                wnToFocus = appImport.INSTANCES[PID]
+            except Exception as exp: 
+                wnToFocus = None
+                LOGGER.addRawLog(exp, [PID, realApp], "Unable to use normal app import focus too. either app has no implementation of method returnInformation or app is hung")
+        if wnToFocus == None: return
+        
         x = wnToFocus.winfo_x()
         y = wnToFocus.winfo_y()
         width = wnToFocus.winfo_width()
@@ -880,13 +944,14 @@ class GUIButtonCommand:
         try:
             image = ImageTk.PhotoImage(ImageGrab.grab(bbox=(x, y, x + width, y + height)).resize(tuple((350, 100))))
             GLOBAL_VARS.ROOT_WINDOW.E_IMG = image
-        except Exception as EXP: exp=str(EXP)+"\n"; imageLoaded = False
+        except Exception as EXP: LOGGER.addRawLog(EXP, [image], "Error in creating screen snip for window preview (ImageGrab.grab())"); exp=str(EXP)+"\n"; imageLoaded = False
         else:  imageLoaded = True
         ttl = None
         try:
             dwm.setFocus(PID, oldFocus)
             ttl = dwm.title(PID=PID)
-        except:
+        except Exception as EXP:
+            LOGGER.addRawLog(EXP, [realApp], f"Unable to contact DWM for PID {PID}. Either app doesn't support dwm or something is wrong")
             appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{realApp}")
             appImport.INSTANCES[PID].update()
             appImport.INSTANCES[PID].state(newstate=oldFocus)
@@ -916,27 +981,22 @@ class GUIButtonCommand:
                 if pid in dict(RunningAppsList[1])[j].keys():
                     del RunningAppsList[1][j][pid]
                     break
-        except Exception as EXP: print(f"Error while handling exits for PID {pid}\nReason: {EXP}\nSkipping Exit Handles.")
+        except Exception as EXP: print(f"Error while handling exits for PID {pid}\nReason: {EXP}\nSkipping Exit Handles."); LOGGER.addRawLog(EXP, [pid, RunningAppsList], "Error while handling exits for given PID")
     @staticmethod
     def currentTime(*args):  
         cr_time = None
+
         if GLOBAL_VARS.USER_CONFIG["CLOCK-WIDGET"] == 0:
-            def recurringClockFunction(e=None):
-                nonlocal cr_time
-                cr_time = time.strftime("%H:%M:%S %p")
-                GLOBAL_VARS.CLOCK_LABEL = tkinter.Label(GLOBAL_VARS.ROOT_WINDOW, text=cr_time, background=GLOBAL_VARS.THEME_WINDOW_BG,
-                                        foreground=GLOBAL_VARS.THEME_FOREGROUND)
-                GLOBAL_VARS.CLOCK_LOOP_ID = GLOBAL_VARS.CLOCK_LABEL.after(1000, recurringClockFunction)
-                GLOBAL_VARS.CLOCK_LABEL.grid(row=0, column=2, sticky="ne")
             GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 1)
-            recurringClockFunction()
+            GUIButtonCommand.clockWidgetPinning()
         else:
             try: 
                cr_time = None
+               GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
                GLOBAL_VARS.CLOCK_LABEL.after_cancel(GLOBAL_VARS.CLOCK_LOOP_ID)
                GLOBAL_VARS.CLOCK_LABEL.destroy()
-               GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "CLOCK-WIDGET", 0)
-            except Exception as E: messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}", GLOBAL_VARS.ROOT_WINDOW)
+               
+            except Exception as E: LOGGER.addRawLog(E, [cr_time, GLOBAL_VARS.CLOCK_LABEL, GLOBAL_VARS.USER_CONFIG], "Error destroying clock widget"); messagebox.showerror("Can't destroy clock widget!", f"Can't destroy clock widget due to the following reason: \n {E}", GLOBAL_VARS.ROOT_WINDOW)
     @staticmethod
     def standardisedContextMenuPopup(contextMenuObj: tkinter.Menu,  event=None, *args):
         """ the context menu popup"""
@@ -946,11 +1006,10 @@ class GUIButtonCommand:
             contextMenuObj.grab_set()
             contextMenuObj.grab_release()
         except Exception as PROBLEM:
-            print(PROBLEM)
+            LOGGER.addRawLog(PROBLEM, [contextMenuObj, event], "Can't do tk_popup on context menu")
     @staticmethod
     def OSContextMenuPopup(event: tkinter.Event=None, *args):
         try:
-
             if (GLOBAL_VARS.ROOT_WINDOW.winfo_containing(event.x_root, event.y_root)).identifier == "taskbar": GLOBAL_VARS.TASKBAR_CONTEXT_MENU.focus()
             elif str((GLOBAL_VARS.ROOT_WINDOW.winfo_containing(event.x_root, event.y_root)).identifier) == "desktopappbtn":
                 widget = (GLOBAL_VARS.ROOT_WINDOW.winfo_containing(event.x_root, event.y_root))
@@ -961,13 +1020,29 @@ class GUIButtonCommand:
             else:
                 try: GLOBAL_VARS.DESKTOP_CONTEXT_MENU.tk_popup(event.x_root, event.y_root, 0)
                 finally: GLOBAL_VARS.DESKTOP_CONTEXT_MENU.grab_release()
-        except  Exception:  pass
+        except  Exception as EXP: LOGGER.addRawLog(EXP, [event], "Can't open context menu")
     @staticmethod
     def getWallpaperImageResized(path: str):
         image = Image.open(path)
         resizedImage = image.resize((GLOBAL_VARS.ROOT_WINDOW.winfo_screenwidth(), GLOBAL_VARS.ROOT_WINDOW.winfo_screenheight()))
         actualImage= ImageTk.PhotoImage(resizedImage)
         return actualImage
+    @staticmethod
+    def clockWidgetPinning():
+        def recurringClockFunc():
+            cr_time = time.strftime("%H:%M:%S %p")
+            
+            GLOBAL_VARS.CLOCK_LABEL.configure(text=cr_time)
+            GLOBAL_VARS.CLOCK_LOOP_ID = GLOBAL_VARS.CLOCK_LABEL.after(1000, recurringClockFunc)
+            
+        try:
+            if GLOBAL_VARS.USER_CONFIG["CLOCK-WIDGET"] == 1: 
+                cr_time = time.strftime("%H:%M:%S %p")
+                GLOBAL_VARS.CLOCK_LABEL = tkinter.Label(GLOBAL_VARS.TASKBAR_FRAME, text=cr_time, background=GLOBAL_VARS.THEME_WN_CLR,
+                                        foreground=GLOBAL_VARS.THEME_FOREGROUND, justify="right", anchor="e")
+                GLOBAL_VARS.CLOCK_LABEL.grid(row=0, column=6, sticky="E")
+                recurringClockFunc()
+        except Exception as EXP: LOGGER.addRawLog(EXP, [GLOBAL_VARS.CLOCK_LABEL], "Unable  to pin clock widget")
 
 def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig= None,):
     PID = random.randint(5000, 9999)
@@ -1164,6 +1239,7 @@ class TaskManager:
         username = "".join(boi for boi in string.split(":")[1:])
         try: dwm.close(PID=int(application))
         except Exception as EXP:
+            LOGGER.addRawLog(EXP, [application], "Unable to close app by DWM. Either app isn't managed by DWM or app is hung")
             try:
                 appToEnd = str(GLOBAL_VARS.RUNNING_APPS[username][int(application)])
                 appToEnd.replace(f"<<<PID: {application}>>>", "").replace(f"<<<USERNAME: {username}>>>")
@@ -1172,10 +1248,11 @@ class TaskManager:
                 appImport.endTask(int(application))
                 del GLOBAL_VARS.RUNNING_APPS[username][int(application)]
             except Exception as E:
+                LOGGER.addRawLog(E, [appToEnd, appImport, GLOBAL_VARS.APP_INSTANCE, GLOBAL_VARS.RUNNING_APPS], "Unable to close app via import and endTask(). File doesn't have an endTask() function implemented?")
                 try: 
                     dwm.MANAGED_DWM_INSTANCES[int(application)][2].destroy()
                     del GLOBAL_VARS.RUNNING_APPS[username][int(application)]
-                except Exception as U: messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {U}\nFrom\n{E}\nFrom\n{EXP}", GLOBAL_VARS.ROOT_WINDOW)
+                except Exception as U: LOGGER.addRawLog(U, [dwm.MANAGED_DWM_INSTANCES, GLOBAL_VARS.RUNNING_APPS], "Unable to close app via force DWM exiting.??"); messagebox.showerror("Error ending application", f"Error ending {application}. \nProblem: {U}\nFrom\n{E}\nFrom\n{EXP}", GLOBAL_VARS.ROOT_WINDOW)
 
 class PW11UserCreation:
     """This can be used for accounts panel in settings menu AND as an OOBE agent"""
@@ -1338,27 +1415,17 @@ def main():
                 appNameReal = GUIButtonCommand.AppImportNameCheck(widget.processInfo[1])
                 try: widget.configure(text=dwm.title(None, widget.processInfo[0]))
                 except:
-                    appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{appNameReal}")
+                    appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{appNameReal}", False)
                     widget.configure(text=appImport.returnInformation(widget.processInfo[0])['title'])
             except Exception as EXP: 
-                print("ERROR!!!", EXP)
                 if widget.RETRIES == 10: 
                     currentTitle = widget.cget("text")
                     widget.configure(text=f"{currentTitle} (Not Responding)")
                 if widget.RETRIES > 20:
+                    LOGGER.addRawLog(EXP, [widget, widget.processInfo], "App took too long to respond")
                     widget.destroy() # That means app took too long to respond!. 
                 widget.RETRIES += 1
     ROOT_WINDOW.after(300, runningTaskbarAppsLOOP)
-    def recurringClockFunc():
-            cr_time = time.strftime("%H:%M:%S %p")
-            GLOBAL_VARS.CLOCK_LABEL = tkinter.Label(GLOBAL_VARS.TASKBAR_FRAME, text=cr_time, background=GLOBAL_VARS.THEME_WN_CLR,
-                                    foreground=GLOBAL_VARS.THEME_FOREGROUND, justify="right", anchor="e")
-    
-            GLOBAL_VARS.CLOCK_LOOP_ID = GLOBAL_VARS.CLOCK_LABEL.after(1000, recurringClockFunc)
-            GLOBAL_VARS.CLOCK_LABEL.grid(row=0, column=6, sticky="E")
-    try:
-        if GLOBAL_VARS.USER_CONFIG["CLOCK-WIDGET"] == 1: recurringClockFunc()
-    except: pass
     appsFrame = tkinter.Frame(GLOBAL_VARS.TASKBAR_FRAME, background=GLOBAL_VARS.THEME_WN_CLR, border=5)
     img = Image.open(os.path.join(CWD, "ProgramFiles/Icons/start.png"))
     img = img.resize((int(img.width/2), int(img.height/2)))
@@ -1389,7 +1456,7 @@ def main():
     GLOBAL_VARS.TASKBAR_FRAME.grid(row=0, column=0, sticky="NEW", )
     desktopFrame.grid(row=1, column=0, sticky="NW")
     desktopFrame.lift()
-    
+    GUIButtonCommand.clockWidgetPinning()
     ROOT_WINDOW.attributes('-fullscreen', True)
     ROOT_WINDOW.bind("<Escape>", safeModePREPTask)
     AppIconManager.refreshDesktop()
@@ -1617,17 +1684,17 @@ def autoRecoveryEnv() -> None:
 def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
     def a1():
         def resetConfigurations():
-            userToreset = input("Enter the GLOBAL_VARS.USERNAME of the user to reset the user too... [Type in defaultuser0 to only do system wise reset]")
+            userToreset = input("Enter the username of the user to reset the user too... [Type in defaultuser0 to only do system wise reset]")
             if userToreset.lower() != "defaultuser0":
                 try:
                     with shelve.open(f"Users/{userToreset}/USER_CONFIG") as deleteIt: deleteIt.clear()
-                except Exception as exp: print(f"ERROR OCCURED While resetting...!Error: {exp}")
+                except Exception as exp: LOGGER.addRawLog(exp, [userToreset], "Error while resetting for user"); print(f"ERROR OCCURED While resetting...!Error: {exp}")
             try:
                 shelveFilesToDelete = [f"Users/{userToreset}/history", f"Users/{userToreset}/IPChat/_serverConfig", f"Users/{userToreset}/IPChat/serversList"]
                 for shelveToDelete in shelveFilesToDelete:
                     try:
                         with shelve.open(shelveToDelete) as deleteIt: deleteIt.clear()
-                    except Exception: pass
+                    except Exception as EXP: LOGGER.addRawLog(EXP, [shelveFilesToDelete], "Unable to clear shelves")
             except Exception as exp: print(f"ERROR OCCURED While resetting...!Error: {exp}")
         print("=" * int(os.get_terminal_size()[0]))
         if NETWORKING:
@@ -1640,7 +1707,7 @@ def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
                     with open("Windows 11.py", "w") as writeTo:
                         try: writeTo.write(Windows11MainDownload.content.decode(encoding="UTF-8"))
                         except UnicodeEncodeError as UER:  print(f"UnicodeDecodeError occured while repairing 'Windows 11.py'\n--MSG:{UER}")
-                except Exception as PROBLEM: print(f"Repairing Failed!\n<<<REASON: {PROBLEM}")
+                except Exception as PROBLEM: LOGGER.addRawLog(PROBLEM, [onlineOrOffline], "Error doing online repairing"); print(f"Repairing Failed!\n<<<REASON: {PROBLEM}")
                 finally: print("=" * int(os.get_terminal_size()[0]))
             elif onlineOrOffline == "N" or onlineOrOffline == "n":
                 print("Resetting your system!")
@@ -1678,7 +1745,7 @@ def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
         print("=" * int(os.get_terminal_size()[0]))
         nonlocal NETWORKING
         try: requests.get("http://theoldnet.com")
-        except Exception as prob: print(f"Operation failed!\nReason: {prob}")
+        except Exception as prob: LOGGER.addRawLog(prob, [requests.get], "Unable to fetch website theoldnet.com, probably due to lack of network."); print(f"Operation failed!\nReason: {prob}")
         else: NETWORKING = True ; print("Enabled networking!")
         print("=" * int(os.get_terminal_size()[0]))
 
@@ -1697,6 +1764,7 @@ def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
         global SYS_CONFIG
         SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "CBSRESTARTATTEMPT", 0)
     except Exception as PRB:
+        LOGGER.addRawLog(PRB, [autoRecoveryEnv, forceNoARENV], "Unable to launch auto recovery environment")
         try:
             if forceNoARENV and forceNoBootRec: raise NotImplementedError("Skipping attempt to launch fullscreen command prompt")
             def sendCommand(e=None):
@@ -1722,6 +1790,7 @@ def safeMode(forceNoARENV=False, forceNoBootRec=False) -> None:
 Or else, type in the command 'restart' and your system will reboot""")
             root.mainloop()
         except Exception as PRB:
+            LOGGER.addRawLog(PRB, [forceNoARENV, forceNoBootRec, cmdInstance], "Unable to launch full screen command prompt!")
             print(f"Cannot launch safe mode UI, going full CLI!\n PRB: {PRB}")
             time.sleep(5)
             try:
@@ -1776,11 +1845,17 @@ class OOBE:
             if choice: self.MAINROOT.destroy()
             return
 
+def _bsodInStartup(func, supportCode):
+    if SYS_CONFIG["CBSRESTARTATTEMPT"] > 3:
+            try: autoRecoveryEnv()
+            except Exception as EXP: LOGGER.addRawLog(EXP, [SYS_CONFIG["CBSRESTARTATTEMPT"]], "Unable to launch auto recovery env - activating safeMode()"); safeMode()
+    else: bsod(func, supportCode)
+
 if __name__ == "__main__":
     arguements = sys.argv[1:]
-    if not os.access("ProgramFiles", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
+    if not os.access("ProgramFiles", os.F_OK): _bsodInStartup(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
     else:
-        if not os.access("ProgramFiles/commandprompt.py", os.F_OK) or not os.access("ProgramFiles/errorHandler.py", os.F_OK): bsod(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
+        if not os.access("ProgramFiles/commandprompt.py", os.F_OK) or not os.access("ProgramFiles/errorHandler.py", os.F_OK): _bsodInStartup(login, "MODULE_NOT_FOUND_ERROR('The required modules inside ProgramFiles folder doesn't exist!')")
         else:
             if SYS_CONFIG["SETUP_IN_PROGRESS"]:
                 createUserAccount("defaultuser0", "SYSTEM", 0, True, ["Black", "White", "Black"])
@@ -1822,12 +1897,13 @@ if __name__ == "__main__":
             else:
                 try:
                     import tkinter
-                    from ProgramFiles.errorHandler import messagebox
+                    #from ProgramFiles.errorHandler import messagebox
                     import requests
                     if SYS_CONFIG["CBSRESTARTATTEMPT"] > 3:
                         try: autoRecoveryEnv()
-                        except: safeMode()
+                        except Exception as EXP: LOGGER.addRawLog(EXP, [SYS_CONFIG["CBSRESTARTATTEMPT"]], "Unable to launch auto recovery env - activating safeMode()"); safeMode()
                 except Exception as PROBLEM:
+                    LOGGER.addRawLog(PROBLEM, [SYS_CONFIG], "Unable to import a module - forcing safeMode()")
                     try:
                         import platform
                         if platform.system() == "Windows": os.system("cls")
@@ -1840,4 +1916,4 @@ if __name__ == "__main__":
                     try: 
                         dwm.MANAGED_DWM_INSTANCES[0] = [None, None, GLOBAL_VARS, None, None, None]
                         login()
-                    except Exception as EXP: bsod(login, f"LOGIN_FAILURE('{EXP}')")
+                    except Exception as EXP: _bsodInStartup(login, f"LOGIN_FAILURE('{EXP}')")
