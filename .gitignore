@@ -32,3 +32,8 @@ mah-wallpaper-png.png:Zone.Identifier
 /bin/
 pyvenv.cfg
 lib64
+ProgramFiles/AllRefactoredStuff/
+ProgramFiles/SYS_CONFIG.*
+Users/*
+Windows.txt
+.vscode
