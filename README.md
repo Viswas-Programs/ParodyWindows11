@@ -28,6 +28,10 @@ You can then change these settings, some of them through the Settings app in GUI
 
 
 SOME KNOWN BUGS: 
-When you're in Linux, make sure that when you're working on a window with textboxes, minimize all other windows, and work on that window only, and if there are multiple text boxes, click on all of them in sequential order, then drag the window around. Repeat this, then your desired text box will accept input. This is a bug that I don't know of a way to fix. It's due to Linux not giving text-bindings to rootoverrideredirect'ed windows so easily without a focus_force which breaks multi-tasking functionalities. (In Windows you don't need to worry about it, it works just fine there.)
+In Linux, keyboard inputs to text boxes and shortcut keys to DWM-Managed windows are broken and inconsistent. This is a bug that I don't know of a way to fix. It's due to Linux not giving text-bindings to rootoverrideredirect'ed windows so easily without a focus_force which breaks multi-tasking functionalities. (In Windows you don't need to worry about it, it works just fine there.)
+
+Some distros might outright block input to the DWM-Managed window, while some other distros like Linux Mint allow input but in a whacky manner. When you move the mouse randomly through the screen (To mess with the focus of widgets) then hover over your desired window and textbox and then start typing, it should work. This is really inconsistent behaviour. 
+
+Will try to fix it but I don't think it's easy since it's a problem that's with the way Linux manages windows that isn't under it's own window manager's control
 
 Have a great time playing around!
