@@ -69,4 +69,5 @@ class LabelledEntryBox():
     def configure(self, *args, **kwargs): self.FRAME.configure(*args, **kwargs)
     def update(self): self.FRAME.update(); self.entryBox.update(); self.label.update()
     def update_idletasks(self): self.FRAME.update_idletasks(); self.entryBox.update_idletasks(); self.label.update_idletasks()
+    def get(self): return self.entryBox.get()
 

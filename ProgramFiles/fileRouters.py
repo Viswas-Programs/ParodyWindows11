@@ -44,8 +44,8 @@ def handleFiles(fileName: str, userConfig: str, USER_CONFIG: shelve):
         print(fileExtension)
         try:
             app: str= defaultProgramFileAssociations["DEFAULTAPPASSOCIATION"].get(fileExtension)
-            print(app, fileExtension, defaultProgramFileAssociations["DEFAULTAPPASSOCIATION"])
-            W11._AppLauncherForExternalApps(app,USER_CONFIG,  fileName, userConfig)
+            if app == None: raise Exception("Manually raised: No app detected for the given file extension: " + fileExtension)
+            callHost._sendCallToPID(1, 0, {"method": "EXEC_ACTION", "LAUNCH_APP": {"APP_NAME": app, "PARAMS": fileName} })
         except Exception as I: 
             print(I)
             openWithSettings(None, fileName, USER_CONFIG, userConfig)

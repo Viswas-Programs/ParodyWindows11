@@ -79,12 +79,10 @@ try:
     import tkinter
     import tkinter.ttk as ttk
     import time
-    from tkinter import colorchooser
     import random
     import ProgramFiles.tooltips as tooltips
     from PIL import Image, ImageTk, ImageGrab
     import psutil
-    from ProgramFiles.fileaskhandlers import askopenfilename
     from ProgramFiles.buttons import IconButton, SidebarButtons
     import platform
     from ProgramFiles import entryWidget
@@ -130,6 +128,7 @@ class PW11GlobalVars():
     Contains all the variables in use for the shell's functions. These act as replacement to global variables.
     """
     def __init__(self):
+        self.SPECIAL_PIDS = [0, 1]
         self.ROW_COUNT_NOTIFICATION_WINDOW = 0
         self.ROW_COUNT_DESKTOP_ICONS = 0
         self.COLUMN_COUNT_DESKTOP_ICONS = 0
@@ -183,8 +182,9 @@ SAMPLE REQUEST:
         "GETATTR": <Attr from GLOBAL_VARS>,
     }
         =-=-=-=-= GET METHOD CODE END =-=-=-=-=
-        =-=-=-=-= EXEC_ACTIONS METHOD =-=-=-=-=
+        =-=-=-=-= EXEC_ACTION  METHOD =-=-=-=-=
     "messageContent": {
+        "method": "EXEC_ACTION",
         "LAUNCH_APP": {
             "APP_NAME": <AppName>,
             "PARAMS": <Params to launch the app with>
@@ -213,7 +213,7 @@ def messageHandler(messageContent: dict):
     from ProgramFiles import callHost
     replyToPID = messageContent["SenderPID"]
     messageConts = messageContent["messageContent"]
-    reply = {"STATE": 404, "messageContent": {}}
+    reply = {"STATE": 200, "messageContent": {}}
     formReply = reply["messageContent"]
     if messageConts["method"] == "GET":
         
@@ -246,7 +246,7 @@ def messageHandler(messageContent: dict):
             except: formReply["CREATE_DESKTOP_ICON"] = False
             else: formReply["CREATE_DESKTOP_ICON"] = True
 
-    callHost._sendCallToPID(0, replyToPID, formReply)    
+    if (not (replyToPID in GLOBAL_VARS.SPECIAL_PIDS)): callHost._sendCallToPID(0, replyToPID, formReply)    
 GLOBAL_VARS.MESSAGES_CALLBACK = messageHandler
 def getUsername(): return GLOBAL_VARS.USERNAME
 def createUserAccount(username: str, password: str, userNumber: int, overwriteConfigs=True, THEME=["Black", "White", "Black"]):
@@ -509,7 +509,8 @@ class settings():
         self.SHOWN_PERSONALIZATION = True
         def changeThemeAspect(aspect: str):
             global SYS_CONFIG
-            colorToUse = colorchooser.askcolor(title=f"Select {aspect} colour!")[1]
+            from ProgramFiles import colorchooser
+            colorToUse = colorchooser.askcolor(title=f"Select {aspect} colour!", HostPID=self.PID)[1]
             if colorToUse == None: return
             labelToChange = globalVarChange = None
             if aspect == "background": labelToChange, GLOBAL_VARS.THEME_WINDOW_BG = crBg, colorToUse; globalVarChange = GLOBAL_VARS.THEME_WINDOW_BG; setTheme(T_BG=GLOBAL_VARS.THEME_WINDOW_BG)
@@ -519,6 +520,7 @@ class settings():
             if systemChangeTheme.get(): SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
             GLOBAL_VARS.ROOT_WINDOW.update()
         def changeWallpaper():
+            from ProgramFiles.fileaskhandlers import askopenfilename
             nonlocal wallpaperText
             wallpaperChoose = askopenfilename("Open a wallpaper file (png)", (("PNG Files", "*.png"), ("All Files", "*.*")))
             img = GUIButtonCommand.getWallpaperImageResized(wallpaperChoose)
@@ -1002,7 +1004,6 @@ class GUIButtonCommand:
         """ the context menu popup"""
         try:
             contextMenuObj.tk_popup(event.x_root, event.y_root, 0)
-            #print(contextMenuObj.grab_status())
             contextMenuObj.grab_set()
             contextMenuObj.grab_release()
         except Exception as PROBLEM:
@@ -1131,7 +1132,6 @@ class StartMenu:
         self.scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.BOTH, expand=True, anchor="e")
         self._RSideFrame = tkinter.Frame(self.startMenuFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, width=self.width/2, height=self.height)
         self._RSideFrame.grid(row=0, column=1)
-        #self._RSideFrame = Scrollable(self._RSideFrame, self.width/2, self.height/2, False)
         self.selectFolders = tkinter.Frame(self._RSideFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, height=self.height, width=self.width/2)
         self.selectFolders.grid(row=0, column=0)
         self.selectFolders = Scrollable(self.selectFolders, self.width/2, self.height, False)
@@ -1336,9 +1336,7 @@ class PW11UserCreation:
         
     def createNewUserPanel(self,):
         usrFrame = entryWidget.LabelledEntryBox(self.RSide_UserContentFrame, "Username: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        #usrLbl = tkinter.Label(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=username, justify="center")
         usrFrame.grid(row=1, column=0)
-        #passwordTxt = entryWidget.Entry(self.RSide_UserContentFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, show="*")
         passwordFrame = entryWidget.LabelledEntryBox(self.RSide_UserContentFrame, "Password: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
         passwordFrame.grid(row=2, column=0)
 
@@ -1438,7 +1436,6 @@ def main():
     appsFrame.grid(row=0, column=1, sticky="n")
     FILE_SYSTEM.RunAppsFrame = runningAppsFrame = GLOBAL_VARS.RUNNING_APPS_FRAME = tkinter.Frame(GLOBAL_VARS.TASKBAR_FRAME, background=GLOBAL_VARS.THEME_WN_CLR, padx=10, border=5)
     runningAppsFrame.grid(row=0, column=4, sticky="W")
-    #for i in range(2, GLOBAL_VARS.TASKBAR_FRAME.winfo_width()+1):
     GLOBAL_VARS.TASKBAR_FRAME.columnconfigure(5, weight=1)
     notificationsButton = tkinter.Button(GLOBAL_VARS.TASKBAR_FRAME, text="Notifications (0)", background=GLOBAL_VARS.THEME_WN_CLR, foreground=GLOBAL_VARS.THEME_FOREGROUND, command= lambda: GLOBAL_VARS.NOTIFICATIONS.showNotificationsList(), justify="right", anchor="e",)
     notificationsButton.grid(row=0, column=7, sticky="E", padx=5)
@@ -1460,9 +1457,6 @@ def main():
     ROOT_WINDOW.attributes('-fullscreen', True)
     ROOT_WINDOW.bind("<Escape>", safeModePREPTask)
     AppIconManager.refreshDesktop()
-    #for app in GLOBAL_VARS.PINNED_APPS:
-    #    try: AppIconManager.pinTaskbarApp(app, False)
-    #    except Exception as EXP: messagebox.showerror("Error pinning app to taskbar", f"Error pinning {app} in the taskbar.\nPROB:{EXP}", root=ROOT_WINDOW)
     startUpTasks(GLOBAL_VARS.USER_CONFIG, ROOT_WINDOW)
     FILE_SYSTEM.ROOT = ROOT_WINDOW
     for app in dict(GLOBAL_VARS.RUNNING_APPS)[GLOBAL_VARS.USERNAME].keys():
@@ -1489,15 +1483,7 @@ def loginVerification(userNameText: str, passwordText: tkinter.Entry, userNum: i
                     try: main()
                     except Exception as EXP: bsod(main, f"DESKTOP_LAUNCH_ERROR('{EXP}')")
                 else: messagebox.showerror(None, None, loginWindow, True, "LOGIN_INCORRECT")
-        else:
-            loginWindow.destroy()
-            GLOBAL_VARS.USERNAME = "GUEST"
-            try: os.mkdir("Users/GUEST")
-            except FileExistsError: pass
-            try: main()
-            except Exception as EXP: bsod(main, f"DESKTOP_LAUNCH_ERROR('{EXP}')")
-            finally: FILE_SYSTEM.__del__()
-    except Exception as EXP: messagebox.showerror("loginVerification Error!", EXP)
+    except Exception as EXP: messagebox.showerror("loginVerification Error!", EXP); LOGGER.addRawLog(EXP, [loginVerification, userNameText, userNameText.get(), userNameText])
 
 DARK_COLOURS = ["black", 'brown', 'blue', 'green', 'red', 'violet', 'purple', 'dark blue', 'dark green',
                 'dark red', 'dark brown', ]
@@ -1606,36 +1592,12 @@ def login():
                 UserButton = tkinter.Button(userBtnFrame, text=e, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=pfpImage, compound="top", command=lambda f=e, g=pfpFilepath, h=userNum, i=perUsrConfig["WALLPAPER"], j=perUsrConfig["THEME"][2], k=perUsrConfig["THEME"][1]:selectUser(f, g, h, i, j, k))
                 UserButton.IMAGE = pfpImage
                 UserButton.grid(row=0, column=balls)
-        #msg = tkinter.Label(loginWindow, text="Enter your Username: ", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        #msg.grid(row=0, column=0)
-        #userNameText = tkinter.Entry(loginWindow, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        #userNameText.grid(row=0, column=1)
-        #userNameText.focus()
-        #userNameText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
-        #msg2 = tkinter.Label(loginWindow, text="Enter your Password", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        #msg2.grid(row=1, column=0)
-        #passwordText = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG, show="*")
-        #passwordText.grid(row=1, column=1)
-        #passwordText.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
-        #def passwordTextFocus(*e): passwordText.focus()
-        #userNameText.bind("<Tab>", passwordTextFocus)
-        #userNameText.bind("<Return>", lambda: passwordTextFocus)
-        #msg3 = tkinter.Label(loginWindow, text="Enter your user number", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
-        #userNum = tkinter.Entry(loginWindow, foreground=GLOBAL_VARS.THEME_FOREGROUND, background=GLOBAL_VARS.THEME_WINDOW_BG)
-        #userNum.grid(row=2, column=1)
-        #userNum.configure(insertbackground=GLOBAL_VARS.THEME_FOREGROUND, selectbackground=GLOBAL_VARS.THEME_FOREGROUND, selectforeground=GLOBAL_VARS.THEME_WINDOW_BG)
-        #msg3.grid(row=2, column=0)
-        #userNum.bind("<Return>", lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
-        #loginBtn = tkinter.Button(loginWindow, text="Login", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
-        #                            command=lambda e=None: loginVerification(userNameText, passwordText, userNum, loginWindow))
-        #loginBtn.grid(row=3, column=1)
         shutdownBtn = tkinter.Button(loginWindow, text="Shutdown", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND,
                                     command=lambda: ShutdownMenu(loginWindow))
-        #shutdownBtn.grid(row=0, column=GLOBAL_VARS.MAX_COLUMN_DESKTOP)
         btnWidth = loginWindow.winfo_screenwidth()/15
         btnHeight= loginWindow.winfo_screenheight()/15
         shutdownBtn.place(x=loginWindow.winfo_screenwidth()-btnWidth-15, y=loginWindow.winfo_screenheight()-btnHeight-15, width=btnWidth, height=btnHeight)
-        #shutdownBtn.place(x=1000, y=1000)
+
 
     loginWindow.bind("<Escape>", safeModePREPTask)
     loginWindow.mainloop()
@@ -1896,9 +1858,7 @@ if __name__ == "__main__":
                     
             else:
                 try:
-                    import tkinter
-                    #from ProgramFiles.errorHandler import messagebox
-                    import requests
+                    import tkinter, requests
                     if SYS_CONFIG["CBSRESTARTATTEMPT"] > 3:
                         try: autoRecoveryEnv()
                         except Exception as EXP: LOGGER.addRawLog(EXP, [SYS_CONFIG["CBSRESTARTATTEMPT"]], "Unable to launch auto recovery env - activating safeMode()"); safeMode()

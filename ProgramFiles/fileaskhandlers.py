@@ -1,5 +1,6 @@
 import tkinter
 from tkinter import ttk
+from ProgramFiles.treeview import Treeview
 import os
 from ProgramFiles.errorHandler import messagebox
 from ProgramFiles import callHost
@@ -14,6 +15,15 @@ THEME_WINDOW_BG, THEME_FOREGROUND = ["Black", "white"]
 RETURN_VALUE = None
 PROCESS_RUNNING = False
 INSTANCES = {}
+KNOWN_FILETYPES = {
+    "py": "Python File",
+    "txt": "Text File",
+    "png": "PNG Image",
+    "jpeg": "JPEG Image",
+    "jpg": "JPG Image",
+    "conf": "ParW11 Credential File"
+}
+
 def main(MainPID=None, *args):
     PID = callHost.getRangeToGenPID(callHost.FILEASK)
     callHost.addToRunningAppsList(PID, f"FileAskDialogueHost - {args[0]}")
@@ -45,23 +55,39 @@ def main(MainPID=None, *args):
             filepath = path
             addressBar.insert(tkinter.END, path)
             filesInFolder = os.listdir(path)
+            fileView.CURRENT_SELECTION = None
             for i in fileView.get_children():
                 fileView.delete(i)
             for file in range(len(filesInFolder)):
                 if (args[0] and args[0] == "folder-mode"):
                     if os.path.isdir(os.path.join(filepath, filesInFolder[file])):
                         fileView.configure(style="Treeview")
-                        fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
+                        fileView.insert(parent='', iid=file, text=filesInFolder[file], index='end', values=["DIRECTORY"],)
                 else:
                     fileView.configure(style="Treeview")
-                    if (actualFileTypes == "*"): fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
+                    if (actualFileTypes == "*"):
+                        fileType = "File"
+                        if os.path.isdir(f"{os.path.join(filepath, filesInFolder[file])}"): fileType="DIRECTORY"
+                        else:
+                            split = str(filesInFolder[file]).split(".")
+                            extension = split[-1]
+                            if len(split) > 1:
+                                if extension in list(KNOWN_FILETYPES.keys()): fileType = KNOWN_FILETYPES[extension]
+                                else: fileType=f"{extension.upper()} File"
+
+                        fileView.configure(style="Treeview")
+                        fileView.insert(parent='', iid=file, text=filesInFolder[file], index='end', values=[fileType],) 
                     elif (os.path.isdir(os.path.join(filepath, filesInFolder[file]))) or  filesInFolder[file].split(".")[-1] == actualFileTypes:
-                        fileView.insert(parent='', iid=file, text='', index='end', values=[filesInFolder[file]],)
+                        fileType = actualFileTypes.upper() + " File"
+                        if os.path.isdir(f"{os.path.join(filepath, filesInFolder[file])}"): fileType="DIRECTORY"
+                        fileView.configure(style="Treeview")
+                        fileView.insert(parent='', iid=file, text=filesInFolder[file], index='end', values=[fileType],)
         def openFileOrFolder(PID, *event):
             nonlocal filepath
             global RETURN_VALUE
             selectedFileIndex = fileView.focus()
-            selectedFile = fileView.item(selectedFileIndex, 'values')[0]
+            selectedFile = fileView.item(selectedFileIndex)
+            print(filepath, selectedFile)
             if os.path.isdir(f"{os.path.join(filepath, selectedFile)}"):
                 filepath = os.path.join(filepath, selectedFile)
                 lookUpFiles(filepath)
@@ -74,14 +100,13 @@ def main(MainPID=None, *args):
                     messagebox.showerror("Cant open files", "You cannot open/run files in this dialogue box. Please select a folder!", INSTANCES[PID])
         def selectFolder(PID, *event):
             global RETURN_VALUE
-            if len(fileView.focus()) == 0:
+            if fileView.CURRENT_SELECTION  == None:
                 RETURN_VALUE = filepath
-                print(RETURN_VALUE)
                 INSTANCES[PID].quit()
                 return RETURN_VALUE
             else: 
                 selectedFolderIndx = fileView.focus()
-                selectedFolder = fileView.item(selectedFolderIndx, 'values')[0]
+                selectedFolder = fileView.item(selectedFolderIndx)
                 RETURN_VALUE = filepath + "/" +  selectedFolder
                 INSTANCES[PID].quit()
                 return RETURN_VALUE      
@@ -109,12 +134,13 @@ def main(MainPID=None, *args):
                     extension: str = item[1]
                     extension = extension.split(".")[-1]
                     types.append(extension)
-                actualFileTypes = ""
+                actualFileTypes = extension
                 launcherComboBox = ttk.Combobox(commandBar)
                 launcherComboBox['values'] = types
                 launcherComboBox['state'] = "readonly"
                 launcherComboBox.bind("<<ComboboxSelected>>", _lookUpFile)
                 launcherComboBox.grid(row=0, column=1)
+            lookUpFiles(addressBar.get())
             return True
         INSTANCES[PID] = tkinter.Tk()
         INSTANCES[PID].configure(background=THEME_WINDOW_BG)
@@ -167,12 +193,12 @@ def main(MainPID=None, *args):
         files = tkinter.Menu(mainFrame, tearoff=False, background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)
         files.add_command(label="Select", command=lambda e=None : openFileOrFolder(PID))
         commandBar.grid(row=1, column=0)
-        fileView = ttk.Treeview(fileContentFrame, style="Treeview")
+        fileView = Treeview(fileContentFrame, style="Treeview")
         fileView.grid(row=0, column=1, sticky="w")
-        fileView['column'] = "Files"
-        fileView.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
-        fileView.column("Files", anchor=tkinter.W, width=600)
-        fileView.heading("Files", text="Files", anchor=tkinter.CENTER)
+        fileView['column'] = "File Type"
+        fileView.column("#0", anchor=tkinter.W, width=600)
+        fileView.heading("#0", text="Files", anchor=tkinter.CENTER)
+        fileView.heading("File Type", text="File Type",  anchor=tkinter.CENTER)
         fileView.bind("<Double-1>", lambda e=None : openFileOrFolder(PID))
         fileView.bind("<Button-3>", popup)
         fileView.configure(style="Treeview")
