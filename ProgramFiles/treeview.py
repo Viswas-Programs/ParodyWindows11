@@ -73,7 +73,7 @@ class Treeview:
         for frame in dict(self.ALL_FRAMEs).keys():
             for x in self.get_children(frame):
                 self._buttonBinder(x)
-    def insert(self, parent, index=None, id=None, iid=None, text="<DefaultText>", values=None):
+    def insert(self, parent, index=None, id=None, iid=None, text="<DefaultText>", values=[]):
         button = tkinter.Button(self.ALL_FRAMEs["#0"], background=self.THEME_BG, foreground=self.THEME_FG, text=text, width=self.ALL_FRAMEs["#0"].WIDTH, justify=tkinter.LEFT, anchor="w")
         button.configure(command=lambda bt=button: self._clickAction(bt))
         #button.grid(row=len(self.ALL_FRAMEs["#0"].BUTTONS.keys())+1, column=0)
@@ -150,6 +150,8 @@ class Treeview:
             if self.CURRENT_SELECTION: self._clickAction(self.CURRENT_SELECTION)
             self._clickAction(item)
         return self.CURRENT_SELECTION
+    def focusByIID(self, iid):
+        self.focus(self.ALL_FRAMEs["#0"].BUTTONS[iid])
     def item(self, item, options=None,):
         if options == None: return item.cget("text")
         else:

@@ -1,11 +1,11 @@
 import tkinter
 import os
 import shelve
-import sys
 import subprocess
 import threading
 import base64
 import inspect
+import io
 SHELL_MODULES_LOADED = False
 try:
     from ProgramFiles import callHost
@@ -21,9 +21,33 @@ class RedirectOutput:
     def __init__(self, cmdInstance):
         self.cmdInstance = cmdInstance
     def write(self, text: str):
-        self.cmdInstance.showMsg(text)
+        self.cmdInstance.ROOT.after(0, lambda: self.cmdInstance.showMsg(text, True))
+        self.cmdInstance.stdout.see(tkinter.END)
+    def writelines(self, lines: list[str]):
+        for line in lines: self.write(line)
+    def isatty(self): return False
+    def fileno(self): return io.UnsupportedOperation("Operation 'fileno' is not supported!")
+    def close(self): pass
+
         
-class cmdCommands(object):
+def manualSplit(string: str, separator=" ", bounding = '"', removeBoundingFromSplits=True):
+    """ Specially made to omit separators within a quoted string - for parameters and stuff """
+    SPLIT = []
+    encounteredQuote = False
+    start = 0
+    if string[-1] != " ": string += " "
+    try:
+        for x, i in enumerate(string):
+            if i == separator and not encounteredQuote: 
+                appendStr = string[start:string.rindex(i, start, x+1 )]
+                if removeBoundingFromSplits: appendStr =  appendStr.replace(bounding, "")
+                SPLIT.append(appendStr)
+                start = string.index(i, start) + 1
+            elif i == bounding: encounteredQuote = not encounteredQuote
+    except Exception: pass 
+    return SPLIT
+
+class cmdCommands(object): 
     def __init__(self, stdout: tkinter.Text, stdin: Entry, root: tkinter.Tk, FS=None, username="defaultuser0", PID=99999) -> None:
         try:
             with shelve.open("ProgramFiles/SYS_CONFIG") as SYS_CONFIG: self.VERSION = SYS_CONFIG["VERSION"]
@@ -50,11 +74,15 @@ class cmdCommands(object):
         self.INPUTTED_COMMANDS_LIST = []
         self.CWD = os.getcwd()
         self.COMMAND_NOT_FOUND = "\nThe following command doesn't exist!"
+        self.stdout.bind("<KeyPress>", self.__breaker)
+        self.stdout.bind("<KeyRelease>", self.__breaker)
+        self.__newlinecount=0
         self.showMsg(f"Welcome to ParodyWindows11 Command Interpreter (OS Version {self.VERSION})\nCurrent Working Directory: {os.getcwd()}\n>")
         if not SHELL_MODULES_LOADED: self.showMsg("\nModules which are used to interact with the parent shell could NOT be imported! Some commands may NOT work correctly!\n>")
         try: self.ROOT.bind("<Up>", self.upArrowBind); self.ROOT.bind("<Down>", self.downArrowBind)
         except Exception as exp: print(exp)
         return None
+    def __breaker(self, *args): return "break"
     def help(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.showMsg("\nHere's a list of all available commands:")
@@ -176,30 +204,29 @@ class cmdCommands(object):
         self.UP_ARROW_COUNT += 1
         self.clearStdIn()
         self.stdin.insert(tkinter.END, self.INPUTTED_COMMANDS_LIST[-self.UP_ARROW_COUNT])
-    def showMsg(self, msg: str):
+    def showMsg(self, msg: str, charmode=False):
         try:
-            self.stdout.configure(state="normal")
-            self.LINE_COUNT += 1.0
-            self.stdout.insert(f"{self.LINE_COUNT+1}", msg)
-            self.stdout.see(f"{self.LINE_COUNT+1}")
-            if "\n" in msg: self.LINE_COUNT += 1.0
-            self.stdout.configure(state="disabled")
+            if charmode and msg == "\n":
+                if self.__newlinecount != 1: self.__newlinecount += 1; return
+                else: self.__newlinecount = 0
+            if charmode and msg == "": msg="\n"
+            self.__newlinecount = 0
+            self.stdout.insert(f"end", msg)
+            self.stdout.see(f"end")
         except Exception as EXP: print(EXP)
     def launchCmd(self, directInvoke=False,  e=None):
         if " " not in self.stdin.get(): self.stdin.insert(tkinter.END, " ")
         command = f"self.{self.getParams(0, ' ')}()"
-        if directInvoke == True: print("hi"); command = f"self.{self.stdin.get().split(' ')[0]}(self.getParams(1, ' ').lstrip('-'))"
-
+        if directInvoke == True: print("hi"); command = f"self.{self.stdin.get().split(' ')[0]}('{self.stdin.get().replace(self.stdin.get().split(' ')[0], "").strip()}')"
         if self.getParams(0, " ") in self.COMMAND_LIST and self.ACCEPT_COMMANDS: self.showMsg(f"\n>{self.stdin.get()}"); exec(command)
     def clearStdIn(self):
         self.stdin.delete(0, tkinter.END)
     def clear(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()
-        self.stdout.configure(state="normal")
         try: self.stdout.delete(1.0, tkinter.END)
         except Exception as exp: self.showMsg(f"\nERROR OCCURED while clearing terminal: {exp}")
-        finally: self.INPUTTED_COMMANDS_LIST.append("clear"); self.stdout.configure(state="disabled")
+        finally: self.INPUTTED_COMMANDS_LIST.append("clear")
     def shutdown(self):
         def actualShutdown(*args):
             try:self.FILE_SYSTEM.__del__()
@@ -349,31 +376,39 @@ class cmdCommands(object):
         except Exception as EXCP: self.showMsg(f"\nCan't load config!\nError: {EXCP}")
         else: self.showMsg("\nConfig loaded succesfully!")
         self.clearStdIn()
-
+    def writeChar(self, char): self.stdout.insert(tkinter.END, char)
     def sendToRootTerminal(self, command = None):
+        def _sendStdin(pipe: subprocess.Popen):
+            pipe.stdin.write(self.stdin.get()+"\n")
+            pipe.stdin.flush()
+            self.showMsg("\n")
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
-        def run():
+        def run(command=None):
             def killer(*args):
                 pipe.kill()
                 self.showMsg("\nCommand killed with Ctrl-C!")
-            if not command: command=self.stdin.get().replace("sendToRootTerminal -", "").split(" ")
-            pipe = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, text=True, stderr=subprocess.PIPE)
+            if not command: command=manualSplit(self.stdin.get().replace("sendToRootTerminal -", ""))
+            else: command=manualSplit(command.lstrip("-"))
+            pipe = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, text=True, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+            self.clearStdIn()
+            self.stdin.unbind("<Return>")
+            self.stdin.bind("<Return>", lambda e=None: _sendStdin(pipe) )
             Unbinder= self.ROOT.bind("<Control-c>", killer)
             while pipe.poll() is None:
-                msg = pipe.stdout.readline().strip() # read a line from the process output
-                if msg:
-                    print(msg, file=RedirectOutput(self))
+                #Some of this code, like the iter() trick was gotten from AI, since the old code that I wrote was prone to being blocked, and not work THAT WELL with streams
+                for line in iter(lambda: pipe.stdout.read(1), ''): print(line, file=RedirectOutput(self))
+                for line in iter(lambda: pipe.stderr.read(1), ''): print(line, file=RedirectOutput(self))
             self.ROOT.unbind("<Control-c>", Unbinder)
             self.showMsg("\nCommand Ended!")
-        if self.ADMINISTRATOR: 
-            OLD_STD = sys.stdout
-            sys.stdout = RedirectOutput(self)
-            print("\n")
-            threading.Thread(target=run).start()
-            sys.stdout = OLD_STD
-            #self.clearStdIn()
-        else: 
-            self.showMsg("\nYou don't have permissions to run this command! Enable Administrator Mode and try again.")
+            self.stdin.unbind("<Return>")
+            self.stdin.bind("<Return>", self.launchCmd)
+        #if self.ADMINISTRATOR: 
+        self.showMsg("\nCommand Starting\n\n")
+        
+        threading.Thread(target=lambda e=command: run(e)).start()
+        #else: 
+        #    self.showMsg("\nYou don't have permissions to run this command! Enable Administrator Mode and try again.")
+        #self.clearStdIn()
     def disableDWM(self):
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         self.clearStdIn()
@@ -439,7 +474,6 @@ class cmdCommands(object):
         except Exception as EXP: self.showMsg(f"\nUnable to reload app cache!\n{EXP}")
         else: self.showMsg(f"\nApp cache for {appToReload} has been updated!")
     def launchApp(self):
-        print("Launchapp CMD")
         app = self.getParams(1, "-").lstrip("app=")
         filename = None
         param = None
@@ -449,7 +483,6 @@ class cmdCommands(object):
             filename = ("".join(word for word in self.stdin.get().split()[2:]))
             indx = len("".join(word for word in self.stdin.get().split()[:2]))+2
             param=None
-            print(filename)
             if "-filename=" in filename:
                 filename.lstrip('-filename="')
                 indx = filename.rfind('*"')
@@ -457,7 +490,6 @@ class cmdCommands(object):
                 indx +=2
             if len(self.stdin.get()[indx+2:]) > 8:
                 username = self.stdin.get()[indx:].lstrip().lstrip("-username=")
-            print(username, app, param, "Launchapp CMD")
         callHost.appLauncherForExternalApps(app, username, param )
 
         
@@ -500,7 +532,7 @@ def main(FILE_SYSTEM, *args):
         cmdInstance.ADMINISTRATOR = True
         cmdInstance.showMsg("\nDetected launch from recovery environment\nSuccesfully turned on administrator mode!")
         cmdInstance.ROOT.title("Administrator - Command Interpreter")
-    if args[1]: cmdInstance.stdin.insert(0, args[2]); cmdInstance.launchCmd(True)
+    if args[1]: cmdInstance.stdin.insert(0, args[1]); cmdInstance.launchCmd(True)
     INSTANCES[args[-1]].mainloop()
     return args[-1]
 

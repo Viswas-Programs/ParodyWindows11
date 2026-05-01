@@ -461,7 +461,7 @@ class settings():
                 except Exception: pass
         desktopAppsList['values'] = CURRENT_LIST
         def _cmd():
-            if paramType.get() == "None":  AppIconManager.createDesktopAppIcon(iconToAdd, f"{iconToAdd}", param=None)
+            if paramType.get() == "None" or paramType.get() == "":  AppIconManager.createDesktopAppIcon(iconToAdd, f"{iconToAdd}", param=None)
             else:
                 func = eval(paramType.get())
                 try: prm = (eval(param.get()))
@@ -689,6 +689,8 @@ class AppIconManager:
     """ pinning of apps to taskbar / desktop and creating running taskbar icons"""
     @staticmethod
     def refreshDesktop():
+        try:GLOBAL_VARS.ROOT_WINDOW.REF_LBL.destroy()
+        except: pass
         GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS= 0
         GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS= 0
         for frame in dict(GLOBAL_VARS.DESKTOP_FRAME.children).values():
@@ -697,11 +699,30 @@ class AppIconManager:
             if not isinstance(button, tkinter.Button): continue
             button.destroy()
         for app, param in GLOBAL_VARS.PINNED_APPS_DESKTOP:
+            print(app, GLOBAL_VARS.PINNED_APPS_DESKTOP)
             try: AppIconManager.createDesktopAppIcon(f"{app}", f"{app}", False, param)
             except Exception as EXP:  messagebox.showerror("Error pinning app to desktop", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
         for app in GLOBAL_VARS.PINNED_APPS:
             try: AppIconManager.pinTaskbarApp(f"{app}",False)
             except Exception as EXP: LOGGER.addRawLog(EXP, [app], "Error pinning app to taskbar"); messagebox.showerror("Error pinning app to taskbar", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
+        if GLOBAL_VARS.WALLPAPER != None and GLOBAL_VARS.WALLPAPER.cget("image") != None:
+            print("REFRESHDESKTOP HERE")
+            rawImage = ImageTk.getimage(GLOBAL_VARS.WALLPAPER.BASE_IMAGE)
+            GLOBAL_VARS.ROOT_WINDOW.REF_WALLPAPERCROP = rawImage
+            GLOBAL_VARS.DESKTOP_FRAME.update()
+            GLOBAL_VARS.DESKTOP_FRAME.update_idletasks()
+            GLOBAL_VARS.TASKBAR_FRAME.update()
+            GLOBAL_VARS.TASKBAR_FRAME.update_idletasks()
+            x, y = GLOBAL_VARS.DESKTOP_FRAME.winfo_rootx(), GLOBAL_VARS.DESKTOP_FRAME.winfo_rooty()
+            h, w = GLOBAL_VARS.DESKTOP_FRAME.winfo_height(), GLOBAL_VARS.DESKTOP_FRAME.winfo_width()
+            newImg = ImageTk.PhotoImage(rawImage.crop((x,y,x+w, y+h)))
+            GLOBAL_VARS.ROOT_WINDOW.REF_WALLPAPER = newImg
+            GLOBAL_VARS.ROOT_WINDOW.REF_LBL = tkinter.Label(GLOBAL_VARS.DESKTOP_FRAME, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=newImg)
+            GLOBAL_VARS.ROOT_WINDOW.REF_LBL.place(x=-15, y=-15)
+            GLOBAL_VARS.ROOT_WINDOW.REF_LBL.ref = newImg
+            for frame in GLOBAL_VARS.DESKTOP_FRAME.winfo_children():
+                if isinstance(frame, tkinter.Frame): frame.lift(); GLOBAL_VARS.DESKTOP_FRAME.lift()
+
     @staticmethod
     def createRunningAppTaskbarIcon(app: str, PID:int, T_BG=None, T_FG=None, username="defaultuser0"):
         ROOT = GLOBAL_VARS.ROOT_WINDOW
@@ -744,10 +765,10 @@ class AppIconManager:
     def removeDesktopAppIcon(appName: str, param=None):
         if not ([appName, param] in GLOBAL_VARS.PINNED_APPS_DESKTOP): return False
         try:
-            apList = GLOBAL_VARS.USER_CONFIG["PINNED"]
+            apList = GLOBAL_VARS.USER_CONFIG["PINNED"] 
             apList[1].remove([appName, param])
             GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
-            GLOBAL_VARS.PINNED_APPS_DESKTOP.remove([appName, param])
+            #GLOBAL_VARS.PINNED_APPS_DESKTOP.remove([appName, param])
         except Exception as EXP: LOGGER.addRawLog(EXP, [appName, param], "Error removing app from desktop");
         AppIconManager.refreshDesktop()
 
@@ -763,7 +784,7 @@ class AppIconManager:
                 apList = GLOBAL_VARS.USER_CONFIG["PINNED"]
                 apList[1].append([appName, param])
                 GLOBAL_VARS.USER_CONFIG = FILE_SYSTEM.editConfig("USER_CONFIG", "PINNED", apList)
-                GLOBAL_VARS.PINNED_APPS_DESKTOP.append([appName, param])
+                #GLOBAL_VARS.PINNED_APPS_DESKTOP.append([appName, param])
             realAppName = GUIButtonCommand.AppImportNameCheck(app=appName)
             appFrame = tkinter.Frame(GLOBAL_VARS.DESKTOP_FRAME, background=GLOBAL_VARS.THEME_WINDOW_BG)
             appFrame.grid(row=GLOBAL_VARS.ROW_COUNT_DESKTOP_ICONS, column=GLOBAL_VARS.COLUMN_COUNT_DESKTOP_ICONS)
@@ -772,7 +793,7 @@ class AppIconManager:
             else: appIcon = giveIcon("file", GLOBAL_VARS.ROOT_WINDOW)
             appBtn = IconButton(appFrame, appIcon, GLOBAL_VARS.THEME_FOREGROUND,GLOBAL_VARS.THEME_WINDOW_BG, lambda: GUIButtonCommand.launchItem(command, param), True)
             appBtn.ref = appIcon
-            appBtn.grid(row=0, column=0)
+            
             appBtn.BUTTON.appName = appName
             appBtn.BUTTON.param = param
             appBtn.BUTTON.identifier="desktopappbtn"
@@ -792,6 +813,31 @@ class AppIconManager:
                 else: txt=param
             appLbl = tkinter.Label(appFrame, text=txt, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
             appLbl.grid(row=1, column=0)
+            appBtn.grid(row=0, column=0)
+            try:
+                if GLOBAL_VARS.WALLPAPER  == None or GLOBAL_VARS.WALLPAPER.cget("image") == None: raise Exception
+                appFrame.lift()
+                appFrame.update_idletasks()
+                appFrame.update()
+                appFrame.update_idletasks()
+                posLEFT = appFrame.winfo_rootx()
+                posUP = appFrame.winfo_rooty()
+                posBOTTOM = posUP + appFrame.winfo_height()
+                posRIGHT = posLEFT + appFrame.winfo_width()
+                newImg = ImageTk.getimage(GLOBAL_VARS.WALLPAPER.BASE_IMAGE)
+                appFrame.REF1 = newImg
+                cropImg = newImg.crop((posLEFT, posUP, posRIGHT, posBOTTOM))
+                appFrame.REF2 = cropImg
+                imgToRender = ImageTk.PhotoImage(cropImg)
+                appFrame.IMG_REF = imgToRender
+                lbl = tkinter.Label(appFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=imgToRender)
+                lbl.REF = imgToRender
+                lbl.place(x=0, y=0)
+                appBtn.BUTTON.lift()
+                appLbl.lift()
+
+            except Exception as EXP: print(f"{EXP}Not Working")
+            if writeto: AppIconManager.refreshDesktop()
         else: messagebox.showerror(None, None, GLOBAL_VARS.ROOT_WINDOW, True, "APP_NOT_FOUND_ERROR")
     @staticmethod
     def removeTaskbarAppIcon(appName: str):
@@ -883,7 +929,7 @@ class GUIButtonCommand:
         elif GUIButtonCommand.AppImportNameCheck(application) == "taskmanager":
             TaskManager(GLOBAL_VARS.ROOT_WINDOW)
             return
-        if application == "Command Prompt":
+        if application == "Command Prompt" or application == "commandprompt":
             import ProgramFiles.commandprompt as CMD
             appToLaunchPID = generatePID(PROCESS_IDS)
             GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][appToLaunchPID] = application
@@ -1194,42 +1240,58 @@ class StartMenu:
 
 class TaskManager:
     def __init__(self, root):
+        from ProgramFiles.treeview import Treeview
         self.ROOT = tkinter.Toplevel(root, background=GLOBAL_VARS.THEME_WINDOW_BG)
-        self.fileView = ttk.Treeview(self.ROOT, style="Treeview")
+        self.fileView = Treeview(self.ROOT, style="Treeview")
         PID = generatePID(TASK_MANAGERS)
         dwm.createTopFrame(self.ROOT, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "taskmanager", "Task Manager", PID)
         GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][PID] = "Task Manager"
         AppIconManager.createRunningAppTaskbarIcon("Task Manager", PID, username=GLOBAL_VARS.USERNAME)
         self.ROOT.title("Task Manager")
         self.fileView.grid(row=1, column=0, sticky="w")
-        self.fileView['column'] = "Applications"
-        self.fileView.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
-        self.fileView.column("Applications", anchor=tkinter.W, width=600)
-        self.fileView.heading("Applications", text="Applications", anchor=tkinter.CENTER)
+        self.fileView['column'] = "PID"
+        self.fileView['column'] = "username"
+        self.fileView.column("#0", anchor=tkinter.W, width=200)
+        self.fileView.heading("#0", "Applications")
+        self.fileView.column("PID", anchor=tkinter.W, width=100)
+        self.fileView.heading("PID", text="Process IDs", anchor=tkinter.CENTER)
+        self.fileView.column("username", anchor=tkinter.W, width=200)
+        self.fileView.heading("username", text="Username", anchor=tkinter.CENTER)
         self.fileView.configure(style="Treeview")
         self.buttonsFrame = tkinter.Frame(self.ROOT, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.buttonsFrame.grid(row=2, column=0)
-        self.endTaskButton = tkinter.Button(self.buttonsFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="End Application", command=lambda e=None: self.endTask(self.fileView.focus()))
+        self.endTaskButton = tkinter.Button(self.buttonsFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="End Application", command=self.endTaskBtn)
         self.endTaskButton.grid(row=0, column=0)
         self.focusBtn = tkinter.Button(self.buttonsFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Focus In/Out", command=self.focusInOut)
         self.focusBtn.grid(row=0, column=1)
         self.ROOT.after(500, self.updateEach1000Ms)
         self.ROOT.mainloop()
+    def endTaskBtn(self):
+        if self.fileView.focus() == None: return
+        username = "".join(e for e in str(self.fileView.focus().IID).split(":")[1:])
+        PID = int(str(self.fileView.focus().IID).split(":")[0])
+        application = GLOBAL_VARS.RUNNING_APPS[username].get(PID)
+        string = f"{application} <<<PID: {PID}>>> <<<USERNAME: {username}>>>"
+        TaskManager.endTask(self.fileView.focus().IID)
+        
+
     def updateEach1000Ms(self):
         self.ROOT.after(1000, self.updateEach1000Ms)
-        SELECTED_SMTH = self.fileView.focus()
+        SELECTED_SMTH = None
+        try: SELECTED_SMTH = (self.fileView.focus()).IID; self.fileView.CURRENT_SELECTION = None
+        except: pass
         for i in self.fileView.get_children(): self.fileView.delete(i)
         for usr in dict(GLOBAL_VARS.RUNNING_APPS).keys():
             for i, PID in enumerate(GLOBAL_VARS.RUNNING_APPS[usr].keys()):
                 appToIns = GLOBAL_VARS.RUNNING_APPS[usr].get(PID)
-                appToIns += f" <<<PID: {PID}>>> <<<USERNAME: {usr}>>>"
+                #appToIns += f" <<<PID: {PID}>>> <<<USERNAME: {usr}>>>"
                 self.fileView.configure(style="Treeview")
-                self.fileView.insert(parent='', iid=f"{PID}:{usr}", text='', index='end', values=[appToIns],)
-        self.fileView.focus(SELECTED_SMTH)
-        self.fileView.selection_set([SELECTED_SMTH])
+                self.fileView.insert(parent='', iid=f"{PID}:{usr}", text=appToIns, index='end', values=[PID, usr],)
+        if SELECTED_SMTH != None: self.fileView.focusByIID(SELECTED_SMTH)
+        #self.fileView.selection_set([SELECTED_SMTH])
     def focusInOut(self, *arg):
-        username = "".join(e for e in str(self.fileView.focus()).split(":")[1:])
-        PID = int(str(self.fileView.focus()).split(":")[0])
+        username = "".join(e for e in str(self.fileView.focus().IID).split(":")[1:])
+        PID = int(str(self.fileView.focus().IID).split(":")[0])
         realApp = GUIButtonCommand.AppImportNameCheck(GLOBAL_VARS.RUNNING_APPS[username][PID])
         GUIButtonCommand.FOCUS_focusApp(PID, realApp)
     @staticmethod    
@@ -1398,6 +1460,7 @@ def main():
         ROOT_WINDOW.wallpaperImage = image
         GLOBAL_VARS.WALLPAPER = tkinter.Label(ROOT_WINDOW, image=image)
         GLOBAL_VARS.WALLPAPER.grid(row=1, column=0, sticky="EWSN")
+        GLOBAL_VARS.WALLPAPER.BASE_IMAGE = image
         GLOBAL_VARS.WALLPAPER.identifier = "wallpaper"
     ROOT_WINDOW.grid_rowconfigure(1, weight=1)
     ROOT_WINDOW.grid_columnconfigure(0, weight=1)
@@ -1467,7 +1530,7 @@ def main():
         from ProgramFiles.notifications import notifications
         GLOBAL_VARS.NOTIFICATIONS = notifications
     GLOBAL_VARS.NOTIFICATIONS.notificationButton = GLOBAL_VARS.NOTIFICATION_BUTTON
-    
+
     ROOT_WINDOW.mainloop()
 import base64
 def loginVerification(userNameText: str, passwordText: tkinter.Entry, userNum: int,  loginWindow: tkinter.Tk, e=None):

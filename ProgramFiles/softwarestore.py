@@ -4,6 +4,7 @@ from ProgramFiles.errorHandler import messagebox
 import os
 import json
 import tkinter.ttk as ttk
+from ProgramFiles.treeview import Treeview
 import shelve
 from ProgramFiles.dwm import createTopFrame
 from ProgramFiles import callHost
@@ -32,7 +33,7 @@ def showDescription(PID, e=None):
             messagebox.showerror("ERROR! While installing app....", f"Can't install app '{item}'! Retry Again.\n DEBUG:<< {PRB} >> ", INSTANCES[PID], MainPID=PID)
     global externalAppsList
     wn = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
-    item = str(externalAppsList.item(externalAppsList.focus(), 'values')[0])
+    item = str(externalAppsList.item(externalAppsList.focus()))
     wn.title(appsList[item][0])
     tkinter.Label(wn, text=appsList[item][0], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).pack()
     if item not in USER_CONFIG["APPS"][1]:
@@ -63,16 +64,14 @@ def main(username,  *args):
             messagebox.showerror("Can't load local apps list!", f"Error: {PRB}", INSTANCES[args[-1]], MainPID=args[-1])
         INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
     INSTANCES[args[-1]].title("Software Store")
-    externalAppsList = ttk.Treeview(INSTANCES[args[-1]], style="Treeview")
+    externalAppsList = Treeview(INSTANCES[args[-1]], style="Treeview")
     externalAppsList.grid(row=1, column=0, sticky="w")
-    externalAppsList['column'] = "Apps"
-    externalAppsList.column("#0", anchor=tkinter.W, width=0, stretch=tkinter.NO)
-    externalAppsList.column("Apps", anchor=tkinter.W, width=600)
-    externalAppsList.heading("Apps", text="Apps", anchor=tkinter.CENTER)
-    externalAppsList.bind("<<TreeviewSelect>>", lambda e: showDescription(args[-1]))
+    externalAppsList.column("#0", anchor=tkinter.W, width=600)
+    externalAppsList.heading("#0", text="Apps", anchor=tkinter.CENTER)
+    externalAppsList.bind("<Double-1>", lambda e: showDescription(args[-1]))
     externalAppsList.configure(style="Treeview")
     for i, app in enumerate(appsList):
-        externalAppsList.insert(parent='', iid=i, text='', index=i, values=[app],)
+        externalAppsList.insert(parent='', iid=i, text=app, index=i)
     INSTANCES[args[-1]].mainloop()
     INSTANCES[args[-1]].destroy()
     return args[-1]

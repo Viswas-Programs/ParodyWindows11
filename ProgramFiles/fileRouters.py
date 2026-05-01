@@ -41,12 +41,11 @@ def handleFiles(fileName: str, userConfig: str, USER_CONFIG: shelve):
     fileExtension = fileName.split(".")[-1]
     fileName = fileName.replace("\\", "/")
     if (fileExtension != "py"):
-        print(fileExtension)
         try:
             app: str= defaultProgramFileAssociations["DEFAULTAPPASSOCIATION"].get(fileExtension)
             if app == None: raise Exception("Manually raised: No app detected for the given file extension: " + fileExtension)
             callHost._sendCallToPID(1, 0, {"method": "EXEC_ACTION", "LAUNCH_APP": {"APP_NAME": app, "PARAMS": fileName} })
         except Exception as I: 
-            print(I)
             openWithSettings(None, fileName, USER_CONFIG, userConfig)
-    else: os.system(fileName)
+    else: 
+        callHost._sendCallToPID(1, 0, {"method": "EXEC_ACTION", "LAUNCH_APP":{"APP_NAME": "commandprompt", "PARAMS": f"sendToRootTerminal -python3 -u {fileName}"}})                     # TODO: wtf is ts gotta change it
