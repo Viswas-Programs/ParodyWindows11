@@ -7,12 +7,11 @@ from ProgramFiles.errorHandler import messagebox
 from ProgramFiles import callHost
 from ProgramFiles.fileaskhandlers import askopenfilename
 from ProgramFiles.dwm import createTopFrame
-W11 = importlib.__import__("Windows 11")
 def openWithSettings(root, fileName: str, USER_CONFIG: shelve, userName: str, ):
     def comboBoxHandler(e=None):
         app = launcherComboBox.get()
         OpenWithMenuWindow.destroy()
-        W11._AppLauncherForExternalApps(app, USER_CONFIG,  fileName, userName,)
+        callHost.appLauncherForExternalApps(app, userName,  fileName, USER_CONFIG,)
     def askAppName():
         appToOpenWith = askopenfilename("Select a program to open with. ", (("Py Files", "*.py"), ("PyC Files", "*.pyc")))
         OpenWithMenuWindow.destroy()

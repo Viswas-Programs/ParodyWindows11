@@ -11,6 +11,7 @@ import shelve
 from datetime import datetime
 from ProgramFiles.dwm import createTopFrame
 from ProgramFiles import callHost
+from ProgramFiles.treeview import Treeview
 PROCESS_RUNNING = True
 INSTANCES = {}
 NEEDS_FILESYSTEM_ACCESS = False
@@ -43,7 +44,7 @@ def browse(PID, e=None):
     frame.load_website(text.get()) 
     frame.configure(on_link_click=addToList)
     if DARK_THEME: frame.configure(dark_theme_enabled=True, image_inversion_enabled=True)
-    frame.bind("<<TitleChanged>>", lambda: a(frame.title()))
+    frame.bind("<<TitleChanged>>", lambda e=None: a(frame.title))
     frame.grid(row=2, column=0)
 def optionsWindow(PID, e=None):
     global DARK_THEME
@@ -55,11 +56,14 @@ def optionsWindow(PID, e=None):
         if SHOWN_PERSONALIZATION: perFrame.destroy()
         historyFrame = tkinter.Frame(optionsWn, background=THEME_WINDOW_BG, width=90, height=120)
         historyFrame.grid(row=1, column=1)
-        for i, (time, search) in enumerate(searchHistory.items()):
-            exec(f"a{i} = tkinter.Label(historyFrame, text='{search}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)")
-            exec(f"a{i}.grid(row=i, column=0)")
-            exec(f"n{i} = tkinter.Label(historyFrame, text=':{time}', background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND)")
-            exec(f"n{i}.grid(row=i, column=1)")
+        maintxt = Treeview(historyFrame, style="Treeview")
+        maintxt.grid(row=0, column=0)
+        maintxt.column("#0", 500, anchor=tkinter.W)
+        maintxt.heading("#0", "Name")
+        maintxt["column"] = "time"
+        maintxt.column("time", 300, anchor=tkinter.W)
+        maintxt.heading("time", "Timestamp")
+        for i, (time, search) in enumerate(searchHistory.items()): maintxt.insert("", iid=i, text=search, values=[time])
     def showAbout():
         global SHOWN_ABOUT
         global aboutFrame

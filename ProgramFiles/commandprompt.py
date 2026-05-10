@@ -30,21 +30,25 @@ class RedirectOutput:
     def close(self): pass
 
         
-def manualSplit(string: str, separator=" ", bounding = '"', removeBoundingFromSplits=True):
+def manualSplit(string: str, separator=" ", bounding = ['"', "'"], removeBoundingFromSplits=True):
     """ Specially made to omit separators within a quoted string - for parameters and stuff """
     SPLIT = []
-    encounteredQuote = False
+    BOUNDS_ENCOUNTERED = dict(zip(bounding, [False]*len(bounding)))
     start = 0
-    if string[-1] != " ": string += " "
+    if string[-1] != separator: string += separator
     try:
         for x, i in enumerate(string):
-            if i == separator and not encounteredQuote: 
-                appendStr = string[start:string.rindex(i, start, x+1 )]
-                if removeBoundingFromSplits: appendStr =  appendStr.replace(bounding, "")
-                SPLIT.append(appendStr)
-                start = string.index(i, start) + 1
-            elif i == bounding: encounteredQuote = not encounteredQuote
-    except Exception: pass 
+            for k, v in BOUNDS_ENCOUNTERED.items(): 
+                if i == separator and not v: 
+                    appendStr = string[start:string.rindex(i, start, x+1 )]
+                    try:
+                        if removeBoundingFromSplits: appendStr =  appendStr.replace(k, "")
+                    except: pass
+                    SPLIT.append(appendStr)
+                    start = string.index(i, start) + 1
+                    break
+                elif i == k: BOUNDS_ENCOUNTERED[k] = not BOUNDS_ENCOUNTERED[k]
+    except Exception as EXP: pass
     return SPLIT
 
 class cmdCommands(object): 
@@ -364,6 +368,7 @@ class cmdCommands(object):
         self.clearStdIn()
     def getParams(self, paramToGet: int, includeParamSeparator: str = " ") -> str:
         try:
+            #return manualSplit(self.stdin.get(), includeParamSeparator)[paramToGet].lstrip(includeParamSeparator)
             return self.stdin.get().split(' ')[paramToGet].lstrip(includeParamSeparator)
         except: print("Get params error: Most likely Index Error!")
     def fsLoadConfig(self):

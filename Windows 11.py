@@ -23,9 +23,9 @@ class ErrorRouter:
     def addRawLog(self, exception: Exception, objectsInvolved=[], additionalText="", ):
         typeofExp = exception.__class__.__name__
         extendedText = ""
-        if len(objectsInvolved)>0: extendedText += "on the objects"
+        if len(objectsInvolved)>0: extendedText += " on the objects"
         for i in objectsInvolved: extendedText += f" {i} of type {type(i)} "
-        self.LOGS[str(datetime.now())] = f"{typeofExp} occured with reasoning {additionalText} {exception}{extendedText}"
+        self.LOGS[str(datetime.now())] = f"{typeofExp} occured with reasoning {additionalText} {exception} {extendedText}"
     def sync(self, errorInstance):
         """ merges given instance of ErrorRouter with current"""
         self.LOGS.update(errorInstance.LOGS)
@@ -87,6 +87,7 @@ try:
     import platform
     from ProgramFiles import entryWidget
     from ProgramFiles.errorHandler import messagebox
+    from ProgramFiles import callHost
 except Exception as E:
     bsod(__name__, str(E) + "\nMODULE_NOT_FOUND_ERROR")
 CWD = os.getcwd()
@@ -146,7 +147,7 @@ class PW11GlobalVars():
         self.CLOCK_LABEL: tkinter.Label = None
         self.CLOCK_LOOP_ID = None
         self.RUNNING_APPS: dict[str, dict[int, str]] = {}
-        self.ICONS: dict[str, tkinter.PhotoImage] = {}
+        self.ICONS: dict[str, Image.Image] = {}
         self.THEME_WINDOW_BG: str = None
         self.THEME_FOREGROUND: str = None
         self.USERNAME: str = "defaultuser0"
@@ -164,12 +165,15 @@ class PW11GlobalVars():
         self.NOTIFICATIONS = None
         self.DESKTOP_APPS_CONTEXT_MENUS: dict[str, tkinter.Menu] = {}
         self.TASKBAR_APPS_CONTEXT_MENUS: dict[str, tkinter.Menu] = {}
+        self.CWD = CWD
+        self.RUNAPPSLIST = [self.RUNNING_APPS_FRAME, self.RUNNING_APPS]
 
 
 UNSAFE_METHODS = ["TASKBAR_FRAME", "MESSAGES", "MESSAGES_CALLBACK", "MESSAGES_AUTODELETE", "APP_INSTANCE", "TASKBAR_FRAME", "CLOCK_LABEL", "CLOCK_LOOP_ID", "DESKTOP_CONTEXT_MENU", "TASKBAR_CONTEXT_MENU", "RUNNING_APPS_FRAME", "NOTIFICATION_BUTTON", "ROOT_WINDOW", "START_MENU_ACTIVE"]
 
 ParWFS._instances["root"].GLOBAL_VARS = PW11GlobalVars()
 GLOBAL_VARS = ParWFS._instances["root"].GLOBAL_VARS
+GLOBAL_VARS.RUNAPPSLIST = [GLOBAL_VARS.RUNNING_APPS_FRAME, GLOBAL_VARS.RUNNING_APPS]
 
 """ 
 SAMPLE REQUEST:
@@ -210,10 +214,10 @@ SAMPLE REQUEST:
 
 """
 def messageHandler(messageContent: dict):
-    from ProgramFiles import callHost
+    global GLOBAL_VARS
     replyToPID = messageContent["SenderPID"]
     messageConts = messageContent["messageContent"]
-    reply = {"STATE": 200, "messageContent": {}}
+    reply = {"SenderPID": 0, "STATE": 200, "messageContent": {}}
     formReply = reply["messageContent"]
     if messageConts["method"] == "GET":
         
@@ -221,30 +225,59 @@ def messageHandler(messageContent: dict):
             if "overRideSafety" in messageConts.keys():
                 if messageConts["overRideSafety"]:
                     try: formReply["GETATTR"] = getattr(GLOBAL_VARS, messageConts["GETATTR"])
-                    except Exception as EXP: formReply["GETATTR"] = False
+                    except Exception as EXP: formReply["GETATTR"] = EXP
             else:
                 if messageConts["GETATTR"] in UNSAFE_METHODS: formReply["GETATTR"] = False
                 else:
                     try: formReply["GETATTR"] = getattr(GLOBAL_VARS, messageConts["GETATTR"])
-                    except Exception as EXP: formReply["GETATTR"] = False
+                    except Exception as EXP: formReply["GETATTR"] = EXP
+        if "GEN_PID" in messageConts.keys():
+            try: formReply["GEN_PID"] = generatePID(PIDsToGen[messageConts["GEN_PID"]])
+            except Exception as EXP: formReply["GEN_PID"] = EXP
+        if "GET_APP_IMPORT_NAME" in messageConts.keys():
+            try: formReply["GET_APP_IMPORT_NAME"] = GUIButtonCommand.AppImportNameCheck(messageConts["GET_APP_IMPORT_NAME"])
+            except Exception as EXP: formReply["GET_APP_IMPORT_NAME"] = EXP
+        if "GET_ICON" in messageConts.keys():
+            ROOT = GLOBAL_VARS.ROOT_WINDOW
+            subsample= False
+            if "root" in messageConts["GET_ICON"].keys(): ROOT = messageConts["GET_ICON"]["root"]
+            if "subsample" in messageConts["GET_ICON"].keys(): subsample = messageConts["GET_ICON"]["subsample"]
+            try: formReply["GET_ICON"] = ROOT.TEMP_REF = giveIcon(messageConts["GET_ICON"]["appname"], ROOT, subsample,)
+            except Exception as EXP: formReply["GET_ICON"] = EXP
     # TODO POST ATTR METHOD
     if messageConts["method"] == "EXEC_ACTION":
         if "LAUNCH_APP" in messageConts.keys(): 
             try: GUIButtonCommand.launchItem(messageConts["LAUNCH_APP"]["APP_NAME"], messageConts["LAUNCH_APP"]["PARAMS"])
-            except: formReply["LAUNCH_APP"] = False
+            except BaseException as EXP: formReply["LAUNCH_APP"] = EXP
             else: formReply["LAUNCH_APP"] = True
+        if "LAUNCH_APP_EXTAPPLNCHR" in messageConts.keys():
+            try: _AppLauncherForExternalApps(messageConts["LAUNCH_APP_EXTAPPLNCHR"]["APP_NAME"], messageConts["LAUNCH_APP_EXTAPPLNCHR"]["USER_CONFIG"], messageConts["LAUNCH_APP_EXTAPPLNCHR"]["PARAMS"], messageConts["LAUNCH_APP_EXTAPPLNCHR"]["USERNAME"])
+            except BaseException as EXP: formReply["LAUNCH_APP_EXTAPPLNCHR"] = EXP
+            else: formReply["LAUNCH_APP_EXTAPPLNCHR"] = True
         if "CHANGE_BASE_THEME" in messageConts.keys(): 
             try: setTheme(messageConts["CHANGE_BASE_THEME"]["WN_CLR"], messageConts["CHANGE_BASE_THEME"]["FG"], messageConts["CHANGE_BASE_THEME"]["BG"], messageConts["CHANGE_BASE_THEME"]["WRITE_CHANGES"])
-            except: formReply["CHANGE_BASE_THEME"] = False
+            except BaseException as EXP: formReply["CHANGE_BASE_THEME"] = EXP
             else: formReply["CHANGE_BASE_THEME"] = True
         if "CHANGE_THEME_TO_PRESET" in messageConts.keys(): 
             try: setPresetTheme(messageConts["CHANGE_THEME_TO_PRESET"])
-            except: formReply["CHANGE_THEME_TO_PRESET"] = False
+            except BaseException as EXP: formReply["CHANGE_THEME_TO_PRESET"] = EXP
             else: formReply["CHANGE_THEME_TO_PRESET"] = True
         if "CREATE_DESKTOP_ICON" in messageConts.keys():
             try: AppIconManager.createDesktopAppIcon(messageConts["CREATE_DESKTOP_ICON"]["appname"], messageConts["CREATE_DESKTOP_ICON"]["command"], messageConts["CREATE_DESKTOP_ICON"]["writeTo"], messageConts["CREATE_DESKTOP_ICON"]["param"])
-            except: formReply["CREATE_DESKTOP_ICON"] = False
+            except BaseException as EXP: formReply["CREATE_DESKTOP_ICON"] = EXP
             else: formReply["CREATE_DESKTOP_ICON"] = True
+        if "ADD_RUNNING_APP" in messageConts.keys():
+            try: GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][messageConts["ADD_RUNNING_APP"]["PID"]] = messageConts["ADD_RUNNING_APP"]["appname"]
+            except BaseException as EXP: formReply["ADD_RUNNING_APP"] = EXP
+            else: formReply["ADD_RUNNING_APP"] = True
+        if "ACK_ENDTASK" in messageConts.keys():
+            try: GUIButtonCommand.handleExits(messageConts["ACK_ENDTASK"], [GLOBAL_VARS.RUNNING_APPS_FRAME, GLOBAL_VARS.RUNNING_APPS])
+            except BaseException as EXP: formReply["ACK_ENDTASK"] = EXP
+            else: formReply = True
+        if "END_TASK" in messageConts.keys():
+            try: TaskManager.endTask(messageConts["END_TASK"])
+            except BaseException as EXP: formReply["END_TASK"] = EXP
+            else: formReply["END_TASK"] = True
 
     if (not (replyToPID in GLOBAL_VARS.SPECIAL_PIDS)): callHost._sendCallToPID(0, replyToPID, formReply)    
 GLOBAL_VARS.MESSAGES_CALLBACK = messageHandler
@@ -309,6 +342,15 @@ TASK_MANAGERS = (600, 650)
 CONTROL_PANELS = (650, 700)
 DIALOGUE_BOXES = (700, 850)
 
+PIDsToGen = {
+    "PROCESS_IDS": PROCESS_IDS,
+    "MSGBOX_IDS": MESSAGEBOX_IDS, 
+    "PROGRESSBAR_IDS": PROGRESSBAR_IDS,
+    "FILEASK_IDS": FILEASK_WINDOWS,
+    "DIALOGUE_IDS": DIALOGUE_BOXES,
+    "EXTERNAL_IDS": EXTERNAL_PID
+}
+
 def generatePID(LIB_TO_USE: tuple[int, int]):
     PID = random.randint(LIB_TO_USE[0], LIB_TO_USE[1])
     for key in dict(GLOBAL_VARS.RUNNING_APPS).keys():
@@ -318,11 +360,15 @@ def generatePID(LIB_TO_USE: tuple[int, int]):
 
 def returnRunningApps():
     return FILE_SYSTEM.RUNNING_APPS
-def giveIcon(appName: str, root, subsample=False, relaunch=False):
+def giveIcon(appName: str, root, subsample=False, relaunch=False,):
     try:
-        if not subsample: return GLOBAL_VARS.ICONS[appName]
+        if not subsample: return ImageTk.PhotoImage(GLOBAL_VARS.ICONS[appName], master=root)
         else:
-            return GLOBAL_VARS.ICONS[appName].subsample(subsample)
+            root.ERM = IMAGE = None
+            if isinstance(subsample, (tuple, list)): IMAGE = GLOBAL_VARS.ICONS[appName].resize([GLOBAL_VARS.ICONS[appName].size[0]//subsample[0], GLOBAL_VARS.ICONS[appName].size[1]//subsample[1]],)
+            else: IMAGE =  GLOBAL_VARS.ICONS[appName].resize([GLOBAL_VARS.ICONS[appName].size[0]//subsample, GLOBAL_VARS.ICONS[appName].size[1]//subsample],)
+            return ImageTk.PhotoImage(IMAGE, master=root)
+
     except Exception as exp:
         LOGGER.addRawLog(exp, [appName, GLOBAL_VARS.ICONS], "Wasn't able to load icon from stored GLOBAL_VARS.ICONS, giving icon manually")
         try:
@@ -331,11 +377,13 @@ def giveIcon(appName: str, root, subsample=False, relaunch=False):
         except Exception as EXP:
             LOGGER.addRawLog(EXP, [appName, tkinter.PhotoImage], "Unable to load icon, giving error icon!") 
             if not relaunch: return giveIcon("error", root, subsample, True)
+
 def loadAllIcons(appsList: list, root):
     for app in appsList:
         realApp = GUIButtonCommand.AppImportNameCheck(app)
         try:
-            GLOBAL_VARS.ICONS[realApp] = tkinter.PhotoImage(file=f"ProgramFiles/Icons/{realApp}.png", master=root)
+            #GLOBAL_VARS.ICONS[realApp] = tkinter.PhotoImage(file=f"ProgramFiles/Icons/{realApp}.png", master=root)
+            GLOBAL_VARS.ICONS[realApp] = Image.open(f"ProgramFiles/Icons/{realApp}.png")
             root.erm = GLOBAL_VARS.ICONS[realApp]
         except Exception as EXP: LOGGER.addRawLog(EXP, [GLOBAL_VARS.ICONS, realApp], "Unable to load icon for app from loadAllIcons")
 
@@ -699,14 +747,12 @@ class AppIconManager:
             if not isinstance(button, tkinter.Button): continue
             button.destroy()
         for app, param in GLOBAL_VARS.PINNED_APPS_DESKTOP:
-            print(app, GLOBAL_VARS.PINNED_APPS_DESKTOP)
             try: AppIconManager.createDesktopAppIcon(f"{app}", f"{app}", False, param)
             except Exception as EXP:  messagebox.showerror("Error pinning app to desktop", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
         for app in GLOBAL_VARS.PINNED_APPS:
             try: AppIconManager.pinTaskbarApp(f"{app}",False)
             except Exception as EXP: LOGGER.addRawLog(EXP, [app], "Error pinning app to taskbar"); messagebox.showerror("Error pinning app to taskbar", f"{app} Cannot be pinned due to the following technical reason: \n {EXP}", root=GLOBAL_VARS.ROOT_WINDOW)
         if GLOBAL_VARS.WALLPAPER != None and GLOBAL_VARS.WALLPAPER.cget("image") != None:
-            print("REFRESHDESKTOP HERE")
             rawImage = ImageTk.getimage(GLOBAL_VARS.WALLPAPER.BASE_IMAGE)
             GLOBAL_VARS.ROOT_WINDOW.REF_WALLPAPERCROP = rawImage
             GLOBAL_VARS.DESKTOP_FRAME.update()
@@ -861,12 +907,12 @@ class ShutdownMenu():
         shutdownWindow.title("Shutdown/Restart the shell")
         a = tkinter.Label(shutdownWindow, text="What you want to do now?", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND)
         a.grid(row=1, column=0)
-        ShutdownICON = GLOBAL_VARS.ICONS["shutdown"].subsample(2, 2)
+        ShutdownICON = giveIcon("shutdown", shutdownWindow, 2)
         ShutdownBTN = tkinter.Button(shutdownWindow, image=ShutdownICON, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=self.shutdown)
         ShutdownBTN.IMGREF = ShutdownICON
         tooltips.createToolTipAtGivenPos(ShutdownBTN, 2, root, "Shuts down the shell")
         ShutdownBTN.grid(row=2, column=0)
-        RestartICON = GLOBAL_VARS.ICONS["restart"].subsample(2, 2)
+        RestartICON = giveIcon("restart", shutdownWindow, 2)
         RestartBTN = tkinter.Button(shutdownWindow, image=RestartICON, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, command=self.restart)
         RestartBTN.IMGREF = RestartICON
         RestartBTN.grid(row=2, column=1)
@@ -878,7 +924,7 @@ class ShutdownMenu():
         tkinter.Label(shutdownWindow, text="Shutdown", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND).grid(row=3, column=0)
         tkinter.Label(shutdownWindow, text="Restart", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND).grid(row=3, column=1)
         if (GLOBAL_VARS.USERNAME != "defaultuser0"): 
-            logoutIcon = GLOBAL_VARS.ICONS["logout"].subsample(4,4)
+            logoutIcon = giveIcon("logout", shutdownWindow, 4)
             logoutBTN = tkinter.Button(shutdownWindow, image=logoutIcon, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Logout", command=self.logout)
             logoutBTN.grid(row=4, column=0)
             tkinter.Label(shutdownWindow, text="Logout", background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND).grid(row=5, column=0)
@@ -1205,8 +1251,7 @@ class StartMenu:
         self.selectFolders.update()
         def _lnchApp(app, prm=None): GUIButtonCommand.launchItem(GUIButtonCommand.AppImportNameCheck(app), prm)
         for x, i in enumerate(GLOBAL_VARS.APPS_LIST):
-            img = giveIcon(GUIButtonCommand.AppImportNameCheck(i), GLOBAL_VARS.ROOT_WINDOW)
-            img = img.subsample(2, 2)
+            img = giveIcon(GUIButtonCommand.AppImportNameCheck(i), GLOBAL_VARS.ROOT_WINDOW, 2)
             btn.e = img
             self.IMAGE_INSTANCES.append(img)
             self.appsListFrame.update()
@@ -1446,7 +1491,6 @@ def main():
     ROOT_WINDOW = tkinter.Tk()
     ROOT_WINDOW.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
     GLOBAL_VARS.APP_INSTANCE.ROOT = ROOT_WINDOW
-    from ProgramFiles import callHost
     callHost.setLoadedApps(GLOBAL_VARS.APP_INSTANCE)
     loadAllIcons(GLOBAL_VARS.APPS_LIST, ROOT_WINDOW)
     loadAllIcons(["shutdown", "restart", "start", "logout"], ROOT_WINDOW)
@@ -1530,7 +1574,8 @@ def main():
         from ProgramFiles.notifications import notifications
         GLOBAL_VARS.NOTIFICATIONS = notifications
     GLOBAL_VARS.NOTIFICATIONS.notificationButton = GLOBAL_VARS.NOTIFICATION_BUTTON
-
+    callHost.INIT_DWM()
+    GLOBAL_VARS.RUNAPPSLIST = [GLOBAL_VARS.RUNNING_APPS_FRAME, GLOBAL_VARS.RUNNING_APPS]
     ROOT_WINDOW.mainloop()
 import base64
 def loginVerification(userNameText: str, passwordText: tkinter.Entry, userNum: int,  loginWindow: tkinter.Tk, e=None):

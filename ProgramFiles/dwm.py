@@ -180,7 +180,7 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     }
     root.Entry = Entry
     lbl = tkinter.Label(DWMFrame, text=appName, background=T_BG, foreground=T_FG, compound='left')
-    lbl.img = img = callHost.getReqIcon(iconName, root).subsample(2)
+    lbl.img = img = callHost.getReqIcon(iconName, root, 2)
     try: 
         lbl.configure(image=img, )
         lbl.image = img
