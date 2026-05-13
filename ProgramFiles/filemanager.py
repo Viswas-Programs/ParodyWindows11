@@ -222,7 +222,6 @@ def main(FILESYSTEM: ParWFS, *args):
     except Exception as exp:
         messagebox.showerror("Can't load app!", f"App can't run! please re-install the app!\nPROB:{exp}")
     finally: 
-        print("FILE MANAGER CLOSE LA", args[-1])
         return args[-1]
 if __name__ == "__main__":
     main()

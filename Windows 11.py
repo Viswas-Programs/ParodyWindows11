@@ -88,6 +88,12 @@ try:
     from ProgramFiles import entryWidget
     from ProgramFiles.errorHandler import messagebox
     from ProgramFiles import callHost
+    from ProgramFiles.notifications import notifications
+    from ProgramFiles import colorchooser
+    from ProgramFiles.fileaskhandlers import askopenfilename
+    from ProgramFiles import fileRouters
+    from ProgramFiles.treeview import Treeview
+    import base64
 except Exception as E:
     bsod(__name__, str(E) + "\nMODULE_NOT_FOUND_ERROR")
 CWD = os.getcwd()
@@ -184,6 +190,9 @@ SAMPLE REQUEST:
         "method": "GET" 
         "overRideSafety": False,
         "GETATTR": <Attr from GLOBAL_VARS>,
+        "GEN_PID": <Range string to fetch PID>,
+        "GET_APP_IMPORT_NAME": <App name string to convert to importable name>,
+        "GET_ICON": <App icon name>
     }
         =-=-=-=-= GET METHOD CODE END =-=-=-=-=
         =-=-=-=-= EXEC_ACTION  METHOD =-=-=-=-=
@@ -205,7 +214,13 @@ SAMPLE REQUEST:
             "command": <Desired command - string of filename of app>,
             "writeTo": <Bool - To write to FS or not>,
             "param": <Launch parameters>
-        }
+        },
+        "ADD_RUNNING_APP": {
+            "PID": <App PID>,
+            "appname": <Name of app>
+        },
+        "ACK_ENDTASK": <PID of app to acknowledge task ending>,
+        "END_TASK": <PID of app to end>
     }
         =-=-=-=-= ENDING EXEC_ACTIONS =-=-=-=-=
 }
@@ -557,7 +572,7 @@ class settings():
         self.SHOWN_PERSONALIZATION = True
         def changeThemeAspect(aspect: str):
             global SYS_CONFIG
-            from ProgramFiles import colorchooser
+            
             colorToUse = colorchooser.askcolor(title=f"Select {aspect} colour!", HostPID=self.PID)[1]
             if colorToUse == None: return
             labelToChange = globalVarChange = None
@@ -568,7 +583,7 @@ class settings():
             if systemChangeTheme.get(): SYS_CONFIG = FILE_SYSTEM.editConfig("SYS_CONFIG", "THEME", [GLOBAL_VARS.THEME_WINDOW_BG, GLOBAL_VARS.THEME_FOREGROUND])
             GLOBAL_VARS.ROOT_WINDOW.update()
         def changeWallpaper():
-            from ProgramFiles.fileaskhandlers import askopenfilename
+            
             nonlocal wallpaperText
             wallpaperChoose = askopenfilename("Open a wallpaper file (png)", (("PNG Files", "*.png"), ("All Files", "*.*")))
             img = GUIButtonCommand.getWallpaperImageResized(wallpaperChoose)
@@ -937,27 +952,36 @@ class ShutdownMenu():
             if FILE_SYSTEM.TASK_IN_PROGRESS == [0, 0]: func()
             self.root.after(100, e)
         self.root.after(100, e)
+    def shutdownTasks(self):
+        global GLOBAL_VARS
+        LOGGER.addTextLog("Shutdown initiated")
+        LOGGER.updateFileLogs()
+        try:
+            for username, map in dict(GLOBAL_VARS.RUNNING_APPS).items():
+                for key in map.keys(): TaskManager.endTask(f"{key}:{username}")
+            notifications.NotificationsList = notifications.TimeofNotification = notifications.actions = []
+            notifications.notificationButton = None
+            for PID in dwm.MANAGED_DWM_INSTANCES.keys(): dwm.close(PID)
+            GLOBAL_VARS = PW11GlobalVars()
+            del ParWFS._instances["root"]
+        except Exception as EXP: LOGGER.addRawLog(EXP, [notifications, GLOBAL_VARS], "Error in doing shutdown tasks. ")
+
+        
     def shutdown(self):
         try:
             if GLOBAL_VARS.USERNAME == "GUEST": FILE_SYSTEM.deleteFiles([[f"{CWD}/Users/GUEST"]])
+            GLOBAL_VARS.ROOT_WINDOW.destroy()
         finally: 
-            LOGGER.addTextLog("Shutdown initiated")
-            LOGGER.updateFileLogs()
+            self.shutdownTasks()
             self.waitUntillTaskFinishes(lambda: os._exit(0))
+    def actualReboot(self, attachment=""):
+        try: GLOBAL_VARS.ROOT_WINDOW.destroy()
+        finally:
+            self.shutdownTasks()
+            self.waitUntillTaskFinishes(lambda e=attachment: os.system(f"""{PYTHON_COMMAND_ARG} "Windows 11.py" {e}"""))
     def restart(self):
-        if self.safeModeRestartVar.get() == 1:
-            try: GLOBAL_VARS.ROOT_WINDOW.destroy()
-            finally:
-                def sigma(): os.system(f"""{PYTHON_COMMAND_ARG} "Windows 11.py" -safemode """)
-                LOGGER.addTextLog("Shutdown initiated")
-                LOGGER.updateFileLogs()
-                self.waitUntillTaskFinishes(sigma)
-        else:
-            try: GLOBAL_VARS.ROOT_WINDOW.destroy()
-            finally: 
-                LOGGER.addTextLog("Shutdown initiated")
-                LOGGER.updateFileLogs()
-                os.system(f"""{PYTHON_COMMAND_ARG} "Windows 11.py" """)
+        if self.safeModeRestartVar.get() == 1: self.actualReboot("-safemode")
+        else: self.actualReboot()
     def logout(self):
         for apps in dict(GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME]).keys():
             dwm.focusOut(apps)
@@ -982,9 +1006,7 @@ class GUIButtonCommand:
             AppIconManager.createRunningAppTaskbarIcon(application, appToLaunchPID, username=GLOBAL_VARS.USERNAME)
             try: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID)
             except: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME,  params, dict({"THEME": ["Black", "White", "Black"]}), appToLaunchPID)   
-        elif application == "<<ANYAPP>>":
-            from ProgramFiles import fileRouters
-            fileRouters.handleFiles(params, GLOBAL_VARS.USERNAME, FILE_SYSTEM.getConfig("USER_CONFIG"))    
+        elif application == "<<ANYAPP>>": fileRouters.handleFiles(params, GLOBAL_VARS.USERNAME, FILE_SYSTEM.getConfig("USER_CONFIG"))    
         else: 
             appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
             appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{appToLaunch}")
@@ -995,8 +1017,7 @@ class GUIButtonCommand:
             else: appImport.main(GLOBAL_VARS.USERNAME,  params, FILE_SYSTEM.getConfig("USER_CONFIG"), appPID)
     @staticmethod
     def FOCUS_focusApp(PID, realApp, E=None):
-        try:
-            dwm.focus(PID)
+        try: dwm.focus(PID)
         except Exception as EXP:
             try:
                 appImport = GLOBAL_VARS.APP_INSTANCE.getAppCache(f"ProgramFiles.{realApp}")
@@ -1285,7 +1306,6 @@ class StartMenu:
 
 class TaskManager:
     def __init__(self, root):
-        from ProgramFiles.treeview import Treeview
         self.ROOT = tkinter.Toplevel(root, background=GLOBAL_VARS.THEME_WINDOW_BG)
         self.fileView = Treeview(self.ROOT, style="Treeview")
         PID = generatePID(TASK_MANAGERS)
@@ -1568,16 +1588,14 @@ def main():
     FILE_SYSTEM.ROOT = ROOT_WINDOW
     for app in dict(GLOBAL_VARS.RUNNING_APPS)[GLOBAL_VARS.USERNAME].keys():
         if (not ((app in range(PROCESS_IDS[0], PROCESS_IDS[1])) or (app in range(EXTERNAL_PID[0], EXTERNAL_PID[1])))): continue
-        AppIconManager.createRunningAppTaskbarIcon(GUIButtonCommand.AppImportNameCheck(dict(GLOBAL_VARS.RUNNING_APPS)[GLOBAL_VARS.USERNAME][app]), app, username=GLOBAL_VARS.USERNAME)
-    
+        AppIconManager.createRunningAppTaskbarIcon(GUIButtonCommand.AppImportNameCheck(dict(GLOBAL_VARS.RUNNING_APPS)[GLOBAL_VARS.USERNAME][app]), app, username=GLOBAL_VARS.USERNAME)   
     if GLOBAL_VARS.NOTIFICATIONS == None:
-        from ProgramFiles.notifications import notifications
         GLOBAL_VARS.NOTIFICATIONS = notifications
     GLOBAL_VARS.NOTIFICATIONS.notificationButton = GLOBAL_VARS.NOTIFICATION_BUTTON
     callHost.INIT_DWM()
     GLOBAL_VARS.RUNAPPSLIST = [GLOBAL_VARS.RUNNING_APPS_FRAME, GLOBAL_VARS.RUNNING_APPS]
     ROOT_WINDOW.mainloop()
-import base64
+
 def loginVerification(userNameText: str, passwordText: tkinter.Entry, userNum: int,  loginWindow: tkinter.Tk, e=None):
     print("Checking credentials")
     try:
@@ -1966,7 +1984,7 @@ if __name__ == "__main__":
                     
             else:
                 try:
-                    import tkinter, requests
+                    import requests
                     if SYS_CONFIG["CBSRESTARTATTEMPT"] > 3:
                         try: autoRecoveryEnv()
                         except Exception as EXP: LOGGER.addRawLog(EXP, [SYS_CONFIG["CBSRESTARTATTEMPT"]], "Unable to launch auto recovery env - activating safeMode()"); safeMode()

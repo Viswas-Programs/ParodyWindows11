@@ -4,15 +4,13 @@ import shelve
 import os
 from tkinter.ttk import Scrollbar
 import tkinter.ttk as ttk
-with shelve.open(os.path.join(callHost.getHostDir(), "Users", callHost.getCurrentUsername(), "USER_CONFIG")) as reader:
-    THEME_BG, THEME_FG = reader["THEME"][2], reader["THEME"][1]
+
 
 OBJECTS = []
 
 class Treeview:
     def __init__(self, master: tkinter.Widget, *args, **kwargs):
-        self.THEME_BG = THEME_BG
-        self.THEME_FG = THEME_FG
+        self.THEME_BG, self.THEME_FG, WN_CLR = callHost.getTheme()
         self.width=30
         self.master = master
         self.BINDS = {}
@@ -27,7 +25,7 @@ class Treeview:
         self.mainFrame = tkinter.Frame(self.master, background=self.THEME_BG)
         self.scrollBar = Scrollbar(self.mainFrame, orient="vertical", command=self.__scrollerHandler, style="TScrollbar")
         self.scrollBar.grid(row=0, column=0, sticky="NS")
-        ttk.Style().configure("TScrollbar", background=THEME_BG)
+        ttk.Style().configure("TScrollbar", background=self.THEME_BG)
         self._populateColumn("#0")
     def __scrollerHandler(self, *args, **kwargs):
         for i in list(dict(self.ALL_FRAMEs).values()):

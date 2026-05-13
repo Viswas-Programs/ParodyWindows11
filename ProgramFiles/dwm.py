@@ -143,8 +143,7 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
         x = root.winfo_x() + deltax
         y = root.winfo_y() + deltay
         root.geometry(f"+{x}+{y}")
-    def ttl(newTitle=None, *args):
-        title(newTitle, PID)
+    def ttl(newTitle=None, *args): title(newTitle, PID)
     if not destroyFunc: destroyFunc = close
     root.TITLE_FUNC = root.title
     root.title = ttl

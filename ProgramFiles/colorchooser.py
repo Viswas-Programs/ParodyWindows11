@@ -1,6 +1,6 @@
 import tkinter
 from ProgramFiles import callHost, dwm, entryWidget
-THEME_BG, THEME_FG, THEME_WNCLR = callHost.getTheme()
+
 #import entryWidget
 #THEME_BG, THEME_FG = ("Black", "White")
 
@@ -33,7 +33,7 @@ def askcolor(title, HostPID):
         win.quit() 
 
     PID = callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES)
-    
+    THEME_BG, THEME_FG, THEME_WNCLR = callHost.getTheme()
     win.configure(background=THEME_BG)
     dwm.createTopFrame(win, THEME_FG, THEME_BG, "info", "Colour Chooser", PID, associatePIDProcess=HostPID)
     mainFrame = tkinter.Frame(win, background=THEME_BG)
