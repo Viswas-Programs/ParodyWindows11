@@ -1,6 +1,5 @@
 import tkinter
 import threading
-import ParWFS
 try:
     import ProgramFiles.callHost as callHost
     from ProgramFiles.entryWidget import Entry
@@ -155,8 +154,15 @@ def createTopFrame(root: tkinter.Tk, T_FG, T_BG, iconName, appName, PID, destroy
     root.MESSAGES_AUTODELETE = autoDeleteOldMsg
         
     #root.wm_attributes('-type', 'splash')
-    try:  BRCLRS = ParWFS._instances["root"].getConfig("USER_CONFIG")["THEME_WN_BORDERS"]
-    except: BRCLRS = {"DWM_HG_CLR": "Black", "DWM_HGBG": "Black"}
+    BRCLRS = None
+    try: 
+        callHost._sendCallToPID(2, 0, {"method": "GET", "GETATTR": "USER_CONFIG"})
+        data = callHost.waitForFurtherReply()[1]
+        if isinstance(data["GETATTR"], Exception) or data["GETATTR"] == None: BRCLRS = {"DWM_HG_CLR": "Black", "DWM_HGBG": "Black"}
+        else: BRCLRS =data["GETATTR"]["THEME_WN_BORDERS"]
+    except Exception as EXP: print(EXP)
+    #try:  BRCLRS = ParWFS._instances["root"].getConfig("USER_CONFIG")["THEME_WN_BORDERS"]
+    #except: BRCLRS = 
     HG_CLR = BRCLRS["DWM_HG_CLR"]
     HGBG = BRCLRS["DWM_HGBG"]
     DWMFrame = tkinter.Frame(root, background=T_BG, borderwidth=5, highlightthickness=2, highlightcolor=HG_CLR, highlightbackground=HGBG)

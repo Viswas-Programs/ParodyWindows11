@@ -2,7 +2,6 @@ import os
 import shelve
 import datetime
 import pickle
-_instances = {}
 
 class CallbackWrapper:
     def __init__(self, function):
@@ -21,16 +20,11 @@ class ParWFS:
         self.currentCutFiles = []
         self.currentLoadedConfigFiles = {}
         self.TASK_IN_PROGRESS = [0, 0]
-        self.RUNNING_APPS = {}
-        self.RunAppsFrame = None
-        self.ROOT = None
-        self.GLOBAL_VARS = None
         self.FS_STOP_RESUME_OBJECT = []
         self.STOP_CALLED = {}
         self.RESUME_CALL = {}
         self.CAME_FROM_FS_LOADS = False
         self._resetStopReumeCalls()
-        _instances[purpose] = self
     def loadToPickle(self):
         temp = dict(self.STOP_CALLED)
         del temp["updaterFunc"]

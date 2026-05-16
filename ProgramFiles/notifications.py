@@ -1,4 +1,3 @@
-import ParWFS
 from ProgramFiles.callHost import getTheme, getRangeToGenPID, DIALOGUE_BOXES, addToRunningAppsList
 import tkinter
 class Notifications(object):
@@ -13,14 +12,11 @@ class Notifications(object):
         self.NotificationsList.append(msg)
         self.TimeofNotification.append(time)
         self.actions.append(action)
-        GLOBAL_VARS = ParWFS._instances["root"].GLOBAL_VARS
-        GLOBAL_VARS.ROW_COUNT_NOTIFICATION_WINDOW += 1
         self.notificationButton.configure(text=f"Notifications ({len(self.NotificationsList)})")
     def showNotification(self, title: str, msg: str, time: str, action: str) -> None:
         from ProgramFiles.errorHandler import messagebox
         self.createNotification(msg=msg, time=time, action=action)
-        GLOBAL_VARS = ParWFS._instances["root"].GLOBAL_VARS
-        messagebox.showinfo(title, msg, GLOBAL_VARS.ROOT_WINDOW)
+        messagebox.showinfo(title, msg)
     def showNotificationsList(self, event=None):
         from ProgramFiles import dwm
         notificationsWindow = tkinter.Toplevel(background=getTheme()[0])

@@ -177,8 +177,8 @@ class PW11GlobalVars():
 
 UNSAFE_METHODS = ["TASKBAR_FRAME", "MESSAGES", "MESSAGES_CALLBACK", "MESSAGES_AUTODELETE", "APP_INSTANCE", "TASKBAR_FRAME", "CLOCK_LABEL", "CLOCK_LOOP_ID", "DESKTOP_CONTEXT_MENU", "TASKBAR_CONTEXT_MENU", "RUNNING_APPS_FRAME", "NOTIFICATION_BUTTON", "ROOT_WINDOW", "START_MENU_ACTIVE"]
 
-ParWFS._instances["root"].GLOBAL_VARS = PW11GlobalVars()
-GLOBAL_VARS = ParWFS._instances["root"].GLOBAL_VARS
+
+GLOBAL_VARS = PW11GlobalVars()
 GLOBAL_VARS.RUNAPPSLIST = [GLOBAL_VARS.RUNNING_APPS_FRAME, GLOBAL_VARS.RUNNING_APPS]
 
 """ 
@@ -346,7 +346,6 @@ except Exception as EXP:
     GLOBAL_VARS.THEME_FOREGROUND = "White"
     GLOBAL_VARS.THEME_WN_CLR = "Black"
 
-GLOBAL_VARS.RUNNING_APPS =  FILE_SYSTEM.RUNNING_APPS
 ICONS = GLOBAL_VARS.ICONS
 PROCESS_IDS = (1000, 5000)
 EXTERNAL_PID = (5000, 9999)
@@ -791,10 +790,10 @@ class AppIconManager:
             THEME_WBG = T_BG
             THEME_FG = T_FG
         else: THEME_WBG, THEME_FG = GLOBAL_VARS.THEME_WN_CLR, GLOBAL_VARS.THEME_FOREGROUND
-        POS = len(list(dict(ParWFS._instances["root"].RUNNING_APPS[username]).keys()))
+        POS = len(list(dict(GLOBAL_VARS.RUNNING_APPS[username]).keys()))
         realApp = GUIButtonCommand.AppImportNameCheck(app=app)
         appIcon = giveIcon(realApp, ROOT, 2)
-        taskbarAppBtn = tkinter.Button(ParWFS._instances["root"].RunAppsFrame, text=app, background=THEME_WBG, foreground=THEME_FG, command=lambda e=realApp: GUIButtonCommand.FOCUS_focusApp(PID, realApp) , image=appIcon, compound='left')
+        taskbarAppBtn = tkinter.Button(GLOBAL_VARS.RUNNING_APPS_FRAME, text=app, background=THEME_WBG, foreground=THEME_FG, command=lambda e=realApp: GUIButtonCommand.FOCUS_focusApp(PID, realApp) , image=appIcon, compound='left')
         taskbarAppBtn.grid(row=0, column=POS)
         taskbarAppBtn.processInfo = (PID, app)
         taskbarAppBtn.windowInfo = 'focusIn'
@@ -963,7 +962,6 @@ class ShutdownMenu():
             notifications.notificationButton = None
             for PID in dwm.MANAGED_DWM_INSTANCES.keys(): dwm.close(PID)
             GLOBAL_VARS = PW11GlobalVars()
-            del ParWFS._instances["root"]
         except Exception as EXP: LOGGER.addRawLog(EXP, [notifications, GLOBAL_VARS], "Error in doing shutdown tasks. ")
 
         
@@ -1160,9 +1158,9 @@ class GUIButtonCommand:
 
 def _AppLauncherForExternalApps(app: str, USER_CONFIG, params = None, userConfig= None,):
     PID = random.randint(5000, 9999)
-    for usr in ParWFS._instances["root"].RUNNING_APPS.keys():
-        while PID in ParWFS._instances["root"].RUNNING_APPS[usr].keys(): PID = random.randint(5000, 9999)
-    ParWFS._instances["root"].RUNNING_APPS[userConfig][PID] = app
+    for usr in GLOBAL_VARS.RUNNING_APPS.keys():
+        while PID in GLOBAL_VARS.RUNNING_APPS[usr].keys(): PID = random.randint(5000, 9999)
+    GLOBAL_VARS.RUNNING_APPS[userConfig][PID] = app
     ShelveRef = USER_CONFIG
     PER_PROGRAM_COMMAND_APPS_LIST = ShelveRef["APPS"][1]
     T_ACT_CLR, T_FG, T_BG = ShelveRef["THEME"]
@@ -1592,7 +1590,6 @@ def main():
     if GLOBAL_VARS.NOTIFICATIONS == None:
         GLOBAL_VARS.NOTIFICATIONS = notifications
     GLOBAL_VARS.NOTIFICATIONS.notificationButton = GLOBAL_VARS.NOTIFICATION_BUTTON
-    callHost.INIT_DWM()
     GLOBAL_VARS.RUNAPPSLIST = [GLOBAL_VARS.RUNNING_APPS_FRAME, GLOBAL_VARS.RUNNING_APPS]
     ROOT_WINDOW.mainloop()
 
@@ -1726,6 +1723,7 @@ def login():
 
 
     loginWindow.bind("<Escape>", safeModePREPTask)
+    callHost.INIT_DWM()
     loginWindow.mainloop()
 def autoRecoveryEnv() -> None:
     recoveryWin = tkinter.Tk()
