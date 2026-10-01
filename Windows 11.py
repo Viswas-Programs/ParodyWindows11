@@ -94,6 +94,8 @@ try:
     from ProgramFiles import fileRouters
     from ProgramFiles.treeview import Treeview
     import base64
+    import inspect
+    import subprocess
 except Exception as E:
     bsod(__name__, str(E) + "\nMODULE_NOT_FOUND_ERROR")
 CWD = os.getcwd()
@@ -992,18 +994,20 @@ class GUIButtonCommand:
     @staticmethod
     def launchItem(application: str, params= None, e=None): 
         if GUIButtonCommand.AppImportNameCheck(application) == "controlpanel":
+            appPID = "SYSTEM"
             settings(openOnPage=params)
             return
         elif GUIButtonCommand.AppImportNameCheck(application) == "taskmanager":
+            appPID = "SYSTEM"
             TaskManager(GLOBAL_VARS.ROOT_WINDOW)
             return
         if application == "Command Prompt" or application == "commandprompt":
             import ProgramFiles.commandprompt as CMD
-            appToLaunchPID = generatePID(PROCESS_IDS)
-            GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][appToLaunchPID] = application
-            AppIconManager.createRunningAppTaskbarIcon(application, appToLaunchPID, username=GLOBAL_VARS.USERNAME)
-            try: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appToLaunchPID)
-            except: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME,  params, dict({"THEME": ["Black", "White", "Black"]}), appToLaunchPID)   
+            appPID = generatePID(PROCESS_IDS)
+            GLOBAL_VARS.RUNNING_APPS[GLOBAL_VARS.USERNAME][appPID] = application
+            AppIconManager.createRunningAppTaskbarIcon(application, appPID, username=GLOBAL_VARS.USERNAME)
+            try: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME, params, FILE_SYSTEM.getConfig("USER_CONFIG"), appPID)
+            except: CMD.main(FILE_SYSTEM, GLOBAL_VARS.USERNAME,  params, dict({"THEME": ["Black", "White", "Black"]}), appPID)   
         elif application == "<<ANYAPP>>": fileRouters.handleFiles(params, GLOBAL_VARS.USERNAME, FILE_SYSTEM.getConfig("USER_CONFIG"))    
         else: 
             appToLaunch = GUIButtonCommand.AppImportNameCheck(app=application)
@@ -1936,6 +1940,77 @@ def _bsodInStartup(func, supportCode):
             try: autoRecoveryEnv()
             except Exception as EXP: LOGGER.addRawLog(EXP, [SYS_CONFIG["CBSRESTARTATTEMPT"]], "Unable to launch auto recovery env - activating safeMode()"); safeMode()
     else: bsod(func, supportCode)
+
+def wrapper(actCommand, commandStr, args, kwargs):
+    def returnYes():
+        nonlocal COMMAND_OUTPUT
+        ALLOWED.set(True)
+        uacWindow.destroy()
+        COMMAND_OUTPUT = actCommand(*args, **kwargs)
+    def returnNo():
+        ALLOWED.set(False)
+        uacWindow.destroy()
+    e = inspect.stack()
+    FILENAME =  e[2].filename
+    AppPID = "Unknown"
+    ICON = "question"
+    appname = FILENAME.replace("\\", "/").split("/")[-1].split(".")
+    if appname[-1] == "py": appname.pop()
+    ICON = "".join(item for item in appname)
+    for i in e: 
+        if ("Windows 11.py" in i.filename and i.function == "launchItem" ) or ("commandprompt.py" in i.filename and i.function=="run"):
+            try:
+                AppPID = i.frame.f_locals["appPID"]
+            except Exception as EXP:
+                LOGGER.addRawLog(EXP, [i.filename, i.function, args], "Error while identifying app that ran unsafe command!")
+    uacWindow = tkinter.Tk()
+    uacWindow.configure(background=GLOBAL_VARS.THEME_WINDOW_BG)
+    ALLOWED = tkinter.BooleanVar(uacWindow)
+    COMMAND_OUTPUT = None
+    PID = generatePID(DIALOGUE_BOXES)
+    topFrame = dwm.createTopFrame(uacWindow, GLOBAL_VARS.THEME_FOREGROUND, GLOBAL_VARS.THEME_WN_CLR, "uac", "User Account Control", PID )
+    topFrame.ALL_BUTTONS["minimize"].grid_forget()
+    mainFrame = tkinter.Frame(uacWindow, background=GLOBAL_VARS.THEME_WINDOW_BG)
+    mainFrame.grid(row=1, column=0)
+    iconImg = giveIcon(ICON, uacWindow)
+    uacWindow.iconImage= iconImg
+    iconLbl = tkinter.Label(mainFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, image=iconImg)
+    iconLbl.grid(row=0, column=0)
+    infoframe = tkinter.Frame(mainFrame, background=GLOBAL_VARS.THEME_WINDOW_BG)
+    infoframe.grid(row=0, column=1)
+    generalLbl = tkinter.Label(infoframe, background=GLOBAL_VARS.THEME_WINDOW_BG,  foreground=GLOBAL_VARS.THEME_FOREGROUND, text="This file/app wants to make changes to your device. Do you want to allow the operation?", font=("Arial Rounded MT Bold", 15))
+    generalLbl.grid(row=1, column=0)
+    descriptFrmMain = tkinter.Frame(infoframe, background=GLOBAL_VARS.THEME_WINDOW_BG)
+    descriptFrmMain.grid(row=2, column=0)
+    descriptFrmText = tkinter.Frame(descriptFrmMain, background=GLOBAL_VARS.THEME_WINDOW_BG)
+    descriptFrmText.grid(row=0, column=0)
+    tkinter.Label(descriptFrmText, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="App/File Name:", justify="left", anchor="w").grid(row=0, column=0, sticky="w",)
+    tkinter.Label(descriptFrmText, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="PID:", justify="left", anchor="w").grid(row=1, column=0, sticky="w",)
+    tkinter.Label(descriptFrmText, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Main command:", justify="left", anchor="w").grid(row=2, column=0, sticky="w",)
+    tkinter.Label(descriptFrmText, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Command Parameters:", justify="left", anchor="w").grid(row=3, column=0, sticky="w",)
+    descriptFrmINFO = tkinter.Frame(descriptFrmMain, background=GLOBAL_VARS.THEME_WINDOW_BG)
+    descriptFrmINFO.grid(row=0, column=1)
+    tkinter.Label(descriptFrmINFO, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=FILENAME, justify="left", anchor="w").grid(row=0, column=0, sticky="w",)
+    tkinter.Label(descriptFrmINFO, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=AppPID, justify="left", anchor="w").grid(row=1, column=0, sticky="w",)
+    tkinter.Label(descriptFrmINFO, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=commandStr, justify="left", anchor="w").grid(row=2, column=0, sticky="w",)
+    tkinter.Label(descriptFrmINFO, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text=f"ARGS: {str(args)}\nKWARGS: {str(kwargs)}", justify="left", anchor="w").grid(row=3, column=0, sticky="w",)
+    btnFrame = tkinter.Frame(uacWindow, background=GLOBAL_VARS.THEME_WINDOW_BG,)
+    uacWindow.update()
+    uacWindow.update_idletasks()
+    btnFrame.grid(row=2, column=1, sticky="EW")
+    uacWindow.grid_columnconfigure(1, weight=1)
+    actBtnFrame = tkinter.Frame(btnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG)
+    actBtnFrame.grid(row=0, column=uacWindow.winfo_width())
+    noBtn = tkinter.Button(actBtnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="No", command=returnNo)
+    noBtn.pack(side="right", anchor="e", padx=5, pady=1)
+    yesBtn = tkinter.Button(actBtnFrame, background=GLOBAL_VARS.THEME_WINDOW_BG, foreground=GLOBAL_VARS.THEME_FOREGROUND, text="Yes", command=returnYes )
+    yesBtn.pack(side="right", anchor="e", padx=5, pady=1)
+    uacWindow.wait_variable(ALLOWED)
+    return COMMAND_OUTPUT
+REAL_OS_SYSTEM = os.system
+REAL_SUBPROCESS_POPEN = subprocess.Popen
+os.system = lambda *args, **kwargs: wrapper(REAL_OS_SYSTEM, "os.system", args, kwargs)
+subprocess.Popen = lambda *args, **kwargs: wrapper(REAL_SUBPROCESS_POPEN, "subprocess.Popen", args, kwargs)
 
 if __name__ == "__main__":
     arguements = sys.argv[1:]

@@ -134,15 +134,60 @@ Bug Fixes ->
 Features ->
 [Photo Viewer] New app icon and slideshow mode if folder mode is enabled. 
 
-v2.3.9 ->
+=-=-=-=-=-=-=
+[NEW]v3.0.0
+Dev Note:
+The shell was intermittently upgraded after the release of v2.3.7 in the main branch, and all the development took place in the dev branch.
+There are a LOT of new things, that make this practically a whole OS change. The functionality that used to exist, still exists but overhauled, and there are many things which are upgraded, and added.
+Check them all out! :D 
+
+Architecture and Codebase Overhaul: The entire codebase had underwent a slow but sure overhaul and refactor such that, the code maintainability and readability has gotten significantly better.
+We had also dropped a lot of our usage on exec() and eval(), shifting to normal methods of coding, and generating on-demand widgets without the help of them. 
+The GUIButtonCommand/GuiInterfaceCommands class, which contained about ~20 methods at one point, have all been split into multiple classes, with additional functionality being built seamlessly.
+Before, the shell used to have global variables LITTERED everywhere around the codebase. Most of them are now unified under the `PW11GlobalVars` class, where the GLOBAL_VARS instance of it contains all the variables.
+
 Features ->
--File Associations: When launching a file from the file manager, previously it did an "os.system" call to the file, resulting in nothing or OS-handled.
+-NEW File Associations: When launching a file from the file manager, previously it did an "os.system" call to the file, resulting in nothing or OS-handled.
 					Now it's handled by the DE. With known file types it launches it with the associated program (txt: notepad and stuff)
 					You can add app entries in the newly added page in the settings app. 
 					You also can right click on the file in the file manager and use the "Open With" menu, which it shows you list of apps and a browse to open in external app menu aswell. 
--Task Manager! You can now view list of running apps and end them if you want!
--New file/folder ask dialogs! previously the DE used the OS-dependant file request dialogues, such as the "Open a folder" and "Open a file" ones. Now this is handled by the DE aswell. 
--NEW Installer! 
+-NEW Task Manager! You can now view list of running apps and end them if you want!
+-NEW File and Folder ask dialogs! previously the DE used the OS-dependant file request dialogues, such as the "Open a folder" and "Open a file" ones. Now this is handled by the DE aswell. 
+-NEW Colour Chooser! Instead of depending on the OS-dependent colour choooser dialogue, we now have our own in-house dialogue
+-NEW Treeview! This one improves consistency as well as integration with the operating system
+-NEW DWM: Custom window managers is up, eliminating for the need of the OS to manage the windows.
+	PROS: Pretty good for controlling the window and app, and better theme consistency can be implemented by the module. along with subprocess management.
+		It also includes a system for window decorations, as well as being the backbone of the belowmentioned new IPC system, and many others. 
+		This framework unites all apps under a single manageable umbrella that can be used to query systems in a uniform way.
+		This has been constructed in a way that, it can be easily integrated into the app that you want, within 10 lines of change.
+		This utilisizes the newly made PID system mentioned below, to keep track of every process (Main apps, dialogue boxes, etc)
+	CONS: In certain Linux Distros, Anything that requires keyboard input, or mouse scroll, might not work properly. 
+		I have applied a workaround to that, and that might work in certain distros. 
+			Basically I patched every tkinter.Entry, tkinter.Text with focus() and focus_force() spammed at creation.
+-NEW UAC: UAC Has been added for apps when unsafe methods like os.system or subprocess.Popen() is called. Works similar to the Microsoft Windows 7 UAC window!
+-NEW IPC: Inter Process Communication has been built into the newly built DWM module, which allows apps to talk to each other, as well as the main shell as well, to fetch things or do actions.
+-NEW Wallpaper support along with semi-transparent dessktop app icons!
+-NEW Sidebar buttons module which improves consistency. 
+-OVERHAULED Settings app to include the above mentioned sidebar buttons along with more settings, and transitioning separate dialogues for taskbar/desktop into one place!
+-NEW App Caching system which no longer imports the launched app EVERY TIME on launch
+-NEW APP: SHELVE EDITOR! Which allows you to edit shelve files of either no extension, or with .dat!
+-NEW FILE SYSTEM WRAPPER ParWFS! This allows more granular control over file accessing and configuration storage!
+-OVERHAULED FILE MANAGER: Support for ParWFS, so copy, cut, paste, delete, along with drive selection menus, and file operation interruption recovery
+-NEW PID SYSTEM: This system is how everything works in the shell now! Every window is now PID'ed. 
+	This enables better streamlining of operations, app communication, management, along with identification to the user for which app instance has what.
+-NEW API: callHost module! This module now contains most of every APIs that an app needs to function!
+-OVERHAULED Command Prompt with a lot of new commands!
+-NEW WIP LOGGING SYSTEM: Now 95% of all errors generated in the shell is now stored in LOG.txt as well as LOG (shelve) [WIP].
+-OVERHAULED USER SYSTEM! Now users get their own directory under root/Users/<username>, and their user configuration will be under their user folder. All user password configurations (.conf) are now under /root/Users/. 
+-OVERHAULED LOGON UI! The logon UI now features a button user type system, similar to Microsoft Windows 7.
+	This helps finding usernames, along with providing an intuvitive way to log into the system, without remembering user IDs. 
+	This also has the capability to adapt to the selected user's theme, that'll be presented in the logon ui. 
+		For example, if I have a background colour of Grey, foreground colour Yellow, and a custom wallpaper, all that will be applied in the logon ui WHEN you select the particular user.
+-NEW LOGOUT FEATURE! Save your work when you want to switch users or log out, to log on as another user, without the need to shut down and reboot the shell!
+-NEW BUTTONS AND TEXTBOX FRAMWORK!: There are now separate frameworks for IconButtons, SideBarButtons, and modified versions of Entry() and Text()
+-NEW TOOLTIP SYSTEM!: Certain buttons in the shell now have tooltips! This is implementable across any app that's needed.
+[	 THERE  ARE A LOT OF NEW AND OVERHAULED FEATURES AND APPS THAT ARE UNTRACKED, DUE TO THE INTERMITTENT DEVELOPMENT IN A TIMESPAN OF 2.5 YEARS.]
+
 
 Bug fixes ->
 -Fixed bugs with Notepad not closing properly. 
@@ -151,4 +196,5 @@ Bug fixes ->
 -Better error handling
 -The theme configurations was being pulled from a text document instead of USER_CONFIG, which meant that there were 2 separate configurations split across USER_CONFIG and text documents.
   Now theme and more personalisation settings would be changed directly in the config files instead of text documents. 
+[ THERE  ARE A LOT OF BUG FIXES THAT ARE UNTRACKED, DUE TO THE INTERMITTENT DEVELOPMENT IN A TIMESPAN OF 2.5 YEARS. MORE THAN 50 FIXES WILL BE THERE, ALONG WITH SOME OTHER BUGS CREATED ]
   

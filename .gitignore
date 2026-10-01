@@ -37,3 +37,4 @@ ProgramFiles/SYS_CONFIG.*
 Users/*
 Windows.txt
 .vscode
+/ProgramFiles/allPyFiles/*

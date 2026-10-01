@@ -389,6 +389,7 @@ class cmdCommands(object):
             self.showMsg("\n")
         self.INPUTTED_COMMANDS_LIST.append(self.stdin.get())
         def run(command=None):
+            appPID = self.PID
             def killer(*args):
                 pipe.kill()
                 self.showMsg("\nCommand killed with Ctrl-C!")
