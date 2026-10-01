@@ -30,39 +30,70 @@ You can then change these settings, some of them through the Settings app in GUI
 FOLDER STRUCTURE:
 
 ParodyWindows11/
+
         __pycache__/
+
         bin/
+
         include/
+
         lib/ [this can vary depending on OS. For windows, the folder "scripts/" might be here instead]
+
         ProgramFiles/
+
             __pycache__/
+
             Blackjack/
+
             Notepad_v3/
+
             Icons/
+
             <all apps.py>
+
             LOG.txt
+
             SYS_CONFIG.dat
+
             CRASHLOGS
+
         Themes/
+
         Users/
+
             <allusers>/
+
                 My Documents/
+
                 My Downloads/
+
                 My Pictures/
+
                 My Videos/
+
                 USER_CONFIG
+
             accConfiguration0.conf
+
             accConfiguration1.conf
             .
             .
         .gitignore
+
         CHANGELOG.txt
+
         VERSION.txt
+
         softwareStoreApps.json
+
         FILE_CHANGES.txt
+
         Installer.py
+
         LICENSE
+
         Windows 11.py
+        
         ParWFS.py
 
 
