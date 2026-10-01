@@ -11,8 +11,9 @@ Step 1: Clone the github repository using `git clone https://github.com/Viswas-P
 
 Step 2: Switch to the desired branch (For most cases, dev branch should be stable enough), do `git checkout <branch-name>` 
 
+Step 3: Create a python venv inside the project root. Refer to the folder structure below step 4
 
-Step 3: 
+Step 4: 
 
 You can either setup a new user account but with limited configuration options with the new OOBE system (I'll update this when I include those settings in the OOBE too)
 
@@ -25,6 +26,44 @@ Run the file with the -config parameter to create a new user account with some m
 Run `python3 "Windows 11.py" -config` for that
 
 You can then change these settings, some of them through the Settings app in GUI, Or by running the -configchange parameter when starting the file (`python3 "Windows 11.py" -configchange`) and selecting the appropriate selections.
+
+FOLDER STRUCTURE:
+
+ParodyWindows11/
+        __pycache__/
+        bin/
+        include/
+        lib/ [this can vary depending on OS. For windows, the folder "scripts/" might be here instead]
+        ProgramFiles/
+            __pycache__/
+            Blackjack/
+            Notepad_v3/
+            Icons/
+            <all apps.py>
+            LOG.txt
+            SYS_CONFIG.dat
+            CRASHLOGS
+        Themes/
+        Users/
+            <allusers>/
+                My Documents/
+                My Downloads/
+                My Pictures/
+                My Videos/
+                USER_CONFIG
+            accConfiguration0.conf
+            accConfiguration1.conf
+            .
+            .
+        .gitignore
+        CHANGELOG.txt
+        VERSION.txt
+        softwareStoreApps.json
+        FILE_CHANGES.txt
+        Installer.py
+        LICENSE
+        Windows 11.py
+        ParWFS.py
 
 
 SOME KNOWN BUGS: 
