@@ -28,74 +28,43 @@ Run `python3 "Windows 11.py" -config` for that
 You can then change these settings, some of them through the Settings app in GUI, Or by running the -configchange parameter when starting the file (`python3 "Windows 11.py" -configchange`) and selecting the appropriate selections.
 
 FOLDER STRUCTURE:
-
+```
 ParodyWindows11/
-
         __pycache__/
-
         bin/
-
         include/
-
         lib/ [this can vary depending on OS. For windows, the folder "scripts/" might be here instead]
-
         ProgramFiles/
-
             __pycache__/
-
             Blackjack/
-
             Notepad_v3/
-
-            Icons/
-
+            Icons/ 
             <all apps.py>
-
             LOG.txt
-
-            SYS_CONFIG.dat
-
+            SYS_CONFIG.dat 
             CRASHLOGS
-
         Themes/
-
         Users/
-
             <allusers>/
-
-                My Documents/
-
+                My Documents/ 
                 My Downloads/
-
                 My Pictures/
-
                 My Videos/
-
                 USER_CONFIG
-
             accConfiguration0.conf
-
             accConfiguration1.conf
             .
             .
         .gitignore
-
         CHANGELOG.txt
-
         VERSION.txt
-
         softwareStoreApps.json
-
         FILE_CHANGES.txt
-
         Installer.py
-
         LICENSE
-
         Windows 11.py
-        
         ParWFS.py
-
+```
 
 SOME KNOWN BUGS: 
 In Linux, keyboard inputs to text boxes and shortcut keys to DWM-Managed windows are broken and inconsistent. This is a bug that I don't know of a way to fix. It's due to Linux not giving text-bindings to rootoverrideredirect'ed windows so easily without a focus_force which breaks multi-tasking functionalities. (In Windows you don't need to worry about it, it works just fine there.)
