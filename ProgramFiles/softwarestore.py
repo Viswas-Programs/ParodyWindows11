@@ -1,0 +1,90 @@
+import requests
+import tkinter
+from ProgramFiles.errorHandler import messagebox
+import os
+import json
+import tkinter.ttk as ttk
+from ProgramFiles.treeview import Treeview
+import shelve
+from ProgramFiles.dwm import createTopFrame
+from ProgramFiles import callHost
+
+global usrname
+global USER_CONFIG
+USER_CONFIG: shelve
+INSTANCES = {}
+NEEDS_FILESYSTEM_ACCESS = False
+THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = ["Black", "White", "Black"]
+def showDescription(PID, e=None):
+    def uninstallProgram(e=None):
+        try:
+            AppToRemove = list(USER_CONFIG["APPS"][1]).index(item)
+            del USER_CONFIG["APPS"][0][AppToRemove]
+            del USER_CONFIG["APPS"][1][AppToRemove]
+            uninstaller = requests.get(appsList[item][2]).content.decode(encoding='utf-8')
+            exec(uninstaller)
+        except Exception as PRB:
+            messagebox.showerror("Error", f"Error occured while uninstalling '{item}': {PRB}", INSTANCES[PID], MainPID=PID)
+    def installProgram(e=None):
+        try:
+            installProgram = requests.get(appsList[item][1], timeout=10)
+            exec(installProgram.content.decode(encoding='utf-8'))
+        except Exception as PRB:
+            messagebox.showerror("ERROR! While installing app....", f"Can't install app '{item}'! Retry Again.\n DEBUG:<< {PRB} >> ", INSTANCES[PID], MainPID=PID)
+    global externalAppsList
+    wn = tkinter.Toplevel(INSTANCES[PID], background=THEME_WINDOW_BG)
+    item = str(externalAppsList.item(externalAppsList.focus()))
+    wn.title(appsList[item][0])
+    tkinter.Label(wn, text=appsList[item][0], background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND).pack()
+    if item not in USER_CONFIG["APPS"][1]:
+        tkinter.Button(wn, text="Install", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=installProgram).pack()
+    else:
+        tkinter.Button(wn, text="Uninstall", background=THEME_WINDOW_BG, foreground=THEME_FOREGROUND, command=uninstallProgram).pack()
+    wn.mainloop()
+def main(username,  *args):
+    global THEME_FOREGROUND, THEME_WINDOW_BG, USER_CONFIG
+    global usrname
+    usrname = username
+    global externalAppsList
+    global appsList
+    USER_CONFIG = args[1]
+    THEME_ACT_CLR, THEME_FOREGROUND, THEME_WINDOW_BG = USER_CONFIG["THEME"]
+    INSTANCES[args[-1]] = tkinter.Tk()
+    createTopFrame(INSTANCES[args[-1]], THEME_FOREGROUND, THEME_ACT_CLR, "softwarestore", "Software Store", args[-1])
+    try:
+        appsList = requests.get("https://raw.githubusercontent.com/Viswas-Programs/ParodyWindows11/main/softwareStoreApps.json", timeout=10)
+        appsList = appsList.json()
+    except Exception as PROB:
+        messagebox.showerror("ERROR!", f"Can't load apps list from internet! using locals\nERR: {PROB}", INSTANCES[args[-1]], MainPID=args[-1])
+        try:
+            print(os.getcwd())
+            with open("ProgramFiles/localAppsList.json", "r") as applistLocal:
+                appsList = json.load(applistLocal)
+        except Exception as PRB:
+            messagebox.showerror("Can't load local apps list!", f"Error: {PRB}", INSTANCES[args[-1]], MainPID=args[-1])
+        INSTANCES[args[-1]].configure(background=THEME_WINDOW_BG)
+    INSTANCES[args[-1]].title("Software Store")
+    externalAppsList = Treeview(INSTANCES[args[-1]], style="Treeview")
+    externalAppsList.grid(row=1, column=0, sticky="w")
+    externalAppsList.column("#0", anchor=tkinter.W, width=600)
+    externalAppsList.heading("#0", text="Apps", anchor=tkinter.CENTER)
+    externalAppsList.bind("<Double-1>", lambda e: showDescription(args[-1]))
+    externalAppsList.configure(style="Treeview")
+    for i, app in enumerate(appsList):
+        externalAppsList.insert(parent='', iid=i, text=app, index=i)
+    INSTANCES[args[-1]].mainloop()
+    INSTANCES[args[-1]].destroy()
+    return args[-1]
+def focusIn(PID): INSTANCES[PID].state(newstate='normal'); INSTANCES[PID].focus(); return True
+def focusOut(PID): INSTANCES[PID].state(newstate='iconic'); return True
+def endTask(PID):
+    INSTANCES[PID].destroy()
+    return True
+def returnInformation(PID):
+    return {
+        "title": INSTANCES[PID].title(),
+        "state": INSTANCES[PID].state()
+        # Would add more stuff here in the future, such as memory usage and shi. 
+    }
+if __name__ == "__main__":
+    main()

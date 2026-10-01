@@ -1,3 +1,0 @@
-Notepad
-FileManager
-LoadExternalApps

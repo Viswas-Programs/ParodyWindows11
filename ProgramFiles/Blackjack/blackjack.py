@@ -4,34 +4,34 @@ Black jack game made possible with tkinter code
 import tkinter
 from tkinter import ttk
 import ProgramFiles.Blackjack.functions_for_blackjack as functions_for_blackjack
+import ProgramFiles.dwm
 
+INSTANCES =  {}
 # Creating styles for background colours.
 
 
-def lightTheme(event=None):
+def lightTheme(PID, event=None):
     """ enables light theme
     :param event: The event that it's going to capture to enable keyboard
     shortcut
     """
-    global display
     ttk.Style().configure("TFrame", foreground="black", background="white")
     ttk.Style().configure("TLabel", foreground="black", background="white")
     ttk.Style().configure("TButton", foreground="black", background="white")
-    display.configure(background="white", menu=altMenu)
+    INSTANCES[PID].configure(background="white", menu=altMenu)
 
 
-def darkTheme(event=None):
+def darkTheme(PID, event=None):
     """ enables dark theme
     :param event: The event that it's going to capture to enable keyboard
     shortcut
     """
-    global display
     global altMenu
 
     ttk.Style().configure("TFrame", foreground="white", background="black")
     ttk.Style().configure("TLabel", foreground="white", background="black")
     ttk.Style().configure("TButton", foreground="black", background="black")
-    display.configure(background="black", menu=altMenu)
+    INSTANCES[PID].configure(background="black", menu=altMenu)
 
 
 def newGame():
@@ -49,29 +49,33 @@ def newGame():
     global pC1F2
     global player1CardFrame
     global player2CardFrame
-    dealerCardFrame.destroy()
-    dCF.destroy()
-    dealerCardFrame = ttk.Frame(cardFrame, style="TFrame")
-    dealerCardFrame.grid(row=0, column=1, sticky="ew", rowspan=2)
-    dCF = ttk.Frame(cardFrame2, style="TFrame")
-    dCF.grid(row=0, column=1, sticky="ew", rowspan=2)
-    player1CardFrame.destroy()
-    pC1F2.destroy()
-    pC1F2 = ttk.Frame(cardFrame2, style="TFrame")
-    pC1F2.grid(row=2, column=1, sticky="ew", rowspan=2)
-    player1CardFrame = ttk.Frame(cardFrame, style="TFrame")
-    player1CardFrame.grid(row=2, column=1, sticky="ew", rowspan=2)
-    player2CardFrame.destroy()
-    player2CardFrame = ttk.Frame(cardFrame2, style="TFrame")
-    player2CardFrame.grid(row=4, column=1, sticky="ew", rowspan=2)
-    resultVar.set("None")
-    resultVarT2.set("None")
-    dealerHand = []
-    dealerHandT2 = []
-    player1Hand = []
-    player1HandT2 = []
-    player2Hand = []
-    initialDeal()
+    try:
+        dealerCardFrame.destroy()
+        dCF.destroy()
+        pC1F2.destroy()
+        player1CardFrame.destroy()
+        player2CardFrame.destroy()
+    finally:
+        dealerCardFrame = ttk.Frame(cardFrame, style="TFrame")
+        dealerCardFrame.grid(row=0, column=1, sticky="ew", rowspan=2)
+        dCF = ttk.Frame(cardFrame2, style="TFrame")
+        dCF.grid(row=0, column=1, sticky="ew", rowspan=2)
+        
+        pC1F2 = ttk.Frame(cardFrame2, style="TFrame")
+        pC1F2.grid(row=2, column=1, sticky="ew", rowspan=2)
+        player1CardFrame = ttk.Frame(cardFrame, style="TFrame")
+        player1CardFrame.grid(row=2, column=1, sticky="ew", rowspan=2)
+        
+        player2CardFrame = ttk.Frame(cardFrame2, style="TFrame")
+        player2CardFrame.grid(row=4, column=1, sticky="ew", rowspan=2)
+        resultVar.set("None")
+        resultVarT2.set("None")
+        dealerHand = []
+        dealerHandT2 = []
+        player1Hand = []
+        player1HandT2 = []
+        player2Hand = []
+        initialDeal()
 
 
 def shuffle():
@@ -83,15 +87,15 @@ def shuffle():
     functions_for_blackjack.shuffler(deck, deck2)
 
 
-def exitter():
+def exitter(PID):
     """
     Corrupting the game by stopping functions or quitting player frames
     :return: None
     """
-    from tkinter import messagebox
+    from ProgramFiles.errorHandler import messagebox
     text = ("Are you sure you want to corrupt the runtime of this game?\n"
            "Note that the code of the game won't be changed at all!")
-    warning = messagebox.askokcancel("CAUTION!", text)
+    warning = messagebox.askyesnocancel("CAUTION!", text, INSTANCES[PID], MainPID=PID)
     if warning:
         import random
         destroyer = ["function", "frame"]
@@ -109,44 +113,46 @@ def exitter():
             print(f"exiting frame {str(destroy_this)}")
             destroy_this.destroy()
     else:
-        tkinter.messagebox.showinfo("You saved your day", "Aborted the "
-                                                          "operation! have a "
-                                                          "great day "
-                                                          "playing blackjack.")
+        from ProgramFiles.errorHandler import messagebox
+        messagebox.showinfo("You saved your day", "Aborted the operation! have a great day playing blackjack.", INSTANCES[PID], MainPID=PID)
 
 
-def fullscreen(event=None):
+def fullscreen(PID, event=None):
     """
 
     :param event: The event that it's going to capture to enable keyboard
     shortcut
     """
-    display.attributes("-fullscreen", 1)
+    INSTANCES[PID].overrideredirect(False)
+    INSTANCES[PID].attributes("-fullscreen", 1)
+    INSTANCES[PID].overrideredirect(True)
 
 
-def exitFullScreen(event=None):
+def exitFullScreen(PID, event=None):
     """
 
     :param event: The event that it's going to capture to enable keyboard
     shortcut
     """
-    display.attributes("-fullscreen", False)
+    INSTANCES[PID].overrideredirect(False)
+    INSTANCES[PID].attributes("-fullscreen", False)
+    INSTANCES[PID].overrideredirect(True)
 
 
-def quit(event=None):
+def quit(PID, event=None):
     """
 
     :param event: The event that it's going to capture to enable keyboard
     shortcut
     """
-    display.destroy()
+    INSTANCES[PID].destroy()
 
 # Functions for the execution of player's buttons
 
 
 def dealDealer():
     """
-    Activate the function to display cards in functions_for_blackjack.py
+    Activate the function to INSTANCES[PID] cards in functions_for_blackjack.py
     :return:Cards for the Dealer
     """
     dealersScore = functions_for_blackjack.scoreHand(dealerHand)
@@ -167,7 +173,7 @@ def dealDealer():
 
 def dealDealerT2():
     """
-        Activate the function to display cards in functions_for_blackjack.py
+        Activate the function to INSTANCES[PID] cards in functions_for_blackjack.py
         :return:Cards for the Dealer
         """
     dealersScoreT2 = functions_for_blackjack.scoreHand(dealerHandT2)
@@ -191,7 +197,7 @@ def dealDealerT2():
 
 def dealPlayer1():
     """
-    Activate the function to display cards in functions_for_blackjack.py
+    Activate the function to INSTANCES[PID] cards in functions_for_blackjack.py
     :return:Cards for Player 1
     """
     player1Hand.append(functions_for_blackjack.dealCard(player1CardFrame, deck))
@@ -212,7 +218,7 @@ def dealPlayer1T2():
 
 def dealPlayer2():
     """
-    Activate the function to display cards in functions_for_blackjack.py
+    Activate the function to INSTANCES[PID] cards in functions_for_blackjack.py
     :return:Cards for Player 2
     """
     player2Hand.append(functions_for_blackjack.dealCard(player2CardFrame,
@@ -241,7 +247,7 @@ def initialDeal():
     dealPlayer2()
 
 
-def play():
+def play(PID):
     """
     Used to run this program from another program
     :return: None
@@ -249,11 +255,11 @@ def play():
     global cards
     newGame()
     initialDeal()
-    functions_for_blackjack.loadImages(cards, display)
-    display.mainloop()
+    functions_for_blackjack.loadImages(cards, INSTANCES[PID])
+    INSTANCES[PID].mainloop()
 
 
-def exitter():
+def exitter(PID):
     """
     Corrupting the game by stopping functions or quitting player frames
     :return: None
@@ -267,8 +273,8 @@ def exitter():
         print(f"exiting function {str(destroy_num)}")
         quit(destroy_num)
     elif destroyer[random.randint(0, 2)] == "quit":
-        print("Exited the program safely with display.quit()")
-        display.quit()
+        print("Exited the program safely with INSTANCES[PID].quit()")
+        INSTANCES[PID].quit()
     else:
         frames = [dealerCardFrame, player1CardFrame, player2CardFrame]
         destroy_this = frames[random.randint(0, 2)]
@@ -277,7 +283,7 @@ def exitter():
 
 
 # The GUI
-def main():
+def main(PID):
     global player1Hand
     global player1HandT2
     global player2Hand
@@ -290,7 +296,6 @@ def main():
     global player2ScoreLabel
     global dealersScoreLabel
     global dealersScoreLabelT2
-    global display
     global altMenu
     global player1CardFrame
     global player2CardFrame
@@ -301,41 +306,41 @@ def main():
     global dCF
     global dealerHand
     global dealerHandT2
-    display = tkinter.Tk()
-    display.title("Blackjack v2.0")
-    display.geometry("1000x600")
-    altMenu = tkinter.Menu(display)
-    display.configure(menu=altMenu, background="grey")
-    display.bind("<Control-q>", quit)
-    display.bind("<Control-f>", fullscreen)
-    display.bind("<Control-F>", exitFullScreen)
-    display.bind("<Control-d>", darkTheme)
-    display.bind("<Control-l>", lightTheme)
+    INSTANCES[PID] = tkinter.Tk()
+    ProgramFiles.dwm.createTopFrame(INSTANCES[PID], "White", "Black", "blackjack", "Blackjack v2.0", PID)
+    INSTANCES[PID].title("Blackjack v2.0")
+    altMenu = tkinter.Menu(INSTANCES[PID])
+    INSTANCES[PID].configure(menu=altMenu, background="grey")
+    INSTANCES[PID].bind("<Control-q>", lambda: quit(PID))
+    INSTANCES[PID].bind("<Control-f>", lambda: fullscreen(PID))
+    INSTANCES[PID].bind("<Control-F>", lambda: exitFullScreen(PID))
+    INSTANCES[PID].bind("<Control-d>", lambda: darkTheme(PID))
+    INSTANCES[PID].bind("<Control-l>", lambda: lightTheme(PID))
     fileMenu = tkinter.Menu(altMenu, tearoff=0)
     altMenu.add_cascade(label="File", menu=fileMenu)
-    fileMenu.add_command(label="Light mode", command=lightTheme)
-    fileMenu.add_command(label="Dark mode", command=darkTheme)
+    fileMenu.add_command(label="Light mode", command=lambda: lightTheme(PID))
+    fileMenu.add_command(label="Dark mode", command=lambda: darkTheme(PID))
     fileMenu.add_separator()
-    fileMenu.add_command(label="FullScreen", command=fullscreen)
-    fileMenu.add_command(label="Exit FullScreen", command=exitFullScreen)
+    fileMenu.add_command(label="FullScreen", command=lambda: fullscreen(PID))
+    fileMenu.add_command(label="Exit FullScreen", command=lambda: exitFullScreen(PID))
     fileMenu.add_separator()
-    fileMenu.add_command(label="Safe quit", command=display.quit)
+    fileMenu.add_command(label="Safe quit", command=lambda: ProgramFiles.dwm.close(PID))
     optionsMenu = tkinter.Menu(altMenu, tearoff=0)
     altMenu.add_cascade(label="Options", menu=optionsMenu)
     optionsMenu.add_command(label="Reset Game", command=newGame)
     optionsMenu.add_command(label="Shuffle decks", command=shuffle)
     optionsMenu.add_separator()
-    optionsMenu.add_command(label="Corrupt game", command=exitter)
+    optionsMenu.add_command(label="Corrupt game", command=lambda: exitter(PID))
 
     # Player's cards
     cards = []
-    functions_for_blackjack.loadImages(cards, display)
+    functions_for_blackjack.loadImages(cards, INSTANCES[PID])
     deck = list(cards)
     deck2 = list(cards)
     functions_for_blackjack.shuffler(deck, deck2)
 
-    tabs = ttk.Notebook(display)
-    tabs.grid(row=0, column=0)
+    tabs = ttk.Notebook(INSTANCES[PID])
+    tabs.grid(row=1, column=0)
     mainT1 = ttk.Frame(tabs)
     mainT1.grid(row=1, column=0)
     mainT2 = ttk.Frame(tabs)
@@ -426,8 +431,25 @@ def main():
     player1HandT2 = []
     player2Hand = []
     initialDeal()
-    display.mainloop()
+    INSTANCES[PID].mainloop()
+    INSTANCES[PID].destroy()
+    return True
 
-
+def endTask(PID):
+    INSTANCES[PID].destroy()
+    return True
+def focusIn(PID):
+    INSTANCES[PID].focus()
+    INSTANCES[PID].state(newstate='normal')
+    return True
+def focusOut(PID):
+    INSTANCES[PID].state(newstate='iconic')
+    return True
+def returnInformation(PID):
+    return {
+        "title": INSTANCES[PID].title(),
+        "state": INSTANCES[PID].state()
+        # Would add more stuff here in the future, such as memory usage and shi. 
+    }
 if __name__ == "__main__":
     main()

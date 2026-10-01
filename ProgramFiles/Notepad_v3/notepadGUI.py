@@ -7,9 +7,21 @@ import os
 import platform
 import shelve
 import tkinter
-from tkinter import filedialog, ttk, font, colorchooser
-from ProgramFiles.errorHandler import messagebox
-import ProgramFiles.Notepad_v3.syntax_checker as syntax_checker
+from tkinter import ttk, font, colorchooser
+
+from ProgramFiles import callHost, dwm
+try:
+    from ProgramFiles.errorHandler import messagebox
+    import ProgramFiles.Notepad_v3.syntax_checker as syntax_checker
+    from ProgramFiles.entryWidget import Text, Entry
+    from ProgramFiles import fileaskhandlers as filedialog
+except ModuleNotFoundError:
+    import tkinter.messagebox as messagebox
+    try: 
+        import Notepad_v3.syntax_checker as syntax_checker
+    except: 
+        import syntax_checker
+    from tkinter import Text, Entry, filedialog
 import typing
 import socket
 try:
@@ -18,6 +30,7 @@ try:
 except Exception as EXP: messagebox.showerror("Can't import update modules!!", f"PROBLEM OCCURED. \n {EXP}")
 import zipfile
 from io import BytesIO
+import sys
 
 MSG_SHOWN = False
 if platform.system() == "Windows":
@@ -48,9 +61,13 @@ filetype = (
 class NotepadRun(object):
     """ notepad run, so that people can use objects without GUI"""
 
-    def __init__(self, text_box: tkinter.Text, gui: tkinter.Tk, saveTo:
-    tkinter.Text, file_to_open: str=None):
+    def __init__(self, text_box: Text, gui: tkinter.Tk, saveTo:
+    Text, file_to_open: str=None, THEME_FOREGROUND="White", THEME_BACKGROUND="Black", PID=0) -> bool:
         print(f"Program started at {datetime.datetime.now()}")
+        self.PID =  PID
+        self.THEME_FOREGROUND = THEME_FOREGROUND
+        self.THEME_TYPING_WIDGETS_BG = THEME_BACKGROUND
+        self.THEME_WINDOW_BG = THEME_BACKGROUND
         self.CURRENT_VERSION, self.UPDATE_BRANCH = versionFind()
         self.fileopen = file_to_open
         self.PROGRAM_MODE_CONFIG = False
@@ -64,12 +81,10 @@ class NotepadRun(object):
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.text = text_box
         self.text.configure(font=(self.font, self.size))
-        self.buttonFrame = tkinter.Frame(self.root, background="Black", pady=10)
-        self.buttonFrame.grid(row=2, column=0)
+        self.buttonFrame = tkinter.Frame(self.root, background=self.THEME_WINDOW_BG, pady=10)
+        self.buttonFrame.grid(row=3, column=0)
         self.saveTo = saveTo
-        self.THEME_FOREGROUND = "white"
-        self.THEME_TYPING_WIDGETS_BG = "black"
-        self.THEME_WINDOW_BG = "black"
+
         self.ZOOM_SIZE = 5
         self.saveTo.insert(1.0, f"{initialPath}/Documents/")
         print(f"Set initial path to {initialPath}/Documents/")
@@ -125,7 +140,7 @@ class NotepadRun(object):
             self.saveTo.configure(insertbackground="white",
                                   selectbackground='white',
                                   selectforeground='black')
-            self._title_bar(window=self.root, mode_val=20)
+            #self._title_bar(window=self.root, mode_val=20)
         print("Initialized the buttons to get into buttonFrame")
         self.root.bind("<Control-r>", self.readFile)
         self.root.bind("<Control-s>", self.save)
@@ -142,12 +157,13 @@ class NotepadRun(object):
         self.saveTo.configure(background=self.THEME_TYPING_WIDGETS_BG)
         self.text.configure(foreground=self.THEME_FOREGROUND, borderwidth=5)
         self.saveTo.configure(foreground=self.THEME_FOREGROUND, borderwidth=5)
+        if (self.fileopen): self.open_file_default()
         try:
             self.UPDATER_FILE = requests.get("https://raw.githubusercontent.com/Viswas-Programs/Notepad/main/VERSION.txt", timeout=5)
             version, branch, a = str(self.UPDATER_FILE.content.decode(encoding='utf-8')).split("\n")
         except Exception: version = 3.3; branch = "STABLE"; 
         if float(version) > float(self.CURRENT_VERSION):
-            messagebox.showinfo("Update available!", f"Version {version} of Notepad is available to download! kindly download this update.\n", self.root)
+            messagebox.showinfo("Update available!", f"Version {version} of Notepad is available to download! kindly download this update.\n", self.root, MainPID=self.PID)
             self.update = tkinter.Label(self.root,
                                         text="An update is available!",
                                         background=self.THEME_WINDOW_BG,
@@ -162,10 +178,10 @@ class NotepadRun(object):
             self.wannaUpdate.grid(row=0, column=5, padx=20)
             self.root.bind("<Alt-d>", self.updater)
         self.root.mainloop()
-        print(
-            f"Exited the program at {datetime.datetime.now()}!\nadding an input"
-            " so that from py console the console will show logs!")
-        input()
+        self.root.destroy()
+        del self
+        print("NotepadGUI V3 qit")
+        return None
     def showChangelogs(self):
         """ changelog """
         CHANGELOGS = tkinter.Toplevel()
@@ -203,8 +219,7 @@ class NotepadRun(object):
             subprocess.Popen(["python3", str(fullpath)])
             exit()
 
-        check = messagebox.askyesnocancel('Reboot required!', 'Do you want to restart the program now, or '
-                                                        'later manually?', self.root)
+        check = messagebox.askyesnocancel('Reboot required!', 'Do you want to restart the program now, or later manually?', self.root, MainPID=self.PID)
         if check == 1:
             restart()
 
@@ -312,22 +327,26 @@ Never gonna run around and desert you""")
 
             createFolder = tkinter.Tk()
             createFolder.configure(background=self.THEME_WINDOW_BG)
-            self._title_bar(window=createFolder, mode_val=20)
+            try:
+                IntPID = callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES)
+            except: IntPID = 4999
+            dwm.createTopFrame(createFolder, self.THEME_FOREGROUND, self.THEME_WINDOW_BG, "notepad", "Folder Creation", IntPID, associatePIDProcess=self.PID)
+            #self._title_bar(window=createFolder, mode_val=20)
             msg = tkinter.Label(createFolder, text="Create the folder before "
                                                    "saving file in the "
                                                    "folder!",
                                 background=self.THEME_WINDOW_BG,
                                 foreground=self.THEME_FOREGROUND)
-            msg.grid(row=0, column=0, columnspan=2)
-            createFolderText = tkinter.Text(createFolder, width=40, height=2)
-            createFolderText.grid(row=1, column=0, padx=30, pady=30)
+            msg.grid(row=1, column=0, columnspan=2)
+            createFolderText = Text(createFolder, width=40, height=2)
+            createFolderText.grid(row=2, column=0, padx=30, pady=30)
             createFolderButton = tkinter.Button(createFolder,
                                                 text="Create folder!",
                                                 command=folderCreate,
                                                 background=self.THEME_WINDOW_BG,
                                                 foreground=self.THEME_FOREGROUND,
                                                 borderwidth=2)
-            createFolderButton.grid(row=2, column=0)
+            createFolderButton.grid(row=3, column=0)
             createFolder.mainloop()
 
     def programmerMode(self, event=None):
@@ -337,7 +356,7 @@ Never gonna run around and desert you""")
         self.command = self.disableProgrammerMode
         TEMP = self.text.get(1.0, tkinter.END)
         self.text.destroy()
-        self.text = tkinter.Text(self.root, height=20, width=100,
+        self.text = Text(self.root, height=20, width=100,
                                  font=(self.font, self.size),
                                  background=self.THEME_TYPING_WIDGETS_BG,
                                  foreground=self.THEME_FOREGROUND)
@@ -348,7 +367,7 @@ Never gonna run around and desert you""")
             self.saveTo.configure(insertbackground="white",
                                   selectbackground='white',
                                   selectforeground='black')
-        self.text.grid(row=0, column=0, pady=10)
+        self.text.grid(row=1, column=0, pady=10)
         self.text.insert(1.0, TEMP)
         self.PROGRAMMER_MODE = True
         self.root.unbind("<Key>")
@@ -400,11 +419,15 @@ Never gonna run around and desert you""")
         lang = ["Python", "JS", "C"]
         if not self.SELECT_PROGRAMMING_LANG:
             newWindow = tkinter.Tk()
-            newWindow.title("Select a programming language")
-            self._title_bar(window=newWindow, mode_val=20)
+            #newWindow.title("Select a programming language")
+            #self._title_bar(window=newWindow, mode_val=20)
+            try:
+                IntPID = callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES)
+            except: IntPID = 4999
+            dwm.createTopFrame(newWindow, self.THEME_FOREGROUND, self.THEME_WINDOW_BG, "notepad", "Select a programming language", IntPID, associatePIDProcess=self.PID)
             newWindow.configure(background=self.THEME_WINDOW_BG)
             chooser = tkinter.Listbox(newWindow, height=len(lang), width=30)
-            chooser.grid(row=0, column=0)
+            chooser.grid(row=1, column=0)
             for i, v in enumerate(lang):
                 chooser.insert(i, v)
 
@@ -423,7 +446,7 @@ Never gonna run around and desert you""")
                                        background=self.THEME_WINDOW_BG,
                                        foreground=self.THEME_FOREGROUND,
                                        borderwidth=2,)
-            choose_it.grid(row=1, column=0)
+            choose_it.grid(row=2, column=0)
             newWindow.mainloop()
 
     def disableProgrammerMode(self, event=None):
@@ -438,7 +461,7 @@ Never gonna run around and desert you""")
         self.root.unbind_all("<Key>")
         TEMP = self.text.get(1.0, tkinter.END)
         self.text.destroy()
-        self.text = tkinter.Text(self.root, height=20, width=100,
+        self.text = Text(self.root, height=20, width=100,
                                  font=(self.font, self.size),
                                  background=self.THEME_TYPING_WIDGETS_BG,
                                  foreground=self.THEME_FOREGROUND)
@@ -484,8 +507,8 @@ Never gonna run around and desert you""")
         self.root.title("Notepad GUI v3.3")
         self.saved = True
         if file is None:
-            filePath = filedialog.askopenfilename(title="Open file to read",
-                                                filetypes=filetype)
+            try: filePath = filedialog.askopenfilename(title="Open file to read", filetypes=filetype, MainPID=self.PID)
+            except: filePath = filedialog.askopenfilename(title="Open file to read", filetypes=filetype)
         else:
             filePath = file
         try:
@@ -510,9 +533,9 @@ Never gonna run around and desert you""")
                             self.text.tag_configure('hide', elide=True)
                             self.saveTo.insert(1.0, filePath)
                         else:
-                            messagebox.showerror("Access denied", "The password is incorrect!", self.root)
+                            messagebox.showerror("Access denied", "The password is incorrect!", self.root, MainPID=SubPID)
                     else:
-                        messagebox.showerror("Access denied", "The username is incorrect!", self.root)
+                        messagebox.showerror("Access denied", "The username is incorrect!", self.root, MainPID=SubPID)
 
                 check.split()
                 index_no_usrname = check.find("usrname=")
@@ -524,29 +547,27 @@ Never gonna run around and desert you""")
                 password = str(check[index_no_passwrd + 9:
                                      semicolon2]).rstrip(";2")
                 gui = tkinter.Toplevel(self.root, background=self.THEME_WINDOW_BG)
-                tkinter.Label(gui, text="This is a protected file, please enter"
-                                        " the credentials",
+                SubPID = callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES)
+                dwm.createTopFrame(gui, self.THEME_FOREGROUND, self.THEME_WINDOW_BG, "notepad", "Password Protected File!", SubPID, associatePIDProcess=self.PID)
+                tkinter.Label(gui, text="This is a protected file, please enter the credentials",
                               background=self.THEME_WINDOW_BG,
-                              foreground=self.THEME_FOREGROUND).grid(row=0,
-                                                                     column=0)
+                              foreground=self.THEME_FOREGROUND).grid(row=1, column=0)
                 tkinter.Label(gui, text="Enter username -> ",
                               background=self.THEME_WINDOW_BG,
-                              foreground=self.THEME_FOREGROUND).grid(row=1,
-                                                                     column=0)
-                usrname_check = tkinter.Entry(gui, background=self.THEME_TYPING_WIDGETS_BG, foreground=self.THEME_FOREGROUND)
+                              foreground=self.THEME_FOREGROUND).grid(row=2, column=0)
+                usrname_check = Entry(gui, background=self.THEME_TYPING_WIDGETS_BG, foreground=self.THEME_FOREGROUND)
                 usrname_check.configure(insertbackground=self.THEME_FOREGROUND, selectbackground=self.THEME_FOREGROUND, selectforeground=self.THEME_WINDOW_BG)
-                usrname_check.grid(row=1, column=1)
+                usrname_check.grid(row=2, column=1)
                 tkinter.Label(gui, text='Enter password -> ',
                               background=self.THEME_WINDOW_BG,
-                              foreground=self.THEME_FOREGROUND).grid(row=2,
-                                                                     column=0)
-                password_check = tkinter.Entry(gui, background=self.THEME_TYPING_WIDGETS_BG, foreground=self.THEME_FOREGROUND)
+                              foreground=self.THEME_FOREGROUND).grid(row=3, column=0)
+                password_check = Entry(gui, background=self.THEME_TYPING_WIDGETS_BG, foreground=self.THEME_FOREGROUND)
                 password_check.configure(insertbackground=self.THEME_FOREGROUND, selectbackground=self.THEME_FOREGROUND, selectforeground=self.THEME_WINDOW_BG)
-                password_check.grid(row=2, column=1)
+                password_check.grid(row=3, column=1)
                 submit = tkinter.Button(gui, text="Check!", command=proceed,
                                         background=self.THEME_WINDOW_BG,
                                         foreground=self.THEME_FOREGROUND,
-                                        borderwidth=2
+                                        borderwidth=3
                                         )
                 submit.grid(row=3, column=1)
                 gui.mainloop()
@@ -557,18 +578,11 @@ Never gonna run around and desert you""")
                 self.text.insert(1.0, returnReader)
                 self.saveTo.insert(1.0, filePath)
                 self.root.title(f"{filePath} - Notepad")
-            if self.PROGRAMMER_MODE:
-                self.programmerMode()
+            if self.PROGRAMMER_MODE: self.programmerMode()
         except FileNotFoundError or TypeError:
-            if filePath == '' or isinstance(filePath, tuple):
-                print("No file selected")
-            else:
-                messagebox.showerror("File not found!", "The selected file doesn't exist! so, we "
-                                                        "can't open it. reverted changes", self.root)
-        except UnicodeDecodeError:
-            messagebox.showerror("Cannot Open File",
-                                 "This editor doesn't support this format! file"
-                                 "cannot be opened! No changes made!", self.root)
+            if filePath == '' or isinstance(filePath, tuple): print("No file selected")
+            else: messagebox.showerror("File not found!", "The selected file doesn't exist! so, we can't open it. reverted changes", self.root, MainPID=self.PID)
+        except UnicodeDecodeError: messagebox.showerror("Cannot Open File", "This editor doesn't support this format! file cannot be opened! No changes made!", self.root, MainPID=self.PID)
 
     def addDoubleQuotes(self, event=None):
         """ add double quotes"""
@@ -591,8 +605,7 @@ Never gonna run around and desert you""")
             self.saveTo.delete(1.0, tkinter.END)
             self.root.title("Notepad GUI v3.3")
         else:
-            messagebox.showerror("File doesn't exist",
-                                 "The file you are trying to delete doesn't exist!", self.root)
+            messagebox.showerror("File doesn't exist", "The file you are trying to delete doesn't exist!", self.root, MainPID=self.PID)
 
     def clear(self, event=None):
         """ clear text """
@@ -626,7 +639,7 @@ Never gonna run around and desert you""")
         finally:
             self.contextMenu.grab_release()
             if problem:
-                messagebox.showerror("Error", str(problem), self.root)
+                messagebox.showerror("Error", str(problem), self.root, MainPID=self.PID)
 
     def zoom_in(self, event=None):
         """ zoom in to the text!"""
@@ -645,10 +658,10 @@ Never gonna run around and desert you""")
         print("called control_panel() function")
         control_window = tkinter.Tk()
         control_window.title("Control Panel")
-        if self.THEME_WINDOW_BG in self.DARK_COLOURS:
-            self._title_bar(window=control_window, mode_val=20)
-        else:
-            self._title_bar(window=control_window, mode_val=0)
+        try:
+            IntPID = callHost.getRangeToGenPID(callHost.DIALOGUE_BOXES)
+        except: IntPID = 4999
+        dwm.createTopFrame(control_window, self.THEME_FOREGROUND, self.THEME_WINDOW_BG, "notepad", "Control Panel", IntPID, associatePIDProcess=self.PID)
         control_window.configure(background=self.THEME_WINDOW_BG)
         colour = self.THEME_WINDOW_BG
         if self.PROGRAM_MODE_CONFIG:
@@ -666,7 +679,7 @@ Never gonna run around and desert you""")
                                      foreground=self.THEME_FOREGROUND,
                                      borderwidth=2
                                      )
-        programMode.grid(row=0, column=0)
+        programMode.grid(row=1, column=0)
         zoom_plus = tkinter.Button(control_window,
                                    text=f"Zoom in ({self.ZOOM_SIZE})",
                                    command=self.zoom_in,
@@ -674,7 +687,7 @@ Never gonna run around and desert you""")
                                    foreground=self.THEME_FOREGROUND,
                                    borderwidth=2
                                    )
-        zoom_plus.grid(row=1, column=3, padx=10)
+        zoom_plus.grid(row=2, column=3, padx=10)
         zoom_minus = tkinter.Button(control_window,
                                     text=f"Zoom out (-{self.ZOOM_SIZE})",
                                     command=self.zoom_out,
@@ -684,7 +697,7 @@ Never gonna run around and desert you""")
                                     )
 
         def change_colour(event=None):
-            """ changes colour of `zoom_size` tkinter.Entry widget"""
+            """ changes colour of `zoom_size` Entry widget"""
             nonlocal colour
             if colour == self.THEME_WINDOW_BG:
                 colour = "White"
@@ -694,7 +707,7 @@ Never gonna run around and desert you""")
                 zoom_size.configure(bg=self.THEME_WINDOW_BG)
 
         def change_colour_zoom(event=None):
-            """ changes colour of `zoom` tkinter.Entry widget"""
+            """ changes colour of `zoom` Entry widget"""
             nonlocal colour
             if colour == self.THEME_WINDOW_BG:
                 colour = "White"
@@ -705,7 +718,7 @@ Never gonna run around and desert you""")
 
         def apply_zoom_modif_size():
             """ apply zooming size, i.e. whether to zoom in +5 ot 2 or any
-            other you enter to `zoom_size` tkinter.Entry widget!"""
+            other you enter to `zoom_size` Entry widget!"""
             self.ZOOM_SIZE = int(zoom_size.get())
             zoom_plus.configure(text=f"Zoom in ({self.ZOOM_SIZE})")
             zoom_minus.configure(text=f"Zoom out ({self.ZOOM_SIZE})")
@@ -742,11 +755,6 @@ Never gonna run around and desert you""")
                 self.root.configure(background=str(colour[1]))
                 control_window.configure(background=str(colour[1]))
                 self.THEME_WINDOW_BG = str(colour[1])
-                if str(colour[1]) in self.DARK_COLOURS:
-                    self._title_bar(window=self.root, mode_val=20)
-                    self._title_bar(window=control_window, mode_val=20)
-                else:
-                    self._title_bar(self.root, 0)
                 widgets = ("self.controls", 'self.saveButton',
                            'self.readButton', 'self.deleteButton',
                            'self.clearText')
@@ -767,21 +775,21 @@ Never gonna run around and desert you""")
                     exec(f"{widget}.configure("
                          "foreground=self.THEME_FOREGROUND,)")
 
-        zoom_minus.grid(row=1, column=4)
+        zoom_minus.grid(row=2, column=4)
         tkinter.Label(control_window, text="Zooming-> ",
                       background=self.THEME_WINDOW_BG,
-                      foreground=self.THEME_FOREGROUND).grid(row=1, column=0)
-        zoom_size = tkinter.Entry(control_window, bg=self.THEME_WINDOW_BG)
-        zoom_size.grid(row=1, column=1)
+                      foreground=self.THEME_FOREGROUND).grid(row=2, column=0)
+        zoom_size = Entry(control_window, bg=self.THEME_WINDOW_BG)
+        zoom_size.grid(row=2, column=1)
         zoom_size.insert(0, str(self.ZOOM_SIZE))
         zoom_size.bind("<Enter>", change_colour)
         zoom_size.bind("<Leave>", change_colour)
         tkinter.Label(control_window, text="Zoom Size-> ",
                       background=self.THEME_WINDOW_BG,
-                      foreground=self.THEME_FOREGROUND).grid(row=2,
+                      foreground=self.THEME_FOREGROUND).grid(row=3,
                                                              column=0)
-        zoom = tkinter.Entry(control_window, bg=self.THEME_WINDOW_BG)
-        zoom.grid(row=2, column=1)
+        zoom = Entry(control_window, bg=self.THEME_WINDOW_BG)
+        zoom.grid(row=3, column=1)
         zoom.insert(0, str(self.size))
         zoom.bind("<Enter>", change_colour_zoom)
         zoom.bind("<Leave>", change_colour_zoom)
@@ -792,7 +800,7 @@ Never gonna run around and desert you""")
                                foreground=self.THEME_FOREGROUND,
                                borderwidth=2
                                )
-        apply.grid(row=1, column=2)
+        apply.grid(row=2, column=2)
         apply_zoom = tkinter.Button(control_window,
                                     text="Apply Zoom Size",
                                     command=apply_zoom_size,
@@ -800,15 +808,15 @@ Never gonna run around and desert you""")
                                     foreground=self.THEME_FOREGROUND,
                                     borderwidth=2
                                     )
-        apply_zoom.grid(row=2, column=2, sticky=tkinter.N)
+        apply_zoom.grid(row=3, column=2, sticky=tkinter.N)
         tkinter.Label(control_window, text='Select your font!',
                       background=self.THEME_WINDOW_BG,
-                      foreground=self.THEME_FOREGROUND).grid(row=3,
+                      foreground=self.THEME_FOREGROUND).grid(row=4,
                                                              column=0)
         widget_selector_themes = ttk.Combobox(control_window)
         widget_selector_themes['values'] = ["Text and SaveTo widget",
                                             "windows", "foreground", ]
-        widget_selector_themes.grid(row=4, column=0)
+        widget_selector_themes.grid(row=5, column=0)
         change_colour_btn = tkinter.Button(control_window,
                                            text="Change colour of text widget",
                                            command=change_theme,
@@ -816,7 +824,7 @@ Never gonna run around and desert you""")
                                            foreground=self.THEME_FOREGROUND,
                                            borderwidth=2
                                            )
-        change_colour_btn.grid(row=4, column=1)
+        change_colour_btn.grid(row=5, column=1)
         font_selector = ttk.Combobox(control_window)
         fonts = list(font.families())
         font_selector['values'] = fonts
@@ -828,115 +836,7 @@ Never gonna run around and desert you""")
             self.text.configure(font=self.font)
 
         font_selector.bind("<<ComboboxSelected>>", confirm_selection)
-        font_selector.grid(row=3, column=1)
-
-
-        def send_file():
-            global encryption
-            """ send files GUI, if done neatly, will call the self._sendFiles()
-            method"""
-            def submit_form():
-                """ submits the form to self._sendFiles()"""
-                self._sendFiles(ip_address.get(), port.get(), fileSelect)
-            key = b'KEYKEYKEY123456123456'
-            messagebox.showinfo("Key", f"Key is {key}", self.root)
-            encryption = Fernet(key)
-            send_file_gui = tkinter.Tk()
-            send_file_gui.configure(background=self.THEME_WINDOW_BG,)
-            send_file_gui.title("File transfer form")
-            self._title_bar(window=send_file_gui, mode_val=20)
-            a = tkinter.Label(send_file_gui,
-                              text="Enter the IP address of the receiver:->",
-                              background=self.THEME_WINDOW_BG,
-                              foreground=self.THEME_FOREGROUND)
-            a.grid(row=0, column=0)
-            ip_address = tkinter.Entry(send_file_gui)
-            ip_address.grid(row=0, column=1)
-            b = tkinter.Label(send_file_gui,
-                              text="Enter the file needed to be sent:->",
-                              background=self.THEME_WINDOW_BG,
-                              foreground=self.THEME_FOREGROUND)
-            b.grid(row=1, column=0)
-
-            def fileselector():
-                """ file select"""
-                global fileSelect
-                fileSelect = filedialog.askopenfilename(title="Select files to "
-                                                              "send over")
-                return fileSelect
-
-            select_files = tkinter.Button(send_file_gui,
-                                          text="Select file",
-                                          background=self.THEME_WINDOW_BG,
-                                          foreground=self.THEME_FOREGROUND,
-                                          command=fileselector)
-            select_files.grid(row=1, column=1)
-            port_label = tkinter.Label(send_file_gui,
-                                       text="Enter the port to send files",
-                                       background=self.THEME_WINDOW_BG,
-                                       foreground=self.THEME_FOREGROUND,)
-            port_label.grid(row=2, column=0)
-            port = tkinter.Entry(send_file_gui,)
-            port.insert(tkinter.END, 5001)
-            port.grid(row=2, column=1)
-            submit = tkinter.Button(send_file_gui,
-                                    text="Submit the form",
-                                    background=self.THEME_WINDOW_BG,
-                                    foreground=self.THEME_FOREGROUND,
-                                    command=submit_form)
-            submit.grid(row=3, column=0)
-            send_file_gui.mainloop()
-
-
-        def recieveFiles():
-            """ recieve files that had been sent (using thepythoncode.com's
-            code)"""
-            def submit_form():
-                """ submits the form to self._sendFiles()"""
-                self._receiveFiles(ip_address.get(), port=int(port.get()))
-            recieve_files = tkinter.Tk()
-            recieve_files.configure(background=self.THEME_WINDOW_BG,)
-            recieve_files.title("File transfer form")
-            self._title_bar(window=recieve_files, mode_val=20)
-            a = tkinter.Label(recieve_files,
-                              text="Enter the IP address of the receiver:->",
-                              background=self.THEME_WINDOW_BG,
-                              foreground=self.THEME_FOREGROUND)
-            a.grid(row=0, column=0)
-            ip_address = tkinter.Entry(recieve_files)
-            ip_address.grid(row=0, column=1)
-            b = tkinter.Label(recieve_files,
-                              text="Enter the port:->",
-                              background=self.THEME_WINDOW_BG,
-                              foreground=self.THEME_FOREGROUND)
-            b.grid(row=1, column=0)
-            port = tkinter.Entry(recieve_files)
-            port.grid(row=1, column=1)
-            submit = tkinter.Button(recieve_files,
-                                    text="Submit the form",
-                                    background=self.THEME_WINDOW_BG,
-                                    foreground=self.THEME_FOREGROUND,
-                                    command=submit_form)
-            submit.grid(row=2, column=0)
-            recieve_files.mainloop()
-        a = tkinter.Label(master=control_window,
-                          text="Transfer Files",
-                          background=self.THEME_WINDOW_BG,
-                          foreground=self.THEME_FOREGROUND)
-        a.grid(row=5, column=0)
-        send_files_btn = tkinter.Button(control_window,
-                                    text="Send files over local network",
-                                    background=self.THEME_WINDOW_BG,
-                                    foreground=self.THEME_FOREGROUND,
-                                    command=send_file)
-        send_files_btn.grid(row=5, column=1)
-        recieve_files_btn = tkinter.Button(control_window,
-                                           text="Read the sent files in the "
-                                                "network",
-                                           background=self.THEME_WINDOW_BG,
-                                           foreground=self.THEME_FOREGROUND,
-                                           command=recieveFiles)
-        recieve_files_btn.grid(row=5, column=2)
+        font_selector.grid(row=4, column=1)
 
         control_window.mainloop()
 
@@ -944,44 +844,29 @@ Never gonna run around and desert you""")
         """ closing message!"""
         print("called on_close() function")
         if not self.saved:
-            alert = messagebox.askyesnocancel(
+            try:
+                alert = messagebox.askyesnocancel(
                 "Save the file?",
                 "This is an unsaved document. so do you wanna save em and, "
-                "close this?", self.root)
+                "close this?", self.root, MainPID=self.PID)
+            except: 
+                alert = messagebox.askyesnocancel(
+                "Save the file?",
+                "This is an unsaved document. so do you wanna save em and, "
+                "close this?")
             if alert == 1:
                 self.save()
+                callHost.acknowledgeEndTask(self.PID)
                 self.root.destroy()
             elif alert == 0:
+                callHost.acknowledgeEndTask(self.PID)
                 self.root.destroy()
             else:
                 pass
         elif self.saved:
+            callHost.acknowledgeEndTask(self.PID)
             self.root.destroy()
-
-    def _title_bar(self, window, mode_val:
-    typing.Literal[20, 0]):
-        """
-        MORE INFO:
-        https://docs.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
-        """
-        global MSG_SHOWN
-        if platform.system() == "Windows":
-            window.update()
-            DWMWA_USE_IMMERSIVE_DARK_MODE = mode_val
-            set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute
-            get_parent = ct.windll.user32.GetParent
-            hwnd = get_parent(window.winfo_id())
-            rendering_policy = DWMWA_USE_IMMERSIVE_DARK_MODE
-            value = 0
-            value = ct.c_int(value)
-            set_window_attribute(hwnd, rendering_policy, ct.byref(value),
-                                 ct.sizeof(value))
-        else:
-            if not MSG_SHOWN:
-                messagebox.showinfo(f"Function not supported for "
-                                     f"{platform.system()}!", "The Title-Bar changer function is not "
-                                     f"supported for {platform.system()}, the program will continue", self.root)
-                MSG_SHOWN = True
+        return True
 
     def _sendFiles(self, sender_ip, port, file_path):
         global encryption
@@ -1011,7 +896,7 @@ Never gonna run around and desert you""")
                 # we use sendall to assure transimission in busy networks
                 file_to_send = encryption.encrypt(bytes_read)
                 s.sendall(file_to_send)
-        messagebox.showinfo("Success", f"Connected and sent to {sender_ip}", self.root)
+        messagebox.showinfo("Success", f"Connected and sent to {sender_ip}", self.root, MainPID=self.PID)
 
         # close the socket
         s.close()
@@ -1031,7 +916,7 @@ Never gonna run around and desert you""")
         client_socket, address = s.accept()
         # if below code is executed, that means the sender is connected
         print(f"[+] {address} is connected.")
-        messagebox.showinfo("Connection successful", f"{address} is connected to your computer", self.root)
+        messagebox.showinfo("Connection successful", f"{address} is connected to your computer", self.root, MainPID=self.PID)
         received = client_socket.recv(BUFFER_SIZE).decode()
         filename, filesize = received.split(SEPARATOR)
         # remove absolute path if there is
@@ -1059,20 +944,26 @@ Never gonna run around and desert you""")
         if self.fileopen != None:
             self.readFile(file=self.fileopen)
 
-def main():
+def main(initialFileOpener=None):
     """ main """
     root = tkinter.Tk()
     root.title("Notepad GUI v3.3 STABLE")
-    text = tkinter.Text(root, height=20, width=100,
+    text = Text(root, height=20, width=100,
                         font=("Arial Rounded MT Bold",
                               18), )
-    text.grid(row=0, column=0, pady=10)
-    saveTo = tkinter.Text(root, height=2, width=50,
+    text.grid(row=1, column=0, pady=10)
+    saveTo = Text(root, height=2, width=50,
                           font=("Arial Rounded MT Bold",
                                 12))
-    saveTo.grid(row=1, column=0)
-    NotepadRun(text_box=text, gui=root, saveTo=saveTo)
+    saveTo.grid(row=2, column=0)
+    NotepadRun(text_box=text, gui=root, saveTo=saveTo, file_to_open =initialFileOpener)
+    return True
 
 
 if __name__ == "__main__":
-    main()
+    params = sys.argv[1:]
+    fileToOpen = None
+    if "-fileOpen" in params:
+        indx = params.index("-fileOpen")
+        fileToOpen = params[indx+1]
+    main(fileToOpen.lstrip("-"))
